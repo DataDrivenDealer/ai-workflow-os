@@ -1,0 +1,374 @@
+# SDF Interface Contract
+
+# Version: 1.0.0
+# Status: FROZEN
+# Created: 2026-02-01
+# Reference: SDF_SPEC_REVIEW_001, SDF Layer Final Spec v1.0
+
+# ---
+# ===========================================================================
+# Section 1: State Engine Interface
+# ===========================================================================
+state_engine:
+  class: StateEngine
+  module: dgsf.sdf.state_engine
+  
+  inputs:
+    returns:
+      type: "np.ndarray"
+      shape: "[T, K]"
+      description: "Asset returns, T timesteps, K assets"
+      constraints:
+        - "T >= 252 (minimum 1 year)"
+        - "K >= 10 (minimum 10 assets)"
+    turnover:
+      type: "np.ndarray"
+      shape: "[T, K]"
+      description: "Asset turnover rates"
+      constraints:
+        - "Non-negative values"
+  
+  outputs:
+    phi:
+      type: "np.ndarray"
+      shape: "[T, J]"
+      description: "Instrument basis vectors"
+      constraints:
+        - "J = 4 (baseline) or J = 5 (with crowd)"
+        - "Elements in [-1, 1] except constant column"
+    V_t:
+      type: "np.ndarray"
+      shape: "[T]"
+      description: "Volatility state"
+      constraints:
+        - "Range: [-1, 1]"
+    L_t:
+      type: "np.ndarray"
+      shape: "[T]"
+      description: "Liquidity state"
+      constraints:
+        - "Range: [-1, 1]"
+  
+  parameters:
+    vol_lookback:
+      value: 12
+      frozen: true
+      description: "Lookback window for volatility"
+    std_window:
+      value: 36
+      frozen: true
+      description: "Rolling std window"
+    lambda_ewma:
+      value: 0.8
+      frozen: true
+      description: "EWMA decay factor"
+    include_crowd:
+      value: false
+      frozen: false
+      description: "Whether to include crowd state (J=5)"
+
+# ---
+# ===========================================================================
+# Section 2: SDF Model Interface
+# ===========================================================================
+sdf_model:
+  class: GenerativeSDF
+  module: dgsf.sdf.model
+  
+  inputs:
+    Info_t:
+      type: "torch.Tensor"
+      shape: "[T, D]"
+      description: "Information available at time t"
+      constraints:
+        - "D = input dimension"
+        - "Must be t-observable (no future leak)"
+  
+  outputs:
+    m_t:
+      type: "torch.Tensor"
+      shape: "[T]"
+      description: "SDF values"
+      constraints:
+        - "Positive values (m > 0)"
+        - "Normalized: mean(m) = 1"
+    log_m_t:
+      type: "torch.Tensor"
+      shape: "[T]"
+      description: "Log SDF values"
+      constraints:
+        - "Bounded: |log_m| <= c = 4.0"
+  
+  parameters:
+    c:
+      value: 4.0
+      frozen: true
+      description: "Log SDF bound"
+    lambda_smooth:
+      value: 0.001
+      frozen: true
+      description: "Temporal smoothness penalty"
+    hidden_dim:
+      value: 64
+      frozen: false
+      description: "MLP hidden dimension"
+    num_layers:
+      value: 2
+      frozen: false
+      description: "Number of MLP layers"
+
+# ---
+# ===========================================================================
+# Section 3: Robust Moment Estimator Interface
+# ===========================================================================
+moment_estimator:
+  class: RobustMomentEstimator
+  module: dgsf.sdf.moments
+  
+  inputs:
+    m_t:
+      type: "np.ndarray"
+      shape: "[T]"
+      description: "SDF time series"
+    R_leaf:
+      type: "np.ndarray"
+      shape: "[T, N]"
+      description: "Leaf portfolio returns (t+1)"
+      constraints:
+        - "N = number of leaf portfolios"
+        - "Strictly future returns (no leak)"
+    phi:
+      type: "np.ndarray"
+      shape: "[T, J]"
+      description: "Instrument basis"
+  
+  outputs:
+    G:
+      type: "np.ndarray"
+      shape: "[N, J]"
+      description: "Instrumented moment matrix"
+      constraints:
+        - "Used for training loss and diagnostics"
+    y_bar:
+      type: "np.ndarray"
+      shape: "[T, N]"
+      description: "Clipped aggregation values"
+  
+  parameters:
+    scale_method:
+      value: "MAD"
+      frozen: true
+      description: "Return scaling method"
+    clip_bound:
+      value: 3.0
+      frozen: true
+      description: "Clipping bound c_y"
+    epsilon:
+      value: 1.0e-8
+      frozen: true
+      description: "Numerical stability epsilon"
+
+# ---
+# ===========================================================================
+# Section 4: Training Pipeline Interface
+# ===========================================================================
+trainer:
+  class: SDFTrainer
+  module: dgsf.sdf.trainer
+  
+  inputs:
+    model:
+      type: "GenerativeSDF"
+      description: "SDF model instance"
+    moment_estimator:
+      type: "RobustMomentEstimator"
+      description: "Moment estimator instance"
+    R_leaf:
+      type: "np.ndarray"
+      shape: "[T, N]"
+      description: "Leaf portfolio returns"
+    Info_t:
+      type: "np.ndarray"
+      shape: "[T, D]"
+      description: "Time-t information"
+    phi:
+      type: "np.ndarray"
+      shape: "[T, J]"
+      description: "Instrument basis"
+  
+  outputs:
+    theta_star:
+      type: "Dict[str, torch.Tensor]"
+      description: "Trained model parameters"
+    m_t_final:
+      type: "np.ndarray"
+      shape: "[T]"
+      description: "Final SDF series"
+    G_final:
+      type: "np.ndarray"
+      shape: "[N, J]"
+      description: "Final moment matrix"
+    diagnostics:
+      type: "Dict[str, Any]"
+      description: "Training metrics"
+      fields:
+        - "loss_history: List[float]"
+        - "G_inf_norm: float (max |g_{i,j}|)"
+        - "argmax_ij: Tuple[int, int]"
+        - "m_stats: Dict[min, mean, max]"
+  
+  parameters:
+    tau_start:
+      value: 5.0
+      frozen: true
+      description: "Initial temperature"
+    tau_end:
+      value: 20.0
+      frozen: true
+      description: "Final temperature"
+    warmup_epochs:
+      value: 10
+      frozen: true
+      description: "Warmup period"
+    total_epochs:
+      value: 100
+      frozen: false
+      description: "Total training epochs"
+    learning_rate:
+      value: 0.001
+      frozen: false
+      description: "Optimizer learning rate"
+
+# ---
+# ===========================================================================
+# Section 5: EA Pricing Oracle Interface
+# ===========================================================================
+pricing_oracle:
+  class: PricingErrorOracle
+  module: dgsf.sdf.oracle
+  
+  inputs:
+    m_t:
+      type: "np.ndarray"
+      shape: "[T]"
+      description: "Frozen SDF from training"
+    R_leaf:
+      type: "np.ndarray"
+      shape: "[T, N]"
+      description: "Leaf portfolio returns"
+    phi:
+      type: "np.ndarray"
+      shape: "[T, J]"
+      description: "Instrument basis"
+    w:
+      type: "np.ndarray"
+      shape: "[N]"
+      description: "Portfolio weights (EA candidate)"
+      constraints:
+        - "sum(w) can be any value (long-short allowed)"
+  
+  outputs:
+    PE:
+      type: "float"
+      description: "Pricing error scalar"
+      constraints:
+        - "PE >= 0"
+        - "Lower is better (EA minimizes)"
+  
+  callable_signature: |
+    def __call__(self, w: np.ndarray) -> float:
+        """
+        Callable interface for EA optimization.
+        
+        Args:
+            w: Portfolio weights [N]
+        
+        Returns:
+            PE(w): Pricing error scalar
+        """
+  
+  parameters:
+    tau:
+      value: 20.0
+      frozen: true
+      description: "Use τ_end for oracle"
+    clip_bound:
+      value: 3.0
+      frozen: true
+      description: "Same as training"
+
+# ---
+# ===========================================================================
+# Section 6: EA Integration Contract
+# ===========================================================================
+ea_integration:
+  description: "Contract between SDF Layer and EA Layer"
+  
+  sdf_provides:
+    - name: "m_t"
+      description: "Trained SDF series (frozen per window)"
+    - name: "phi"
+      description: "Instrument basis (deterministic)"
+    - name: "pricing_error_oracle"
+      description: "Callable PE(w) function"
+  
+  ea_uses:
+    objectives:
+      - name: "Sharpe"
+        direction: "maximize"
+      - name: "MaxDrawdown"
+        direction: "minimize"
+      - name: "Turnover"
+        direction: "minimize"
+      - name: "PricingError"
+        direction: "minimize"
+        source: "pricing_error_oracle"
+  
+  invariants:
+    - "EA does NOT modify m_t (SDF is environment)"
+    - "EA does NOT retrain SDF (frozen per window)"
+    - "PE(w) uses SAME moment formula as training"
+    - "PE normalization: NONE (keep raw scale)"
+
+# ---
+# ===========================================================================
+# Section 7: No-Leakage Rules (HARD)
+# ===========================================================================
+no_leakage_rules:
+  severity: "CRITICAL"
+  
+  rules:
+    - id: "NL-001"
+      description: "phi[t] uses only t-observable data"
+      verification: "Timestamp check in unit tests"
+    
+    - id: "NL-002"
+      description: "R_leaf[t+1] is strictly future return"
+      verification: "Index alignment check"
+    
+    - id: "NL-003"
+      description: "Scaling statistics use only past data"
+      verification: "Rolling window boundary check"
+    
+    - id: "NL-004"
+      description: "Info_t excludes any t+1 information"
+      verification: "Feature timestamp audit"
+
+# ---
+# ===========================================================================
+# Section 8: Version Control
+# ===========================================================================
+version_control:
+  spec_version: "1.0.0"
+  frozen_date: "2026-02-01"
+  
+  change_policy:
+    frozen_parameters: "Requires Project Owner approval + new version"
+    non_frozen_parameters: "Can tune during development"
+    interface_changes: "Requires spec amendment"
+  
+  related_specs:
+    - "SDF Layer Specification v3.1"
+    - "SDF Layer Final Spec v1.0"
+    - "State Engine Spec v1.0"
+    - "EA Layer Specification v3.1"

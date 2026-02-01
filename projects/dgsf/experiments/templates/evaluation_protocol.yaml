@@ -1,0 +1,275 @@
+# Evaluation Protocol Template
+# DGSF Research Project
+# Version: 1.0.0
+
+# ============================================================
+# EVALUATION PROTOCOL
+# ============================================================
+protocol:
+  name: "DGSF Standard Evaluation Protocol"
+  version: "1.0.0"
+  description: |
+    Standard evaluation protocol for DGSF experiments.
+    Ensures consistency and reproducibility across all experiments.
+
+# ============================================================
+# EVALUATION STAGES
+# ============================================================
+stages:
+  # Stage 1: In-Sample Evaluation
+  in_sample:
+    name: "In-Sample (IS) Evaluation"
+    period: ["2015-01-01", "2021-12-31"]
+    purpose: "Model fitting and parameter selection"
+    required: true
+    
+    metrics:
+      - name: "sharpe_ratio"
+        threshold: 1.0
+        comparison: ">="
+      - name: "pricing_error"
+        threshold: 0.5
+        comparison: "<="
+      - name: "hit_rate"
+        threshold: 0.52
+        comparison: ">="
+  
+  # Stage 2: Out-of-Sample Evaluation
+  out_of_sample:
+    name: "Out-of-Sample (OOS) Evaluation"
+    period: ["2022-01-01", "2023-12-31"]
+    purpose: "Generalization assessment"
+    required: true
+    
+    metrics:
+      - name: "sharpe_ratio"
+        threshold: 0.8
+        comparison: ">="
+      - name: "pricing_error"
+        threshold: 0.6
+        comparison: "<="
+    
+    # OOS must not degrade too much from IS
+    degradation_limits:
+      sharpe_ratio: 0.3  # Max 30% degradation
+      alpha: 0.4  # Max 40% degradation
+  
+  # Stage 3: Rolling Window Evaluation
+  rolling_window:
+    name: "Rolling Window Evaluation"
+    purpose: "Temporal stability assessment"
+    required: true
+    
+    config:
+      window_size: 36  # months
+      step_size: 12    # months
+      min_windows: 5
+    
+    metrics:
+      - name: "sharpe_ratio_mean"
+        threshold: 0.7
+      - name: "sharpe_ratio_std"
+        threshold: 0.5
+        comparison: "<="
+      - name: "positive_windows_ratio"
+        threshold: 0.6
+        comparison: ">="
+  
+  # Stage 4: Robustness Checks
+  robustness:
+    name: "Robustness Checks"
+    purpose: "Sensitivity and stability analysis"
+    required: true
+    
+    checks:
+      # Feature ablation
+      feature_ablation:
+        enabled: true
+        method: "sequential_removal"
+        top_k_features: 10
+        
+      # Hyperparameter sensitivity
+      hyperparameter_sensitivity:
+        enabled: true
+        parameters:
+          - name: "learning_rate"
+            range: [1e-5, 1e-3]
+            log_scale: true
+          - name: "hidden_dim"
+            values: [64, 128, 256]
+      
+      # Sub-period analysis
+      sub_period:
+        enabled: true
+        periods:
+          - name: "bull_market"
+            dates: ["2019-01-01", "2021-06-30"]
+          - name: "bear_market"
+            dates: ["2021-07-01", "2022-12-31"]
+          - name: "recovery"
+            dates: ["2023-01-01", "2023-12-31"]
+      
+      # Alternative specifications
+      alternative_specs:
+        enabled: true
+        variations:
+          - name: "different_features"
+            description: "Top 50 features only"
+          - name: "different_target"
+            description: "5-day vs 1-month returns"
+  
+  # Stage 5: Statistical Testing
+  statistical_testing:
+    name: "Statistical Significance Testing"
+    purpose: "Ensure results are statistically meaningful"
+    required: true
+    
+    tests:
+      # Sharpe ratio difference test
+      sharpe_difference:
+        method: "ledoit_wolf_2008"
+        null_hypothesis: "SR_new = SR_baseline"
+        alpha: 0.05
+        two_sided: false  # One-sided (new > baseline)
+      
+      # Spanning test
+      spanning_test:
+        method: "gibbons_ross_shanken_1989"
+        null_hypothesis: "New factors are spanned by existing"
+        alpha: 0.05
+      
+      # Bootstrap confidence intervals
+      bootstrap:
+        method: "circular_block"
+        block_size: 12  # months
+        n_bootstrap: 1000
+        confidence_levels: [0.90, 0.95, 0.99]
+      
+      # Multiple testing correction
+      multiple_testing:
+        method: "benjamini_hochberg"
+        fdr_level: 0.05
+
+# ============================================================
+# BASELINE COMPARISON
+# ============================================================
+baseline_comparison:
+  required_baselines:
+    - id: "A"
+      name: "Univariate Sorting"
+      type: "traditional"
+      reference_sharpe: 0.95
+      
+    - id: "C"
+      name: "PanelTree (Original)"
+      type: "current_best"
+      reference_sharpe: 1.52
+      
+    - id: "E"
+      name: "Fama-French 5-Factor"
+      type: "academic_benchmark"
+      reference_sharpe: 0.40
+      
+    - id: "F"
+      name: "Neural Network SDF"
+      type: "ml_benchmark"
+      reference_sharpe: 1.35
+  
+  comparison_metrics:
+    - sharpe_ratio
+    - alpha
+    - beta
+    - information_ratio
+    - max_drawdown
+    - calmar_ratio
+
+# ============================================================
+# REPORTING REQUIREMENTS
+# ============================================================
+reporting:
+  # Required figures
+  figures:
+    - name: "cumulative_returns"
+      description: "Cumulative returns vs baselines"
+      required: true
+      
+    - name: "rolling_sharpe"
+      description: "12-month rolling Sharpe ratio"
+      required: true
+      
+    - name: "drawdown"
+      description: "Drawdown over time"
+      required: true
+      
+    - name: "factor_loadings"
+      description: "Factor exposure heatmap"
+      required: true
+      
+    - name: "feature_importance"
+      description: "Top features by importance"
+      required: false
+  
+  # Required tables
+  tables:
+    - name: "performance_summary"
+      description: "Key performance metrics"
+      required: true
+      columns:
+        - metric
+        - in_sample
+        - out_of_sample
+        - baseline_A
+        - baseline_C
+        - baseline_E
+        - baseline_F
+      
+    - name: "statistical_tests"
+      description: "Statistical test results"
+      required: true
+      columns:
+        - test_name
+        - test_statistic
+        - p_value
+        - significant
+      
+    - name: "robustness_results"
+      description: "Robustness check summary"
+      required: true
+
+# ============================================================
+# ACCEPTANCE CRITERIA
+# ============================================================
+acceptance_criteria:
+  # Minimum requirements for experiment success
+  minimum:
+    oos_sharpe: 0.8
+    oos_positive_return: true
+    statistical_significance: true
+    passes_robustness: 0.7  # 70% of robustness checks
+  
+  # Target for publication-ready results
+  target:
+    oos_sharpe: 1.2
+    improvement_over_baseline_C: 0.1
+    all_statistical_tests_pass: true
+    passes_robustness: 0.9
+
+# ============================================================
+# AUDIT INTEGRATION
+# ============================================================
+audit:
+  # Log all evaluation runs
+  log_evaluations: true
+  
+  # Required audit fields
+  required_fields:
+    - experiment_id
+    - evaluation_timestamp
+    - config_hash
+    - data_version
+    - code_version
+  
+  # Audit storage
+  storage:
+    backend: "yaml"
+    path: "ops/audit/experiments/"
