@@ -1,0 +1,45 @@
+name: Task request
+description: Submit a task request for routing into a TaskCard
+title: "[Task] <short title>"
+labels: ["task:request"]
+body:
+  - type: input
+    id: task_title
+    attributes:
+      label: Title
+      description: Short, action-oriented task title
+      placeholder: "Implement X"
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What outcome is expected?
+      placeholder: "Describe the goal"
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints (must/never)
+      description: Rules, limitations, or non-negotiables
+      placeholder: "Must..., Never..."
+    validations:
+      required: false
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope (files/areas)
+      description: Files, modules, or areas involved
+      placeholder: "paths, modules, components"
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Concrete checks that prove completion
+      placeholder: "- [ ] ..."
+    validations:
+      required: true

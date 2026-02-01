@@ -1,0 +1,34 @@
+name: Router Intake
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  intake:
+    if: github.event.label.name == 'task:request'
+    runs-on: ubuntu-latest
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate TaskCard
+        run: python scripts/router_intake.py
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "router: add TaskCard for issue #${{ env.ISSUE_NUMBER }}"
+          title: "router: intake issue #${{ env.ISSUE_NUMBER }} → TaskCard"
+          body: |
+            Auto-generated from issue #${{ env.ISSUE_NUMBER }}.
+            Source: ${{ github.event.issue.html_url }}
+          branch: "router/issue-${{ env.ISSUE_NUMBER }}"
+          delete-branch: true
