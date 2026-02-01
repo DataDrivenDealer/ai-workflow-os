@@ -445,11 +445,12 @@ class GateChecker:
     
     def _run_unit_tests(self, context: Dict[str, Any]) -> CheckResult:
         """Run pytest and return result."""
+        import sys
         project_path = context.get("project_path", ROOT / "projects" / "dgsf" / "repo")
         
         try:
             result = subprocess.run(
-                ["python", "-m", "pytest", str(project_path), "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", str(project_path), "-v", "--tb=short"],
                 capture_output=True,
                 text=True,
                 timeout=300,
