@@ -1,28 +1,143 @@
 # DGSF L2 Project Specification
-# Version: 1.0.0
-# Status: draft
-# Authority: speculative (requires Project Owner acceptance)
+# Version: 2.1.0
+# Status: active
+# Authority: accepted (Project Owner confirmed 2026-02-01)
 # Spec Refs: GOVERNANCE_INVARIANTS, PROJECT_DELIVERY_PIPELINE
+# Direction: Inherit Legacy DGSF (SDF Asset Pricing Framework)
 # Created by: 李架构 (Chief Architect)
+# Updated: 2026-02-01 - Added adapter layer and spec mappings
 
 # =============================================================================
 # Section 1: Project Identity
 # =============================================================================
 project:
   id: "DGSF"
-  name: "Dynamic Grid Strategy Framework"
-  type: "trading_system"
+  name: "Dynamic Generative SDF Forest"  # Updated from "Dynamic Grid Strategy Framework"
+  type: "asset_pricing_research"  # Updated from "trading_system"
   layer: "L2"  # Project-level specification
   repository:
     remote: "https://github.com/DataDrivenDealer/DGSF.git"
     integration: "submodule"
     local_path: "projects/dgsf/repo"
+    legacy_path: "projects/dgsf/legacy/DGSF"  # Legacy assets location
   created: "2026-02-01"
+  updated: "2026-02-01"
   owner: "Project Owner"
   status: "active"
+  direction: "inherit_legacy_dgsf"
 
 # =============================================================================
-# Section 2: Spec Dependencies (Upward Reference)
+# Section 2: Adapter Layer Configuration
+# =============================================================================
+adapter:
+  package: "projects.dgsf.adapter"
+  version: "1.0.0"
+  modules:
+    - name: "dgsf_adapter"
+      class: "DGSFAdapter"
+      description: "Main adapter for DGSF ↔ AI Workflow OS integration"
+    - name: "spec_mapper"
+      class: "SpecMapper"
+      description: "Specification path resolution and mapping"
+    - name: "task_hooks"
+      class: "DGSFTaskHooks"
+      description: "Task lifecycle hooks"
+    - name: "audit_bridge"
+      class: "DGSFAuditBridge"
+      description: "Audit event bridging"
+    - name: "config_loader"
+      class: "DGSFConfigLoader"
+      description: "Configuration loading utilities"
+  paths:
+    legacy_root: "projects/dgsf/legacy/DGSF"
+    specs_dir: "projects/dgsf/legacy/DGSF/specs_v3"
+    src_dir: "projects/dgsf/legacy/DGSF/src/dgsf"
+    data_dir: "projects/dgsf/legacy/DGSF/data"
+    config_dir: "projects/dgsf/legacy/DGSF/configs"
+
+# =============================================================================
+# Section 3: Spec Mappings (Legacy → AI Workflow OS)
+# =============================================================================
+spec_mappings:
+  layer_to_legacy:
+    L0:
+      spec_id: "DGSF_DATAENG_V3"
+      file: "DATAENGINEERING.md"
+      description: "Data Engineering - causal pipeline"
+    L1:
+      spec_id: "DGSF_DATAENG_V3"
+      file: "DATAENGINEERING.md"
+      description: "Data Engineering - validation"
+    L2:
+      spec_id: "DGSF_PANELTREE_V3"
+      file: "PANELTREE_SPEC.md"
+      description: "PanelTree - structural learning"
+    L3:
+      spec_id: "DGSF_SDF_V3"
+      file: "SDF_SPEC.md"
+      description: "SDF - stochastic discount factor"
+    L4:
+      spec_id: "DGSF_EA_V3"
+      file: "EA_SPEC.md"
+      description: "EA - evolutionary algorithm"
+    L5:
+      spec_id: "DGSF_ROLLING_V3"
+      file: "ROLLING_SPEC.md"
+      description: "Rolling - time-series evaluation"
+    L6:
+      spec_id: "DGSF_REPORT_V3"
+      file: "REPORTING_TELEMETRY.md"
+      description: "Reporting"
+    L7:
+      spec_id: "DGSF_TELEMETRY_V3"
+      file: "REPORTING_TELEMETRY.md"
+      description: "Telemetry"
+  concept_alignment:
+    baseline: "baseline_ecosystem"
+    gate: "validation_gate"
+    drift: "temporal_drift"
+    factor: "sdf_factor"
+    tree: "panel_tree"
+  module_mapping:
+    paneltree: "dgsf.paneltree"
+    sdf: "dgsf.sdf"
+    ea: "dgsf.ea"
+    rolling: "dgsf.rolling"
+    backtest: "dgsf.backtest"
+    dataeng: "dgsf.dataeng"
+    config: "dgsf.config"
+    utils: "dgsf.utils"
+
+# =============================================================================
+# Section 4: Governance Gates
+# =============================================================================
+gates:
+  spec_integration:
+    trigger: "pre_merge"
+    checks:
+      - name: "spec_hierarchy_valid"
+        description: "Verify spec hierarchy is valid"
+      - name: "mapping_complete"
+        description: "All legacy specs have AI Workflow OS mappings"
+      - name: "adapter_functional"
+        description: "Adapter layer passes health check"
+  data_migration:
+    trigger: "pre_stage_2"
+    checks:
+      - name: "data_integrity"
+        description: "Verify data integrity after migration"
+      - name: "causality_preserved"
+        description: "No look-ahead leakage introduced"
+  reproducibility:
+    trigger: "pre_stage_3"
+    checks:
+      - name: "baseline_match"
+        description: "Baselines A-H reproduce to tolerance"
+      - name: "metrics_stable"
+        description: "Key metrics within acceptable variance"
+
+# =============================================================================
+# Section 5: Spec Dependencies (Upward Reference)
 # =============================================================================
 spec_dependencies:
   canon:  # L0 Canon Specs (frozen)
@@ -40,198 +155,258 @@ spec_dependencies:
       version: "1.0.0"
     - id: "ARCH_BLUEPRINT_MASTER"
       version: "1.0.0"
+  legacy:  # Legacy DGSF Specs (to be integrated)
+    - id: "DGSF_Architecture_v3.0"
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF Architecture v3.0 _ Final.md"
+      status: "pending_integration"
+    - id: "DGSF_PanelTree_v3.0.2"
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF PanelTree Layer Specification v3.0.2.md"
+      status: "pending_integration"
+    - id: "DGSF_SDF_v3.1"
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF SDF Layer Specification v3.1.md"
+      status: "pending_integration"
+    - id: "DGSF_EA_v3.1"
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF EA Layer Specification v3.1.md"
+      status: "pending_integration"
+    - id: "DGSF_Rolling_v3.0"
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF Rolling & Evaluation Specification v3.0.md"
+      status: "pending_integration"
 
 # =============================================================================
-# Section 3: Project Scope
+# Section 3: Project Scope (DGSF Framework)
 # =============================================================================
 scope:
-  domain: "quantitative_trading"
-  features:
-    - name: "grid_signal_generation"
-      description: "Generate buy/sell signals based on dynamic grid spacing"
-      priority: "P1"
-    - name: "adaptive_spacing"
-      description: "Adjust grid spacing based on market volatility (ATR)"
-      priority: "P1"
-    - name: "position_management"
-      description: "Track and manage positions across grid levels"
-      priority: "P1"
-    - name: "risk_control"
-      description: "Stop-loss and max-position limits"
-      priority: "P2"
-    - name: "performance_analytics"
-      description: "Sharpe ratio, max drawdown, win rate tracking"
-      priority: "P2"
+  domain: "asset_pricing_research"
+  description: |
+    DGSF is a research framework for building stochastic discount factor (SDF) models 
+    using panel trees, evolutionary algorithms, and rolling window backtesting.
+  core_layers:
+    - name: "L0-L1 Data Engineering"
+      description: "Causal data pipeline with no look-ahead leakage"
+      spec_version: "v4.2"
+    - name: "L2 PanelTree"
+      description: "Hierarchical partitions of cross-section based on firm characteristics"
+      spec_version: "v3.0.2"
+    - name: "L3 Generative SDF"
+      description: "Neural network-based stochastic discount factor models"
+      spec_version: "v3.1"
+    - name: "L4 EA Optimizer"
+      description: "Multi-objective evolutionary algorithms for portfolio optimization"
+      spec_version: "v3.1"
+    - name: "L5 Rolling & Evaluation"
+      description: "Time-series cross-validation and walk-forward testing"
+      spec_version: "v3.0"
   constraints:
     - type: "authority"
       rule: "All outputs are speculative until explicit acceptance"
     - type: "data"
-      rule: "Only use public market data (OHLCV)"
-    - type: "risk"
-      rule: "Max drawdown must not exceed 15%"
+      rule: "Strict causality: no look-ahead leakage"
+    - type: "methodology"
+      rule: "All modules must have corresponding baselines (A-H ecosystem)"
 
 # =============================================================================
-# Section 4: Pipeline Stages (L2 overrides)
+# Section 4: Pipeline Stages (Reset for Legacy Integration)
 # =============================================================================
 pipeline:
-  current_stage: 1
+  current_stage: 4
   stages:
     - id: 0
-      name: "Idea Triage"
+      name: "Legacy Asset Assessment"
       status: "completed"
-      task_id: "RESEARCH_0_DGSF_001"
-      decision: "PROCEED"
-    - id: 1
-      name: "Research Design"
-      status: "active"
-      task_id: "RESEARCH_1_DGSF_001"
+      task_id: "LEGACY_DGSF_ASSESS_001"
+      completed_date: "2026-02-01"
       deliverables:
-        - "Signal definition"
-        - "Experiment plan"
-        - "Success metrics"
-        - "Reproducibility package draft"
+        - "Architecture reusability assessment ✅"
+        - "Specification value assessment ✅"
+        - "Data asset inventory ✅"
+        - "Test coverage report ✅"
+        - "Integration recommendation (APPROVED) ✅"
+    - id: 1
+      name: "Specification Integration"
+      status: "completed"
+      task_id: "SPEC_INTEGRATION_001"
+      completed_date: "2026-02-01"
+      dependencies:
+        - "LEGACY_DGSF_ASSESS_001"
+      deliverables:
+        - "Spec mapping plan (SPEC_MAPPING_PLAN.md) ✅"
+        - "Adapter layer (projects/dgsf/adapter/) ✅"
+        - "PROJECT_DGSF.yaml v2.1.0 ✅"
     - id: 2
-      name: "Data Engineering"
-      status: "pending"
-      task_id: "DATA_2_DGSF_001"
+      name: "Data Migration"
+      status: "completed"
+      task_id: "DATA_MIGRATION_001"
+      completed_date: "2026-02-01"
       dependencies:
-        - "RESEARCH_1_DGSF_001"
+        - "SPEC_INTEGRATION_001"
+      deliverables:
+        - "Data path validation (DATA_PATH_VALIDATION.md) ✅"
+        - "Causality verification (CAUSALITY_VERIFICATION.md) ✅"
+        - "Data loader module (data_loader.py) ✅"
     - id: 3
-      name: "Development"
-      status: "pending"
-      task_id: "DEV_3_DGSF_001"
+      name: "Reproducibility Verification"
+      status: "completed"
+      task_id: "REPRO_VERIFY_001"
+      completed_date: "2026-02-01"
       dependencies:
-        - "DATA_2_DGSF_001"
+        - "DATA_MIGRATION_001"
+      deliverables:
+        - "Baseline reproduction script ✅"
+        - "Baseline reproduction report ✅"
+        - "Variance analysis report ✅"
+    - id: 4
+      name: "Research Continuation"
+      status: "completed"
+      task_id: "RESEARCH_CONTINUE_001"
+      completed_date: "2026-02-01"
+      dependencies:
+        - "REPRO_VERIFY_001"
+      deliverables:
+        - "Research roadmap (RESEARCH_ROADMAP_2026.md) ✅"
+        - "Experiment design (EXPERIMENT_DESIGN.md) ✅"
+        - "Publication plan (PUBLICATION_PLAN.md) ✅"
+        - "Experiment templates (experiments/templates/) ✅"
 
 # =============================================================================
-# Section 5: Data Requirements
+# PIPELINE COMPLETION STATUS
 # =============================================================================
-data:
-  sources:
-    - name: "exchange_ohlcv"
-      type: "market_data"
-      format: "OHLCV"
-      frequency: "1h"
-      provider: "exchange_api"
-  universe:
-    - symbol: "BTC/USDT"
-      exchange: "binance"
-      priority: "primary"
-    - symbol: "ETH/USDT"
-      exchange: "binance"
-      priority: "primary"
-  time_range:
-    start: "2020-01-01"
-    end: "2025-12-31"
-  quality:
-    missing_threshold: 0.01  # Max 1% missing data
-    outlier_handling: "winsorize"
+pipeline_summary:
+  status: "COMPLETE"
+  completed_date: "2026-02-01"
+  total_stages: 5
+  stages_completed: 5
+  gates_passed:
+    - "G1: Integration Review"
+    - "G2: Data Migration"
+    - "G3: Reproducibility"
+    - "G4: Research Plan"
+  next_phase: "Research Execution (Q2 2026)"
 
 # =============================================================================
-# Section 6: Model Specification
+# Section 5: Legacy Asset Registry
 # =============================================================================
-model:
-  type: "dynamic_grid"
-  parameters:
-    base_grid_spacing:
-      default: 0.01
-      range: [0.005, 0.02]
-      description: "Base distance between grid levels (percentage)"
-    position_per_grid:
-      default: 0.10
-      range: [0.05, 0.15]
-      description: "Position size per grid level"
-    max_position:
-      default: 1.0
-      max: 1.0
-      description: "Maximum total position"
-    adaptive_method:
-      default: "atr"
-      options: ["atr", "bollinger", "fixed"]
-      description: "Method for dynamic spacing adjustment"
-    atr_period:
-      default: 14
-      range: [7, 21]
-      description: "ATR calculation period"
-    stop_loss:
-      default: 0.15
-      range: [0.10, 0.20]
-      description: "Stop-loss threshold"
+legacy_assets:
+  specifications:
+    architecture:
+      - "DGSF Architecture v3.0 (3907 lines, mother spec)"
+      - "DGSF Project Specification Master Roadmap v3.0"
+    layer_specs:
+      - "DGSF PanelTree Layer Specification v3.0.2"
+      - "DGSF SDF Layer Specification v3.1"
+      - "DGSF EA Layer Specification v3.1"
+      - "DGSF Rolling & Evaluation Specification v3.0"
+    baseline_specs:
+      - "DGSF Baseline System Specification v4.3"
+      - "DGSF Rolling Baseline Execution Framework v3.1"
+  source_code:
+    path: "projects/dgsf/legacy/DGSF/src/dgsf/"
+    modules:
+      - backtest
+      - config
+      - data
+      - dataeng
+      - ea
+      - eval
+      - experiments
+      - factors
+      - paneltree
+      - rolling
+      - sdf
+      - utils
+  configurations:
+    path: "projects/dgsf/legacy/DGSF/configs/"
+    count: "75+ config files"
+  data:
+    path: "projects/dgsf/legacy/DGSF/data/"
+    directories:
+      - a0
+      - cache
+      - final
+      - full
+      - interim
+      - paneltree
+      - processed
+      - raw
+  results:
+    path: "projects/dgsf/legacy/DGSF/results/"
+    reports:
+      - "SDF gamma grid static OOS evidence pack"
+      - "OOS horizon robustness reports"
+      - "Expanding minloop reports"
 
 # =============================================================================
-# Section 7: Evaluation Metrics
+# Section 6: Evaluation Metrics (DGSF Framework)
 # =============================================================================
 evaluation:
-  primary_metrics:
-    - name: "sharpe_ratio"
-      threshold: ">= 1.5"
-      description: "Annualized risk-adjusted return"
-    - name: "max_drawdown"
-      threshold: "<= 15%"
-      description: "Maximum peak-to-trough decline"
-  secondary_metrics:
-    - name: "win_rate"
-      threshold: ">= 60%"
-      description: "Percentage of profitable trades"
-    - name: "grid_fill_rate"
-      threshold: ">= 80%"
-      description: "Percentage of grid orders filled"
-    - name: "daily_pnl_volatility"
-      threshold: "<= 2%"
-      description: "Daily P&L standard deviation"
-  evaluation_periods:
-    - name: "in_sample"
-      start: "2020-01-01"
-      end: "2023-12-31"
-      purpose: "training"
-    - name: "out_of_sample"
-      start: "2024-01-01"
-      end: "2024-12-31"
-      purpose: "validation"
-    - name: "holdout"
-      start: "2025-01-01"
-      end: "2025-12-31"
-      purpose: "final_test"
+  primary_objectives:
+    - name: "Sharpe Ratio (HV optimized)"
+      description: "Risk-adjusted return from MVE portfolios"
+    - name: "Alpha Stability"
+      description: "Rolling OOS alpha consistency"
+    - name: "SDF Pricing Error"
+      description: "Cross-sectional pricing accuracy"
+  baseline_ecosystem:
+    - "A: Sorting-based portfolios"
+    - "B: GP-SR baseline"
+    - "C: P-tree factor"
+    - "D: Pure EA baseline"
+    - "E: CAPM / FF5 / HXZ"
+    - "F: Linear P-tree"
+    - "G: Macro SDF baseline"
+    - "H: DCA/Buy-and-Hold"
 
 # =============================================================================
-# Section 8: Authority & Governance
+# Section 7: Authority & Governance
 # =============================================================================
 authority:
-  level: "speculative"
+  level: "accepted"
   granted_by: "Project Owner"
-  scope: "project_definition"
+  decision_date: "2026-02-01"
+  decision: "Inherit Legacy DGSF (SDF Asset Pricing Framework)"
+  previous_direction: "Grid Strategy (DEPRECATED)"
+  scope: "project_direction"
   escalation:
     triggers:
-      - "Scope change beyond defined features"
-      - "Parameter ranges outside specification"
-      - "Risk threshold violations"
+      - "Architecture change from v3.0"
+      - "Major spec deviation"
+      - "Data integrity issues"
     to: "Project Owner"
-  acceptance:
-    requires:
-      - "All primary metrics pass thresholds"
-      - "Out-of-sample validation complete"
-      - "Code review by reviewer role"
 
 # =============================================================================
-# Section 9: Audit Configuration
+# Section 8: Audit Configuration
 # =============================================================================
 audit:
   events:
     - "task_state_change"
-    - "parameter_modification"
-    - "metric_evaluation"
+    - "spec_integration"
+    - "data_migration"
     - "authority_escalation"
   log_path: "ops/audit/dgsf/"
   retention_days: 365
 
 # =============================================================================
-# Section 10: Version History
+# Section 9: Version History
 # =============================================================================
 version_history:
+  - version: "2.1.0"
+    date: "2026-02-01"
+    author: "Copilot Agent"
+    changes:
+      - "Added adapter layer configuration (Section 2)"
+      - "Added spec mappings (Section 3)"
+      - "Added governance gates (Section 4)"
+      - "Completed SPEC_INTEGRATION_001 deliverables"
+  - version: "2.0.0"
+    date: "2026-02-01"
+    author: "Project Owner"
+    changes:
+      - "MAJOR: Direction changed from Grid Strategy to inherit Legacy DGSF"
+      - "Updated project name to 'Dynamic Generative SDF Forest'"
+      - "Added legacy spec dependencies"
+      - "Reset pipeline for legacy integration"
+      - "Removed RESEARCH_1 and DATA_2 tasks (deprecated)"
   - version: "1.0.0"
     date: "2026-02-01"
     author: "li_architect"
     changes:
-      - "Initial L2 project specification"
-      - "Defined scope, pipeline, data requirements"
-      - "Established model parameters and evaluation metrics"
+      - "Initial L2 project specification (Grid Strategy - DEPRECATED)"
