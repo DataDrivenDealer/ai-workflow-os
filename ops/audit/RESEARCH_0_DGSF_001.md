@@ -17,3 +17,9 @@
     - ops/decision-log/RESEARCH_0_DGSF_001_triage.md ✓
     - projects/dgsf/specs/PROJECT_DGSF.yaml ✓
   - next_action: Start RESEARCH_1_DGSF_001
+## 2026-02-01T18:08:41.474774+00:00
+- status: merged
+- details:
+  - queue: research
+  - branch: feature/RESEARCH_0_DGSF_001
+  - merged_by: system

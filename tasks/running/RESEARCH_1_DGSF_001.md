@@ -156,10 +156,10 @@ plotly>=5.18       # 可视化
 
 | Artifact | 路径 | 状态 |
 |----------|------|------|
-| Research Design Doc | `projects/dgsf/docs/RESEARCH_1_DGSF_001_design.md` | `pending` |
-| Experiment Config | `projects/dgsf/configs/RESEARCH_1_DGSF_001.yaml` | `pending` |
-| Repro Package Manifest | `projects/dgsf/docs/RESEARCH_1_DGSF_001_repro.md` | `pending` |
-| Ablation Results | `projects/dgsf/results/ablation_report.md` | `pending` |
+| Research Design Doc | `projects/dgsf/docs/RESEARCH_1_design.md` | ✅ `complete` |
+| Experiment Config | `projects/dgsf/configs/RESEARCH_1.yaml` | ✅ `complete` |
+| Repro Package Manifest | `projects/dgsf/docs/RESEARCH_1_repro.md` | ✅ `complete` |
+| Ablation Results | `projects/dgsf/results/ablation_report.md` | `pending` (Stage 4) |
 
 ---
 

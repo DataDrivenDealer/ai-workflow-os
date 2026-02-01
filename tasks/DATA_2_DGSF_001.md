@@ -6,8 +6,8 @@ branch: "feature/DATA_2_DGSF_001"
 priority: P2
 spec_ids:
   - ARCH_BLUEPRINT_MASTER
-  - PROJECT_DELIVERY_PIPELINE
-  - PROJECT_DGSF
+  - TASK_STATE_MACHINE
+  - GOVERNANCE_INVARIANTS
 verification:
   - "Raw data schema validation passed"
   - "Missing data rate < 5%"

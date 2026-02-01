@@ -1,0 +1,119 @@
+# RESEARCH_1_DGSF_001 Experiment Configuration
+# Version: 1.0.0
+# Created: 2026-02-01
+# Author: 陈研究 (Quant Researcher)
+
+experiment:
+  name: "DGSF Grid Strategy Research"
+  task_id: "RESEARCH_1_DGSF_001"
+  type: "research_design"
+  random_seed: 42
+
+# =============================================================================
+# Signal Definition
+# =============================================================================
+signal:
+  name: "DGSF Grid Position Signal"
+  type: "mean-reversion"
+  frequency: "intraday"
+  
+  core_logic:
+    description: "Price triggers grid buy/sell with dynamic ATR-based spacing"
+    trigger: "price_crosses_grid_level"
+    actions:
+      on_down_cross: "buy"
+      on_up_cross: "sell"
+
+# =============================================================================
+# Universe Configuration
+# =============================================================================
+universe:
+  symbols:
+    - "BTC/USDT"
+    - "ETH/USDT"
+  data_frequency: "1h"
+  source: "binance"
+
+# =============================================================================
+# Time Ranges
+# =============================================================================
+time_ranges:
+  in_sample:
+    start: "2020-01-01"
+    end: "2023-12-31"
+    purpose: "training"
+  out_of_sample:
+    start: "2024-01-01"
+    end: "2024-12-31"
+    purpose: "validation"
+  holdout:
+    start: "2025-01-01"
+    end: "2025-12-31"
+    purpose: "final_test"
+
+# =============================================================================
+# Success Metrics (Thresholds)
+# =============================================================================
+success_metrics:
+  sharpe_ratio:
+    threshold: 1.5
+    operator: ">="
+    description: "Annualized risk-adjusted return"
+  max_drawdown:
+    threshold: 0.15
+    operator: "<="
+    description: "Maximum drawdown control"
+  win_rate:
+    threshold: 0.60
+    operator: ">="
+    description: "Single trade win rate"
+  grid_fill_rate:
+    threshold: 0.80
+    operator: ">="
+    description: "Grid order fill rate"
+
+# =============================================================================
+# Ablation Study Plan
+# =============================================================================
+ablations:
+  A1_grid_spacing:
+    variable: "grid_spacing"
+    values: [0.005, 0.01, 0.015, 0.02]  # 0.5%, 1%, 1.5%, 2%
+    baseline: 0.01
+    
+  A2_position_ratio:
+    variable: "position_ratio"
+    values: [0.05, 0.10, 0.15]  # 5%, 10%, 15%
+    baseline: 0.10
+    
+  A3_adaptive_factor:
+    variable: "adaptive_factor"
+    values: ["ATR", "Bollinger", "Fixed"]
+    baseline: "ATR"
+    
+  A4_stop_loss:
+    variable: "stop_loss_threshold"
+    values: [0.10, 0.15, 0.20]  # 10%, 15%, 20%
+    baseline: 0.15
+
+# =============================================================================
+# Default Parameters (Baseline)
+# =============================================================================
+default_params:
+  grid_spacing: 0.01
+  position_ratio: 0.10
+  adaptive_factor: "ATR"
+  stop_loss_threshold: 0.15
+  atr_period: 14
+  max_positions: 10
+  rebalance_frequency: "daily"
+
+# =============================================================================
+# Reproducibility Settings
+# =============================================================================
+reproducibility:
+  random_seed: 42
+  numpy_seed: 42
+  python_hash_seed: 42
+  deterministic: true
+  data_snapshot_id: "DS_DGSF_20260201_V1"
