@@ -347,6 +347,46 @@ specs:
       prs: []
       freeze_records: []
 
+  # ============================================
+  # L2 Project Specifications
+  # ============================================
+  
+  - spec_id: "PROJECT_DGSF"
+    title: "DGSF Project Specification"
+    scope: "project"
+    status: "draft"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "projects/dgsf/specs/PROJECT_DGSF.yaml"
+      format: "yaml"
+    applies_to:
+      - "project:dgsf"
+    owners:
+      - "role:project_owner"
+    depends_on:
+      - "GOVERNANCE_INVARIANTS"
+      - "AUTHORITY_CANON"
+      - "PROJECT_DELIVERY_PIPELINE"
+    consumers:
+      - kind: "task"
+        ref: "tasks/inbox/RESEARCH_*_DGSF_*"
+      - kind: "project"
+        ref: "projects/dgsf/*"
+    compatibility:
+      level: "compatible"
+      notes: "L2 project-level specification for DGSF trading system."
+    change_control:
+      edit_policy: "direct_edit"
+      proposal_type: null
+      required_artifacts:
+        - "ops/audit/dgsf/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
 proposals: []
 
 deviations: []

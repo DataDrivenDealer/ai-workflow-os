@@ -1,2 +1,20 @@
 #!/usr/bin/env sh
+# Pre-push hook: Run gate checks before pushing
+
+echo "Running pre-push gate checks..."
+
+# Run policy check
 python scripts/policy_check.py --mode prepush
+if [ $? -ne 0 ]; then
+    echo "❌ Policy check failed"
+    exit 1
+fi
+
+# Run G2 sanity checks (unit tests)
+python scripts/gate_check.py --gate G2 --output text
+if [ $? -ne 0 ]; then
+    echo "⚠️ G2 gate check has warnings/errors (push allowed)"
+fi
+
+echo "✅ Pre-push checks complete"
+exit 0

@@ -11,7 +11,7 @@ import yaml
 
 from audit import write_audit
 from state_store import append_event, get_task, init_state, read_yaml, upsert_task, write_yaml
-from task_parser import parse_taskcard, validate_taskcard
+from task_parser import parse_taskcard, validate_taskcard, get_priority, get_priority_order, PRIORITY_LEVELS
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE_MACHINE_PATH = ROOT / "kernel" / "state_machine.yaml"
@@ -140,6 +140,9 @@ def cmd_task_start(args: argparse.Namespace) -> None:
     branch_name = fields["branch"]
     ensure_branch(branch_name)
 
+    # Get priority from TaskCard (defaults to P3)
+    priority = get_priority(fields)
+
     queues[queue] = args.task_id
     upsert_task(
         tasks_state,
@@ -148,6 +151,7 @@ def cmd_task_start(args: argparse.Namespace) -> None:
             "status": "running",
             "queue": queue,
             "branch": branch_name,
+            "priority": priority,
         },
     )
     append_event(
@@ -223,12 +227,182 @@ def cmd_task_finish(args: argparse.Namespace) -> None:
     print(f"Task {args.task_id} moved to reviewing. Audit: {audit_path}")
 
 
+def cmd_task_merge(args: argparse.Namespace) -> None:
+    """Merge a task from reviewing state."""
+    task_path = TASKS_DIR / f"{args.task_id}.md"
+    if not task_path.exists():
+        raise RuntimeError(f"TaskCard not found: {task_path}")
+
+    parsed = parse_taskcard(task_path)
+    fields = parsed["frontmatter"]
+    validate_taskcard(fields)
+
+    state_machine = load_state_machine()
+    tasks_state_path = ROOT / "state" / "tasks.yaml"
+    tasks_state = read_yaml(tasks_state_path)
+
+    current_task = get_task(tasks_state, args.task_id)
+    current_status = current_task.get("status", "draft")
+
+    if current_status != "reviewing":
+        raise RuntimeError(f"Task {args.task_id} is not in reviewing state (current: {current_status})")
+
+    if not can_transition(state_machine, current_status, "merged"):
+        raise RuntimeError(f"Invalid transition {current_status} -> merged")
+
+    upsert_task(
+        tasks_state,
+        args.task_id,
+        {
+            "status": "merged",
+        },
+    )
+    append_event(
+        tasks_state,
+        args.task_id,
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "action": "task_merge",
+            "from": current_status,
+            "to": "merged",
+        },
+    )
+    write_yaml(tasks_state_path, tasks_state)
+
+    audit_path = write_audit(
+        ROOT,
+        args.task_id,
+        "merged",
+        {
+            "queue": fields["queue"],
+            "branch": fields["branch"],
+            "merged_by": args.merged_by if hasattr(args, 'merged_by') and args.merged_by else "system",
+        },
+    )
+    print(f"Task {args.task_id} merged. Audit: {audit_path}")
+
+
+def cmd_task_release(args: argparse.Namespace) -> None:
+    """Release a merged task."""
+    task_path = TASKS_DIR / f"{args.task_id}.md"
+    if not task_path.exists():
+        raise RuntimeError(f"TaskCard not found: {task_path}")
+
+    state_machine = load_state_machine()
+    tasks_state_path = ROOT / "state" / "tasks.yaml"
+    tasks_state = read_yaml(tasks_state_path)
+
+    current_task = get_task(tasks_state, args.task_id)
+    current_status = current_task.get("status", "draft")
+
+    if current_status != "merged":
+        raise RuntimeError(f"Task {args.task_id} is not in merged state (current: {current_status})")
+
+    if not can_transition(state_machine, current_status, "released"):
+        raise RuntimeError(f"Invalid transition {current_status} -> released")
+
+    upsert_task(
+        tasks_state,
+        args.task_id,
+        {
+            "status": "released",
+        },
+    )
+    append_event(
+        tasks_state,
+        args.task_id,
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "action": "task_release",
+            "from": current_status,
+            "to": "released",
+        },
+    )
+    write_yaml(tasks_state_path, tasks_state)
+
+    # Move TaskCard to done folder
+    done_dir = TASKS_DIR / "done"
+    done_dir.mkdir(parents=True, exist_ok=True)
+    done_path = done_dir / f"{args.task_id}.md"
+    task_path.rename(done_path)
+
+    print(f"Task {args.task_id} released and moved to {done_path}")
+
+
 def cmd_task_status(args: argparse.Namespace) -> None:
     tasks_state_path = ROOT / "state" / "tasks.yaml"
     tasks_state = read_yaml(tasks_state_path)
     current_task = get_task(tasks_state, args.task_id)
     status = current_task.get("status", "draft")
     print(f"Task {args.task_id} status: {status}")
+
+
+def cmd_task_list(args: argparse.Namespace) -> None:
+    """List tasks, optionally sorted by priority."""
+    tasks_state_path = ROOT / "state" / "tasks.yaml"
+    tasks_state = read_yaml(tasks_state_path)
+    tasks = tasks_state.get("tasks", {})
+
+    if not tasks:
+        print("No tasks found.")
+        return
+
+    # Collect task info with priorities
+    task_list = []
+    for task_id, task_data in tasks.items():
+        status = task_data.get("status", "draft")
+        priority = task_data.get("priority", "P3")
+        queue = task_data.get("queue", "-")
+        task_list.append({
+            "task_id": task_id,
+            "status": status,
+            "priority": priority,
+            "queue": queue,
+        })
+
+    # Filter by status if specified
+    if args.status:
+        task_list = [t for t in task_list if t["status"] == args.status]
+
+    # Filter by queue if specified
+    if args.queue:
+        task_list = [t for t in task_list if t["queue"] == args.queue]
+
+    # Sort by priority (P0 first) then by task_id
+    task_list.sort(key=lambda t: (get_priority_order(t["priority"]), t["task_id"]))
+
+    if not task_list:
+        print("No tasks match the filter criteria.")
+        return
+
+    # Print header
+    print(f"{'Task ID':<25} {'Status':<12} {'Priority':<10} {'Queue':<10}")
+    print("-" * 60)
+
+    for t in task_list:
+        priority_marker = "🔴" if t["priority"] == "P0" else "🟠" if t["priority"] == "P1" else "🟡" if t["priority"] == "P2" else "🟢"
+        print(f"{t['task_id']:<25} {t['status']:<12} {priority_marker} {t['priority']:<7} {t['queue']:<10}")
+
+    print(f"\nTotal: {len(task_list)} task(s)")
+
+
+def get_sorted_task_ids(tasks_state: Dict[str, Any], status_filter: str = None, queue_filter: str = None) -> List[str]:
+    """Return task IDs sorted by priority (P0 first, then P1, etc.)."""
+    tasks = tasks_state.get("tasks", {})
+    
+    filtered_tasks = []
+    for task_id, task_data in tasks.items():
+        if status_filter and task_data.get("status") != status_filter:
+            continue
+        if queue_filter and task_data.get("queue") != queue_filter:
+            continue
+        priority = task_data.get("priority", "P3")
+        filtered_tasks.append((task_id, get_priority_order(priority)))
+    
+    # Sort by priority order (lower = higher priority), then by task_id
+    filtered_tasks.sort(key=lambda x: (x[1], x[0]))
+    
+    return [task_id for task_id, _ in filtered_tasks]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -253,9 +427,23 @@ def build_parser() -> argparse.ArgumentParser:
     task_finish.add_argument("task_id")
     task_finish.set_defaults(func=cmd_task_finish)
 
+    task_merge = task_sub.add_parser("merge", help="Merge a reviewed task")
+    task_merge.add_argument("task_id")
+    task_merge.add_argument("--merged-by", default="system", help="Who merged the task")
+    task_merge.set_defaults(func=cmd_task_merge)
+
+    task_release = task_sub.add_parser("release", help="Release a merged task")
+    task_release.add_argument("task_id")
+    task_release.set_defaults(func=cmd_task_release)
+
     task_status = task_sub.add_parser("status", help="Show task status")
     task_status.add_argument("task_id")
     task_status.set_defaults(func=cmd_task_status)
+
+    task_list = task_sub.add_parser("list", help="List tasks sorted by priority")
+    task_list.add_argument("--status", help="Filter by status (draft, running, reviewing, etc.)")
+    task_list.add_argument("--queue", help="Filter by queue (dev, research, data, gov)")
+    task_list.set_defaults(func=cmd_task_list)
 
     return parser
 

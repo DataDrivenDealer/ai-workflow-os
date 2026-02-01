@@ -1,7 +1,5 @@
-﻿version: '0.1'
+version: '0.1'
 sessions:
-  # === Archived Sessions (for audit trail) ===
-  # Production session example
   sess-0d429e5c56c8e5f7a8c5e2071cf04068:
     session_token: sess-0d429e5c56c8e5f7a8c5e2071cf04068
     agent_id: ai_claude-7ea8f842
@@ -23,8 +21,6 @@ sessions:
       details:
         reason: work_complete
     pending_artifacts: []
-    
-  # E2E Test session (archived)
   sess-49a2b22a5af2eabce0b13fcef51a9a3e:
     session_token: sess-49a2b22a5af2eabce0b13fcef51a9a3e
     agent_id: e2e_test-f611927d
@@ -46,7 +42,143 @@ sessions:
       details:
         reason: e2e_test_complete
     pending_artifacts: []
-    metadata:
-      note: Archived for audit - all other test sessions cleaned up
-      cleanup_date: '2026-02-01'
-      cleanup_by: Zhang Platform Engineer
+  sess-fd6e506c3ceb3c5361acad5b66a5fafa:
+    session_token: sess-fd6e506c3ceb3c5361acad5b66a5fafa
+    agent_id: ai_test-8bfcdcc6
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:52:59.764336+00:00'
+    authorized_by: test_harness
+    expires_at: '2026-02-02T01:52:59.764336+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.764336+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test_harness
+    pending_artifacts: []
+  sess-c1a00b3cfb6a9aa713bbf03747aac67f:
+    session_token: sess-c1a00b3cfb6a9aa713bbf03747aac67f
+    agent_id: ai_test-3d9a1cfd
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:52:59.795334+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:52:59.795334+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.795334+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+  sess-38feae7eef8088a6f6bfc9eb265b93ad:
+    session_token: sess-38feae7eef8088a6f6bfc9eb265b93ad
+    agent_id: ai_test-50e71ff6
+    role_mode: executor
+    state: terminated
+    started_at: '2026-02-01T17:52:59.827334+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:52:59.827334+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.827334+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    - timestamp: '2026-02-01T17:52:59.831333+00:00'
+      action: session_terminated
+      details:
+        reason: test_complete
+    pending_artifacts: []
+  sess-3080bc21987c5f4709964f0a6dfc6871:
+    session_token: sess-3080bc21987c5f4709964f0a6dfc6871
+    agent_id: ai_test-c6deeba8
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:52:59.858334+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:52:59.858334+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.858334+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+  sess-c9378e94f16458177ca7eee0ca356ba8:
+    session_token: sess-c9378e94f16458177ca7eee0ca356ba8
+    agent_id: ai_test-54461d2c
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:52:59.891654+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:52:59.891654+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.891654+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+  sess-e23b989758f80bf088b3572f42cc7802:
+    session_token: sess-e23b989758f80bf088b3572f42cc7802
+    agent_id: ai_test-94a6eea3
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:52:59.949652+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:52:59.949652+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.949652+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+  sess-a0d8000de8d9fa6cd28fc0b6f70520f9:
+    session_token: sess-a0d8000de8d9fa6cd28fc0b6f70520f9
+    agent_id: ai_test-807b1381
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:52:59.982672+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:52:59.982672+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:52:59.982672+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+  sess-3b36768694fe2bda2a68e453693ffe1e:
+    session_token: sess-3b36768694fe2bda2a68e453693ffe1e
+    agent_id: ai_test-6ec83904
+    role_mode: executor
+    state: active
+    started_at: '2026-02-01T17:53:00.034476+00:00'
+    authorized_by: test
+    expires_at: '2026-02-02T01:53:00.034476+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T17:53:00.034476+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []

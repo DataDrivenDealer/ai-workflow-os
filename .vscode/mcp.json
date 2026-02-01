@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ai-workflow-os": {
+      "command": "python",
+      "args": ["-m", "kernel.mcp_stdio"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    }
+  }
+}

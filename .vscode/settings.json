@@ -1,0 +1,32 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "gh": true,
+        "Get-Command": true,
+        "New-Item": true,
+        "Out-Null": true,
+        "/^\\$root=\"E:\\\\AI Tools\\\\AI Workflow OS\"; \\$map=@\\(@\\(\"architecture_pack_index\\.md\",\"docs\\\\ARCHITECTURE_PACK_INDEX\\.md\"\\),@\\(\"arch_blueprint_master\\.md\",\"docs\\\\ARCH_BLUEPRINT_MASTER\\.mmd\"\\),@\\(\"spec_governance_model\\.md\",\"docs\\\\SPEC_GOVERNANCE_MODEL\\.mmd\"\\),@\\(\"spec_registry_schema\\.md\",\"docs\\\\SPEC_REGISTRY_SCHEMA\\.md\"\\),@\\(\"kernel_v_0_runtime_flow\\.md\",\"docs\\\\KERNEL_V0_RUNTIME_FLOW\\.mmd\"\\),@\\(\"task_state_machine\\.md\",\"docs\\\\TASK_STATE_MACHINE\\.mmd\"\\),@\\(\"project_delivery_pipeline\\.md\",\"docs\\\\PROJECT_DELIVERY_PIPELINE\\.mmd\"\\),@\\(\"interface_layer_map\\.md\",\"docs\\\\INTERFACE_LAYER_MAP\\.mmd\"\\),@\\(\"security_trust_boundary\\.md\",\"docs\\\\SECURITY_TRUST_BOUNDARY\\.mmd\"\\),@\\(\"blueprint_freeze_record\\.md\",\"docs\\\\BLUEPRINT_FREEZE_RECORD\\.md\"\\)\\); foreach\\(\\$pair in \\$map\\)\\{ \\$src=Join-Path \\$root \\$pair\\[0\\]; \\$dst=Join-Path \\$root \\$pair\\[1\\]; Copy-Item -LiteralPath \\$src -Destination \\$dst -Force \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" checkout -b feature/router-v0; git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" add tasks/inbox/\\.gitkeep tasks/running/\\.gitkeep tasks/done/\\.gitkeep \\.github/ISSUE_TEMPLATE/task_request\\.yml scripts/router_intake\\.py \\.github/workflows/router_intake\\.yml; git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" commit -m \"feat: router v0 \\(issue -> taskcard -> PR\\)\"; git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" push -u origin feature/router-v0$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^& \"E:/AI Tools/AI Workflow OS/\\.venv/Scripts/python\\.exe\" -m pip install PyYAML$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" commit -m \"feat: router v0 \\(issue -> taskcard -> PR\\)\"; git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" push -u origin feature/router-v0$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$env:PATH=\"E:\\\\AI Tools\\\\AI Workflow OS\\\\\\.venv\\\\Scripts;\\$env:PATH\"; git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" commit -m \"feat: router v0 \\(issue -> taskcard -> PR\\)\"; git -C \"E:\\\\AI Tools\\\\AI Workflow OS\" push -u origin feature/router-v0$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^where python$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

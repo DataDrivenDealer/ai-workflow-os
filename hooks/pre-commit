@@ -1,2 +1,41 @@
 #!/usr/bin/env sh
+# Pre-commit hook: Run policy check and basic validation
+
+echo "Running pre-commit checks..."
+
+# Run policy check
 python scripts/policy_check.py --mode precommit
+if [ $? -ne 0 ]; then
+    echo "❌ Policy check failed"
+    exit 1
+fi
+
+# Validate YAML files
+python -c "
+import yaml
+import sys
+from pathlib import Path
+
+errors = []
+for f in Path('.').rglob('*.yaml'):
+    if '.git' in str(f):
+        continue
+    try:
+        with open(f) as h:
+            yaml.safe_load(h)
+    except Exception as e:
+        errors.append(f'{f}: {e}')
+
+if errors:
+    print('❌ YAML validation failed:')
+    for e in errors:
+        print(f'  {e}')
+    sys.exit(1)
+"
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+echo "✅ Pre-commit checks passed"
+exit 0

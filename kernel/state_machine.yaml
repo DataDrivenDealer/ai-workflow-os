@@ -1,3 +1,10 @@
+# AI Workflow OS State Machine Configuration
+# Version: 0.2.0
+# Derived From: GOVERNANCE_INVARIANTS, ROLE_MODE_CANON, MULTI_AGENT_CANON
+
+# =============================================================================
+# TASK STATES
+# =============================================================================
 states:
   - draft
   - ready
@@ -21,3 +28,238 @@ transitions:
     to: merged
   - from: merged
     to: released
+  # Block/unblock transitions
+  - from: running
+    to: blocked
+  - from: blocked
+    to: running
+  - from: reviewing
+    to: blocked
+  - from: blocked
+    to: reviewing
+  # Abandon transitions
+  - from: draft
+    to: abandoned
+  - from: ready
+    to: abandoned
+  - from: running
+    to: abandoned
+  - from: blocked
+    to: abandoned
+
+# =============================================================================
+# ROLE MODES (from ROLE_MODE_CANON)
+# =============================================================================
+role_modes:
+  architect:
+    description: "Constitutional and structural design"
+    permissions:
+      - read_all_governance
+      - propose_l0_changes
+      - propose_l1_changes
+      - design_governance_structures
+    prohibitions:
+      - execute_domain_tasks
+      - accept_artifacts
+      - freeze_artifacts
+      - grant_authority
+      - modify_authoritative_artifacts
+    authority_level: none  # All outputs speculative
+
+  planner:
+    description: "Planning, decomposition, and specification"
+    permissions:
+      - read_all_artifacts
+      - define_plans
+      - define_roadmaps
+      - define_specifications
+      - decompose_tasks
+      - define_validation_criteria
+      - create_l2_specs
+    prohibitions:
+      - modify_l0_artifacts
+      - modify_l1_artifacts
+      - execute_implementation
+      - accept_artifacts
+      - freeze_artifacts
+      - validate_own_outputs
+    authority_level: none
+
+  executor:
+    description: "Execution and implementation"
+    permissions:
+      - read_task_definitions
+      - read_relevant_specs
+      - perform_execution_tasks
+      - produce_artifact_drafts
+      - generate_evidence
+      - generate_execution_trace
+      - request_task_transitions
+    prohibitions:
+      - define_requirements
+      - define_specifications
+      - validate_own_outcomes
+      - commit_state_directly
+      - modify_governance_artifacts
+      - accept_artifacts
+      - freeze_artifacts
+      - switch_to_higher_role
+    authority_level: none
+
+  builder:
+    description: "Constrained composite - execution with limited planning"
+    permissions:
+      # Inherits all executor permissions
+      - read_task_definitions
+      - read_relevant_specs
+      - perform_execution_tasks
+      - produce_artifact_drafts
+      - generate_evidence
+      - generate_execution_trace
+      - request_task_transitions
+      # Limited planner permissions
+      - decompose_assigned_task
+      - adjust_implementation_approach
+    prohibitions:
+      # Inherits all prohibitions from both modes
+      - modify_l0_artifacts
+      - modify_l1_artifacts
+      - authorize_role_changes
+      - accept_artifacts
+      - freeze_artifacts
+      - define_new_task_scope
+      - create_l0_proposals
+      - create_l1_proposals
+      - self_validate
+      - self_accept
+    authority_level: none
+
+# =============================================================================
+# ROLE MODE TRANSITIONS
+# =============================================================================
+role_mode_transitions:
+  # Only Project Owner can authorize role mode changes
+  authorized_by: project_owner
+  
+  # Allowed transitions (requires explicit authorization)
+  allowed:
+    - from: executor
+      to: builder
+    - from: builder
+      to: executor
+    - from: planner
+      to: builder
+    - from: builder
+      to: planner
+  
+  # Prohibited (escalation)
+  prohibited:
+    - from: executor
+      to: planner
+      reason: "Cannot escalate from execution to planning"
+    - from: executor
+      to: architect
+      reason: "Cannot escalate from execution to architecture"
+    - from: builder
+      to: architect
+      reason: "Cannot escalate from builder to architecture"
+    - from: planner
+      to: architect
+      reason: "Cannot escalate from planning to architecture"
+    - from: "*"
+      to: "*"
+      self: true
+      reason: "Self-escalation is prohibited"
+
+# =============================================================================
+# AGENT SESSION CONFIGURATION
+# =============================================================================
+agent_session:
+  required_fields:
+    - agent_id          # Unique identifier for the agent
+    - role_mode         # Active role mode
+    - session_token     # Concurrency control token
+    - started_at        # ISO timestamp
+    - authorized_by     # Who authorized this session
+  
+  optional_fields:
+    - expires_at        # Session expiration (ISO timestamp)
+    - task_scope        # Bound task IDs (if any)
+    - parent_session    # For delegation tracking
+  
+  constraints:
+    max_concurrent_sessions_per_agent: 1
+    session_timeout_minutes: 480  # 8 hours default
+    require_explicit_termination: true
+  
+  lifecycle_states:
+    - anonymous         # Before authorization
+    - active            # Authorized and operating
+    - suspended         # Temporarily paused
+    - terminated        # Ended (cannot resume)
+
+# =============================================================================
+# AUTHORITY STATES (for artifacts)
+# =============================================================================
+authority_states:
+  - speculative   # No authority, freely mutable
+  - accepted      # Active authority, controlled mutation
+  - frozen        # Immutable historical authority
+
+authority_transitions:
+  - from: speculative
+    to: accepted
+    action: accept
+    authorized_by: project_owner
+  - from: accepted
+    to: frozen
+    action: freeze
+    authorized_by: project_owner
+  - from: accepted
+    to: speculative
+    action: reject
+    authorized_by: project_owner
+  - from: frozen
+    to: speculative
+    action: supersede
+    authorized_by: project_owner
+    requires: new_artifact_accepted
+
+# =============================================================================
+# GOVERNANCE GATE CHECKS
+# =============================================================================
+governance_gates:
+  authority_integrity:
+    description: "No execution output claims authority"
+    checks:
+      - no_authority_claim_in_output
+      - no_governance_action_implied
+      - no_binding_without_record
+
+  role_mode_integrity:
+    description: "Each action is attributable to exactly one Role Mode"
+    checks:
+      - single_role_mode_per_action
+      - no_implicit_switching
+      - no_escalation_inferred
+
+  state_integrity:
+    description: "System state reconstructable from artifacts only"
+    checks:
+      - state_from_artifacts_only
+      - no_execution_side_memory_as_state
+      - no_implicit_state_transition
+
+  workflow_spine_integrity:
+    description: "No implicit stage progression"
+    checks:
+      - explicit_stage_progression
+      - no_execution_validation_collapse
+      - no_inferred_completion
+
+  concurrency_isolation:
+    description: "Parallel executions do not combine authority"
+    checks:
+      - no_authority_amplification
+      - conflicting_drafts_isolated
+      - no_collective_legitimacy

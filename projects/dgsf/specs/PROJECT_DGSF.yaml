@@ -1,0 +1,285 @@
+# DGSF L2 Project Specification
+# Version: 1.0.0
+# Status: draft
+# Authority: speculative (requires Project Owner acceptance)
+
+---
+# Section 1: Project Identity
+project:
+  id: "DGSF"
+  name: "Dynamic Grid Strategy Framework"
+  type: "trading_system"
+  layer: "L2"  # Project-level specification
+  
+  # External references
+  repository:
+    remote: "https://github.com/DataDrivenDealer/DGSF.git"
+    integration: "submodule"
+    local_path: "projects/dgsf/repo"
+    
+  # Lifecycle
+  created: "2026-02-01"
+  owner: "Project Owner"
+  status: "active"
+
+---
+# Section 2: Spec Dependencies (Upward Reference)
+spec_dependencies:
+  # L0 Canon Specs (frozen)
+  canon:
+    - id: "GOVERNANCE_INVARIANTS"
+      version: "1.0.0"
+      frozen: true
+      
+    - id: "AUTHORITY_CANON"
+      version: "1.0.0"
+      frozen: true
+      
+    - id: "ROLE_MODE_CANON"
+      version: "1.0.0"
+      frozen: true
+      
+  # L1 Framework Specs
+  framework:
+    - id: "PROJECT_DELIVERY_PIPELINE"
+      version: "1.0.0"
+      
+    - id: "ARCH_BLUEPRINT_MASTER"
+      version: "1.0.0"
+
+---
+# Section 3: Project Scope
+scope:
+  # Domain definition
+  domain: "quantitative_trading"
+  
+  # Core functionality
+  features:
+    - name: "grid_signal_generation"
+      description: "Generate buy/sell signals based on dynamic grid spacing"
+      priority: "P1"
+      
+    - name: "adaptive_spacing"
+      description: "Adjust grid spacing based on market volatility (ATR)"
+      priority: "P1"
+      
+    - name: "position_management"
+      description: "Track and manage positions across grid levels"
+      priority: "P1"
+      
+    - name: "risk_control"
+      description: "Stop-loss and max-position limits"
+      priority: "P2"
+      
+    - name: "performance_analytics"
+      description: "Sharpe ratio, max drawdown, win rate tracking"
+      priority: "P2"
+      
+  # Constraints
+  constraints:
+    - type: "authority"
+      rule: "All outputs are speculative until explicit acceptance"
+      
+    - type: "data"
+      rule: "Only use public market data (OHLCV)"
+      
+    - type: "risk"
+      rule: "Max drawdown must not exceed 15%"
+
+---
+# Section 4: Pipeline Stages (L2 overrides)
+pipeline:
+  current_stage: 1
+  
+  stages:
+    - id: 0
+      name: "Idea Triage"
+      status: "completed"
+      task_id: "RESEARCH_0_DGSF_001"
+      decision: "PROCEED"
+      
+    - id: 1
+      name: "Research Design"
+      status: "active"
+      task_id: "RESEARCH_1_DGSF_001"
+      deliverables:
+        - "Signal definition"
+        - "Experiment plan"
+        - "Success metrics"
+        - "Reproducibility package draft"
+        
+    - id: 2
+      name: "Data Engineering"
+      status: "pending"
+      task_id: "DATA_2_DGSF_001"
+      dependencies:
+        - "RESEARCH_1_DGSF_001"
+        
+    - id: 3
+      name: "Development"
+      status: "pending"
+      task_id: "DEV_3_DGSF_001"
+      dependencies:
+        - "DATA_2_DGSF_001"
+
+---
+# Section 5: Data Requirements
+data:
+  sources:
+    - name: "exchange_ohlcv"
+      type: "market_data"
+      format: "OHLCV"
+      frequency: "1h"
+      provider: "exchange_api"
+      
+  universe:
+    - symbol: "BTC/USDT"
+      exchange: "binance"
+      priority: "primary"
+      
+    - symbol: "ETH/USDT"
+      exchange: "binance"
+      priority: "primary"
+      
+  time_range:
+    start: "2020-01-01"
+    end: "2025-12-31"
+    
+  quality:
+    missing_threshold: 0.01  # Max 1% missing data
+    outlier_handling: "winsorize"
+
+---
+# Section 6: Model Specification
+model:
+  type: "dynamic_grid"
+  
+  parameters:
+    # Grid parameters
+    base_grid_spacing:
+      default: 0.01
+      range: [0.005, 0.02]
+      description: "Base distance between grid levels (percentage)"
+      
+    position_per_grid:
+      default: 0.10
+      range: [0.05, 0.15]
+      description: "Position size per grid level"
+      
+    max_position:
+      default: 1.0
+      max: 1.0
+      description: "Maximum total position"
+      
+    # Adaptive parameters
+    adaptive_method:
+      default: "atr"
+      options: ["atr", "bollinger", "fixed"]
+      description: "Method for dynamic spacing adjustment"
+      
+    atr_period:
+      default: 14
+      range: [7, 21]
+      description: "ATR calculation period"
+      
+    # Risk parameters
+    stop_loss:
+      default: 0.15
+      range: [0.10, 0.20]
+      description: "Stop-loss threshold"
+
+---
+# Section 7: Evaluation Metrics
+evaluation:
+  primary_metrics:
+    - name: "sharpe_ratio"
+      threshold: ">= 1.5"
+      description: "Annualized risk-adjusted return"
+      
+    - name: "max_drawdown"
+      threshold: "<= 15%"
+      description: "Maximum peak-to-trough decline"
+      
+  secondary_metrics:
+    - name: "win_rate"
+      threshold: ">= 60%"
+      description: "Percentage of profitable trades"
+      
+    - name: "grid_fill_rate"
+      threshold: ">= 80%"
+      description: "Percentage of grid orders filled"
+      
+    - name: "daily_pnl_volatility"
+      threshold: "<= 2%"
+      description: "Daily P&L standard deviation"
+      
+  evaluation_periods:
+    - name: "in_sample"
+      start: "2020-01-01"
+      end: "2023-12-31"
+      purpose: "training"
+      
+    - name: "out_of_sample"
+      start: "2024-01-01"
+      end: "2024-12-31"
+      purpose: "validation"
+      
+    - name: "holdout"
+      start: "2025-01-01"
+      end: "2025-12-31"
+      purpose: "final_test"
+
+---
+# Section 8: Authority & Governance
+authority:
+  level: "speculative"
+  granted_by: "Project Owner"
+  scope: "project_definition"
+  
+  escalation:
+    # When to escalate
+    triggers:
+      - "Scope change beyond defined features"
+      - "Parameter ranges outside specification"
+      - "Risk threshold violations"
+      
+    # Escalation target
+    to: "Project Owner"
+    
+  acceptance:
+    # Required for production
+    requires:
+      - "All primary metrics pass thresholds"
+      - "Out-of-sample validation complete"
+      - "Code review by reviewer role"
+    
+---
+# Section 9: Audit Configuration
+audit:
+  # What to log
+  events:
+    - "task_state_change"
+    - "parameter_modification"
+    - "metric_evaluation"
+    - "authority_escalation"
+    
+  # Where to log
+  log_path: "ops/audit/dgsf/"
+  
+  # Retention
+  retention_days: 365
+
+---
+# Section 10: Version History
+version_history:
+  - version: "1.0.0"
+    date: "2026-02-01"
+    author: "li_architect"
+    changes:
+      - "Initial L2 project specification"
+      - "Defined scope, pipeline, data requirements"
+      - "Established model parameters and evaluation metrics"
+
+---
+# Spec Refs: GOVERNANCE_INVARIANTS, PROJECT_DELIVERY_PIPELINE
+# Created by: 李架构 (Chief Architect)

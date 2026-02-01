@@ -1,11 +1,12 @@
 version: '0.1'
-queues: {}
+queues:
+  dev: RESEARCH_0_DGSF_001
 tasks:
   TASK_DEMO_0001:
-    status: reviewing
+    status: released
     queue: dev
     branch: feature/TASK_DEMO_0001
-    last_updated: '2026-02-01T14:46:19.223351+00:00'
+    last_updated: '2026-02-01T17:11:26.010977+00:00'
     events:
     - timestamp: '2026-02-01T14:46:02.401009'
       action: task_start
@@ -15,3 +16,22 @@ tasks:
       action: task_finish
       from: running
       to: reviewing
+    - timestamp: '2026-02-01T17:11:20.799280+00:00'
+      action: task_merge
+      from: reviewing
+      to: merged
+    - timestamp: '2026-02-01T17:11:26.010977+00:00'
+      action: task_release
+      from: merged
+      to: released
+  RESEARCH_0_DGSF_001:
+    status: running
+    queue: dev
+    branch: feature/RESEARCH_0_DGSF_001
+    priority: P2
+    last_updated: '2026-02-01T17:53:25.078372+00:00'
+    events:
+    - timestamp: '2026-02-01T17:53:25.078372+00:00'
+      action: task_start
+      from: draft
+      to: running
