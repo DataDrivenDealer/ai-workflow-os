@@ -1,4 +1,26 @@
 {
+    // ===== Python 环境配置 =====
+    // 指定项目使用的 Python 解释器（虚拟环境）
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    
+    // 终端自动激活虚拟环境
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    
+    // Python 分析设置 (typeCheckingMode controlled by pyrightconfig.json)
+    "python.analysis.autoImportCompletions": true,
+    
+    // 测试配置
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["kernel/tests"],
+    
+    // ===== 终端配置 =====
+    "terminal.integrated.env.windows": {
+        "VIRTUAL_ENV": "${workspaceFolder}/.venv",
+        "PATH": "${workspaceFolder}/.venv/Scripts;${env:PATH}"
+    },
+    
+    // ===== 其他配置 =====
     "chat.tools.terminal.autoApprove": {
         "gh": true,
         "Get-Command": true,
@@ -28,5 +50,6 @@
             "approve": true,
             "matchCommandLine": true
         }
-    }
+    },
+    "python-envs.pythonProjects": []
 }
