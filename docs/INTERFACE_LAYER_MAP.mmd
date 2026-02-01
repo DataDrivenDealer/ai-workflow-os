@@ -1,0 +1,152 @@
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% INTERFACE_LAYER_MAP (v0)
+%% Purpose:
+%% - Clarify how hooks / skills / MCP fit into the Company OS
+%% - Make "automation" an interface layer, not the kernel
+%% - Define who calls what, and where enforcement happens
+%% =====================================================
+
+%% -------------------------
+%% Top: Users / Agents
+%% -------------------------
+subgraph USERS["Operators & Agents" ]
+  direction LR
+  U1["Human Operator\n(Planner / PM / Research Lead)"]
+  U2["Coder Agent\n(implements changes)"]
+  U3["Reviewer Agent\n(quality + safety)"]
+end
+
+%% -------------------------
+%% Entry Surfaces
+%% -------------------------
+subgraph ENTRY["Entry Surfaces" ]
+  direction LR
+  E1["CLI\n./os ..."]
+  E2["Chat Gateway (optional)\nSlack/Telegram/Console"]
+  E3["Web Console (optional)"]
+end
+
+%% -------------------------
+%% Kernel (Decision Brain)
+%% -------------------------
+subgraph KERNEL["Kernel Runtime (Decision Brain)" ]
+  direction TB
+  K1["Load Inputs\n- spec_registry.yaml\n- state_machine.yaml\n- /state"]
+  K2["Policy Decisions\n- scope controls (L0/L1/L2)\n- proposal/deviation requirements\n- impact analysis required"]
+  K3["Task Lifecycle\n- validate/start/finish\n- state transitions\n- audit writes"]
+  K1 --> K2 --> K3
+end
+
+%% -------------------------
+%% Enforcement Arm (Hard Gates)
+%% -------------------------
+subgraph ENF["Enforcement Arm (Hard Gates)" ]
+  direction TB
+  H1["Local Hooks\n- pre-commit\n- pre-push"]
+  H2["CI Gates\n- lint/test\n- policy checks\n- security scans"]
+  H3["Branch Protection\n- required reviews\n- required CI\n- merge rules"]
+  H1 --> H2 --> H3
+end
+
+%% -------------------------
+%% Skills Layer (Tools)
+%% -------------------------
+subgraph SK["Skills Layer (Tool Wrappers)" ]
+  direction TB
+  S_GIT["Repo Skills\n- create branch\n- commit helpers\n- apply patch"]
+  S_GH["GitHub Skills\n- open PR\n- comment PR\n- label/assign"]
+  S_DOC["Doc Skills\n- generate audit\n- update registry links\n- generate diff digest"]
+  S_TEST["Test/CI Skills\n- run local checks\n- trigger CI rerun\n- collect artifacts"]
+  S_GIT --> S_GH
+  S_DOC --> S_GH
+  S_TEST --> S_GH
+end
+
+%% -------------------------
+%% MCP Layer (Optional Standard Interface)
+%% -------------------------
+subgraph MCP["MCP Layer (Optional)" ]
+  direction TB
+  M1["MCP Server\n- exposes skills as tools\n- consistent tool schema\n- auth boundaries"]
+  M2["MCP Clients\n- model runtimes\n- editors\n- gateways"]
+  M2 --> M1
+end
+
+%% -------------------------
+%% Persistence & Audit
+%% -------------------------
+subgraph MEM["Persistence & Audit (Source of Truth)" ]
+  direction TB
+  P1["Git\n- specs\n- code\n- history"]
+  P2["/state\n- tasks.yaml\n- project.yaml"]
+  P3["/ops\n- audit\n- decision log\n- freeze"]
+  P1 --> P2 --> P3
+end
+
+%% -------------------------
+%% Optional Runtime Hosts
+%% -------------------------
+subgraph HOST["Runtime Hosts" ]
+  direction LR
+  R1["Local Machine"]
+  R2["CI Runners"]
+  R3["Cloud Runner (optional)"]
+end
+
+%% =====================================================
+%% Relationships
+%% =====================================================
+
+%% Users to entry
+U1 --> E1
+U1 -.optional.-> E2
+U1 -.optional.-> E3
+U2 -.optional.-> E2
+U3 -.optional.-> E2
+
+%% Entry to kernel
+E1 --> KERNEL
+E2 --> KERNEL
+E3 --> KERNEL
+
+%% Kernel calls skills
+KERNEL -.calls.-> SK
+
+%% Skills operate on persistence
+SK -->|"edits"| P1
+SK -->|"writes"| P3
+
+%% Enforcement reads source of truth and blocks
+ENF -->|"validates"| P1
+ENF -->|"validates"| P2
+ENF -->|"validates"| P3
+
+%% Kernel writes state/audit
+KERNEL -->|"writes"| P2
+KERNEL -->|"writes"| P3
+
+%% MCP exposes skills
+M1 -.exposes.-> SK
+KERNEL -.may call via.-> M1
+
+%% Hosting
+E1 --> R1
+H1 --> R1
+H2 --> R2
+E2 -.optional.-> R3
+M1 -.optional.-> R3
+
+%% Enforcement is the hard stop
+K2 -.decisions enforced by.-> ENF
+
+%% =====================================================
+%% Notes (implicit)
+%% - Kernel decides; hooks/CI enforce.
+%% - Skills are the only layer that touches repo/gh actions.
+%% - MCP is optional: standardizes tool access across runtimes.
+%% =====================================================
+```
+

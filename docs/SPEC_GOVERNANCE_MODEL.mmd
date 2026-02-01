@@ -1,0 +1,131 @@
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% SPEC_GOVERNANCE_MODEL
+%% Three-layer Specs + Two Evolution Channels + Approval Paths
+%% =====================================================
+
+%% -------------------------
+%% Spec Layers (L0/L1/L2)
+%% -------------------------
+subgraph L0["L0 · Company Canonical Specs (Constitution)" ]
+  direction TB
+  L0_DEF["Definition\n- Non-negotiable rules\n- Safety & audit baselines\n- OS invariants (must-haves)" ]
+  L0_CHANGE["Change Path\n- Cannot be edited by projects\n- Only via Canon Amendment Proposal\n- Requires high-threshold approval + migration" ]
+  L0_OUT["Outputs\n- Canon spec files\n- Canon freeze records\n- Mandatory compliance checks" ]
+end
+
+subgraph L1["L1 · Company Framework Specs (Platform Standards)" ]
+  direction TB
+  L1_DEF["Definition\n- Shared schemas & templates\n- Standard pipelines & gates\n- Interfaces/contracts between OS & projects" ]
+  L1_CHANGE["Change Path\n- Upgraded via Framework Upgrade Proposal\n- Can be piloted in projects before adoption" ]
+  L1_OUT["Outputs\n- Spec schemas (TaskCard/Audit/Registry)\n- Recommended workflows\n- Tooling contracts (skills/hooks)" ]
+end
+
+subgraph L2["L2 · Project Adaptive Specs (Project Autonomy)" ]
+  direction TB
+  L2_DEF["Definition\n- Project-specific rules & processes\n- Strategy/data/model constraints\n- Local workflow adjustments" ]
+  L2_CHANGE["Change Path\n- Projects may edit directly\n- Must log deviations + rationale\n- Must remain compatible with L0/L1 baselines" ]
+  L2_OUT["Outputs\n- Project spec set\n- Local verification rules\n- Project overrides & experiments" ]
+end
+
+%% -------------------------
+%% Two Evolution Channels
+%% -------------------------
+subgraph CH["Evolution Channels (Fast + Slow)" ]
+  direction LR
+
+  CH_FAST["Channel A · Local Evolution (FAST)\nProject iterates L2 specs\n→ immediate productivity & experimentation\n→ requires audit + deviation declaration" ]
+
+  CH_SLOW["Channel B · Promotion / Feedback (SLOW)\nProject learnings\n→ proposals to upgrade L1/L0\n→ review, pilot, adopt or reject\n→ produces institutional memory" ]
+end
+
+%% -------------------------
+%% Governance Mechanisms
+%% -------------------------
+subgraph GM["Governance Mechanisms (Enforcement + Records)" ]
+  direction TB
+
+  GM_REG["Spec Registry (First-class Specs)\n- spec_id / scope / version\n- depends_on / consumers\n- compatibility expectations" ]
+
+  GM_DEV["Deviation Declaration\nWhen L2 overrides L1 behavior\n- what deviates\n- why\n- risk/impact\n- rollback plan\n- expiration / review date" ]
+
+  GM_IMPACT["Impact Analysis\nSpec change → affected modules/tasks/pipelines\n- required updates\n- migration notes\n- gate adjustments" ]
+
+  GM_RECORDS["Decision & Freeze Records\n- DRS decision log\n- freeze record (what + why + when)\n- rejection reasons recorded" ]
+end
+
+%% -------------------------
+%% Approval & Escalation Paths
+%% -------------------------
+subgraph AP["Approval & Escalation Paths" ]
+  direction TB
+
+  AP_L2["L2 Change (Project)\n- direct PR allowed\n- must pass project gates\n- must update registry + audit" ]
+
+  AP_L1P["L1 Upgrade Proposal\n- created by project\n- reviewed by Company OS governance\n- optional pilot in one/more projects" ]
+
+  AP_L0P["L0 Amendment Proposal\n- rare & high-threshold\n- requires compatibility/migration plan\n- strict security review" ]
+
+  AP_DECIDE["Company Decision\nAdopt → becomes L1/L0\nPilot → timeboxed trial\nReject → rationale logged" ]
+end
+
+%% -------------------------
+%% Binding to Execution (Kernel Enforcement)
+%% -------------------------
+subgraph EX["Binding to Execution (Kernel-Enforced Rules)" ]
+  direction TB
+
+  EX_RULES["Kernel Enforcement Rules\n1) Every spec declares scope: L0/L1/L2\n2) L2 may override only with Deviation Declaration\n3) L1/L0 edits require proposals\n4) All spec changes require impact analysis\n5) All merges write audit + decision record" ]
+
+  EX_HOOKS["Hooks / CI Gates\n- block forbidden edits\n- require templates/fields\n- enforce registry updates\n- ensure migration notes when needed" ]
+end
+
+%% =====================================================
+%% Relationships
+%% =====================================================
+
+%% Layer relations
+L0 --> L1 --> L2
+
+%% Evolution channels
+L2 --> CH_FAST
+CH_FAST --> L2
+
+L2 -.learned patterns.-> CH_SLOW
+CH_SLOW --> AP_L1P
+CH_SLOW --> AP_L0P
+
+%% Registry & enforcement applied to all
+GM_REG -.indexes.-> L0
+GM_REG -.indexes.-> L1
+GM_REG -.indexes.-> L2
+
+GM_DEV -.required for overrides.-> L2
+GM_IMPACT -.required for changes.-> L0
+GM_IMPACT -.required for changes.-> L1
+GM_IMPACT -.required for changes.-> L2
+
+GM_RECORDS -.records.-> AP_DECIDE
+
+%% Escalation and approvals
+AP_L2 --> GM_RECORDS
+AP_L2 --> EX_HOOKS
+AP_L1P --> AP_DECIDE
+AP_L0P --> AP_DECIDE
+
+AP_DECIDE --> L1
+AP_DECIDE --> L0
+
+%% Execution binding
+EX_RULES -.enforced by.-> EX_HOOKS
+EX_RULES -.applies to.-> GM_REG
+
+%% =====================================================
+%% Notes (implicit)
+%% - Projects retain autonomy via L2, with auditable deviations
+%% - Institutional coherence via promotion channel to L1/L0
+%% - No silent drift: every deviation is declared and reviewable
+%% =====================================================
+```

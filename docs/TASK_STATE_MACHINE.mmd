@@ -1,0 +1,251 @@
+```mermaid
+stateDiagram-v2
+
+%% =====================================================
+%% TASK_STATE_MACHINE (v0)
+%% Purpose: A strict, kernel-enforced task lifecycle
+%% Notes:
+%% - Kernel refuses illegal transitions
+%% - Hooks/CI enforce required artifacts before merge
+%% =====================================================
+
+[*] --> draft
+
+draft --> ready: os task validate
+ready --> running: os task start
+running --> reviewing: os task finish
+reviewing --> merged: PR merge (CI+approval)
+merged --> released: os release (or auto post-merge)
+
+%% Failure / rollback paths (v0)
+running --> blocked: missing artifact / failed checks
+reviewing --> blocked: CI fail / review requested changes
+blocked --> running: fix + re-run checks
+blocked --> abandoned: explicit cancel
+abandoned --> [*]
+
+%% Optional: hotfix path after release
+released --> running: hotfix (new task)
+```
+
+---
+
+## `kernel/state_machine.yaml` (v0)
+
+```yaml
+# Task State Machine (v0)
+# Authoritative input to Kernel.
+# Any transition not listed here is illegal.
+
+version: 0.1
+
+states:
+  - draft
+  - ready
+  - running
+  - reviewing
+  - merged
+  - released
+  - blocked
+  - abandoned
+
+# Transition rules: from -> to
+# Each transition defines:
+# - trigger: who/what initiates it
+# - required_refs: mandatory references (spec ids, proposal ids, deviation ids)
+# - required_artifacts: files that must exist or be generated
+# - gates: checks that must pass (local/CI)
+# - writes: what the kernel must write on successful transition
+
+transitions:
+  - name: draft_to_ready
+    from: draft
+    to: ready
+    trigger: "os task validate"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "tasks/<task_id>.md"                # TaskCard exists
+    gates:
+      - "taskcard_frontmatter_valid"        # parseable frontmatter
+      - "spec_registry_contains_spec_ids"   # all referenced specs exist
+      - "scope_rules_satisfied"             # cannot propose forbidden edits
+    writes:
+      - "state/tasks.yaml:transition_event" # append transition event
+      - "ops/audit/<task_id>.md:draft"      # create/update audit draft
+
+  - name: ready_to_running
+    from: ready
+    to: running
+    trigger: "os task start"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "tasks/<task_id>.md"
+      - "state/project.yaml"                # exists after os init
+      - "state/tasks.yaml"                  # exists after os init
+    gates:
+      - "queue_lock_acquired"               # enforce per-queue concurrency
+      - "working_tree_clean"                # optional: no uncommitted changes
+    writes:
+      - "state/tasks.yaml:status=running"
+      - "state/tasks.yaml:queue_lock"
+      - "ops/audit/<task_id>.md:update"
+      - "git:create_branch:feature/<task_id>"
+
+  - name: running_to_reviewing
+    from: running
+    to: reviewing
+    trigger: "os task finish"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "tasks/<task_id>.md"
+      - "ops/audit/<task_id>.md"            # must exist from earlier steps
+    gates:
+      - "required_artifacts_declared_in_taskcard"  # task declares expected outputs
+      - "spec_change_requires_impact_analysis"     # if any spec touched
+    writes:
+      - "state/tasks.yaml:status=reviewing"
+      - "ops/audit/<task_id>.md:finalize_draft"
+      - "ops/decision-log/<task_id>.md:draft"      # optional draft
+      - "pr:draft"                                  # optional: gh pr create
+
+  - name: reviewing_to_merged
+    from: reviewing
+    to: merged
+    trigger: "PR merge (CI + approvals)"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "ops/audit/<task_id>.md"
+    gates:
+      - "ci_pass"                          # required workflows pass
+      - "required_reviews_approved"        # branch protection
+      - "forbidden_edits_blocked"          # L0/L1 cannot be edited without proposal
+      - "override_requires_deviation"      # L2 override must have deviation
+    writes:
+      - "state/tasks.yaml:status=merged"
+      - "ops/decision-log/<task_id>.md:finalize"
+      - "spec_registry.yaml:append_links"  # add PR link if applicable
+      - "ops/audit/<task_id>.md:append_merge_info"
+
+  - name: merged_to_released
+    from: merged
+    to: released
+    trigger: "os release (or auto post-merge)"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "ops/audit/<task_id>.md"
+      - "ops/decision-log/<task_id>.md"
+    gates:
+      - "post_merge_checks_pass"           # optional: smoke checks
+    writes:
+      - "state/tasks.yaml:status=released"
+      - "ops/freeze/<milestone>.md:draft"  # optional: create freeze draft
+      - "state/tasks.yaml:release_tag"     # optional: git tag
+
+  # Blocking transitions
+  - name: running_to_blocked
+    from: running
+    to: blocked
+    trigger: "kernel_or_hook_failure"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "ops/audit/<task_id>.md"
+    gates: []
+    writes:
+      - "state/tasks.yaml:status=blocked"
+      - "ops/audit/<task_id>.md:append_block_reason"
+
+  - name: reviewing_to_blocked
+    from: reviewing
+    to: blocked
+    trigger: "ci_or_review_failure"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "ops/audit/<task_id>.md"
+    gates: []
+    writes:
+      - "state/tasks.yaml:status=blocked"
+      - "ops/audit/<task_id>.md:append_block_reason"
+
+  - name: blocked_to_running
+    from: blocked
+    to: running
+    trigger: "fix_and_retry"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "ops/audit/<task_id>.md"
+    gates:
+      - "queue_lock_still_valid"           # keep lock or reacquire
+    writes:
+      - "state/tasks.yaml:status=running"
+      - "ops/audit/<task_id>.md:append_retry"
+
+  - name: blocked_to_abandoned
+    from: blocked
+    to: abandoned
+    trigger: "os task cancel"
+    required_refs:
+      spec_ids: { min: 1 }
+      proposal_ids: { min: 0 }
+      deviation_ids: { min: 0 }
+    required_artifacts:
+      - "ops/audit/<task_id>.md"
+    gates:
+      - "explicit_cancel_confirmed"
+    writes:
+      - "state/tasks.yaml:status=abandoned"
+      - "state/tasks.yaml:release_queue_lock"
+      - "ops/audit/<task_id>.md:append_cancel"
+
+# v0 policy shortcuts
+policies:
+  queue_locking:
+    enabled: true
+    lock_scope: "queue"  # one writing task per queue
+
+  required_roles:
+    reviewing_to_merged:
+      min_reviews: 1
+
+  enforcement_sources:
+    - "hooks/pre-commit"
+    - "hooks/pre-push"
+    - ".github/workflows/ci.yml"
+
+  scope_controls:
+    canon_edit_policy: "proposal_required"
+    framework_edit_policy: "proposal_required"
+    project_edit_policy: "direct_allowed"
+
+  override_controls:
+    require_deviation_for_L2_overrides_L1: true
+
+  impact_analysis:
+    required_when:
+      - "spec_files_changed"
+    minimum: "consumers_listed"
+```
+

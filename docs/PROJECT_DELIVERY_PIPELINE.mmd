@@ -1,0 +1,189 @@
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% PROJECT_DELIVERY_PIPELINE (v0)
+%% Quant Trading System Project: Research → Build → Validate → Release → Operate
+%% Goals:
+%% - Make project outputs first-class artifacts
+%% - Turn "verification" into explicit gates
+%% - Enable spec-driven, auditable iteration
+%% =====================================================
+
+%% -------------------------
+%% Project Inputs / Specs
+%% -------------------------
+subgraph SPEC["Specs & Contracts (Project-owned, spec-driven)" ]
+  direction TB
+
+  S_REG["Spec Registry\n- L2 project specs\n- inherits L1/L0\n- overrides declared (deviations)"]
+
+  S_PIPE["Project Pipeline Spec (L2)\n- stages + gates\n- artifact definitions\n- acceptance thresholds"]
+
+  S_RISK["Risk & Compliance Spec (L2)\n- max drawdown, leverage, exposure\n- turnover limits\n- kill-switch rules"]
+
+  S_DATA["Data Contract Spec (L2)\n- universe\n- frequency\n- survivorship handling\n- labeling conventions"]
+
+  S_REG --> S_PIPE
+  S_REG --> S_RISK
+  S_REG --> S_DATA
+end
+
+%% -------------------------
+%% Stage 0: Idea Intake
+%% -------------------------
+subgraph ST0["Stage 0 · Idea Intake & Triage" ]
+  direction TB
+  I0["Inputs\n- papers / practitioner notes\n- internal alpha ideas\n- post-mortems"]
+  I1["Triage\n- novelty vs cost\n- data availability\n- expected edge hypothesis"]
+  I2["TaskCard: RESEARCH_0" ]
+  I0 --> I1 --> I2
+end
+
+%% -------------------------
+%% Stage 1: Research Design & Repro Plan
+%% -------------------------
+subgraph ST1["Stage 1 · Research Design (Reproducibility First)" ]
+  direction TB
+  R1["Hypothesis & Target\n- signal definition\n- expected regime\n- success metrics"]
+  R2["Experiment Plan\n- ablations\n- baselines\n- evaluation horizons"]
+  R3["Repro Package Draft\n- config\n- seed\n- notebooks/scripts map"]
+  R4["TaskCard: RESEARCH_1" ]
+  R1 --> R2 --> R3 --> R4
+end
+
+%% -------------------------
+%% Stage 2: Data Build & Versioning
+%% -------------------------
+subgraph ST2["Stage 2 · Data Engineering (Versioned Data)" ]
+  direction TB
+  D1["Raw Ingest\n- vendors/APIs\n- schema validation"]
+  D2["Cleaning & Align\n- corporate actions\n- missing policy\n- calendar alignment"]
+  D3["Feature/Factor Panel\n- factor definitions\n- lag rules\n- leakage controls"]
+  D4["Data Snapshot\n- immutable version id\n- metadata + checksums"]
+  D5["Gate G1: Data Quality" ]
+  D6["TaskCard: DATA_2" ]
+  D1 --> D2 --> D3 --> D4 --> D5 --> D6
+end
+
+%% -------------------------
+%% Stage 3: Model / Strategy Construction
+%% -------------------------
+subgraph ST3["Stage 3 · Model/Strategy Build (Modular)" ]
+  direction TB
+  M1["Signal Module\n- factor transforms\n- model inference"]
+  M2["Portfolio Construction\n- constraints\n- turnover control\n- costs model"]
+  M3["Execution Assumptions\n- slippage\n- latency\n- liquidity"]
+  M4["Artifact: Strategy Package" ]
+  M5["Gate G2: Sanity Checks" ]
+  M6["TaskCard: DEV_3" ]
+  M1 --> M2 --> M3 --> M4 --> M5 --> M6
+end
+
+%% -------------------------
+%% Stage 4: Backtest & Evaluation
+%% -------------------------
+subgraph ST4["Stage 4 · Backtest & Evaluation" ]
+  direction TB
+  B1["Backtest Run\n- walk-forward\n- train/test split\n- embargo rules"]
+  B2["Performance Report\n- Sharpe/Sortino\n- drawdown\n- hit-rate"]
+  B3["Risk Attribution\n- exposures\n- regime sensitivity\n- tail behavior"]
+  B4["Robustness\n- parameter sweeps\n- subperiod stability\n- stress tests"]
+  B5["Gate G3: Performance & Robustness" ]
+  B6["TaskCard: EVAL_4" ]
+  B1 --> B2 --> B3 --> B4 --> B5 --> B6
+end
+
+%% -------------------------
+%% Stage 5: Governance Review & Release Decision
+%% -------------------------
+subgraph ST5["Stage 5 · Release Review (Decision Gate)" ]
+  direction TB
+  G1["Release Candidate\n- pinned data version\n- pinned code commit\n- pinned config"]
+  G2["Decision Memo\n- why it works\n- failure modes\n- kill-switch criteria"]
+  G3["Gate G4: Approval" ]
+  G4["TaskCard: RELEASE_5" ]
+  G1 --> G2 --> G3 --> G4
+end
+
+%% -------------------------
+%% Stage 6: Deployment & Monitoring
+%% -------------------------
+subgraph ST6["Stage 6 · Deploy & Operate" ]
+  direction TB
+  P1["Deployment\n- paper trade\n- shadow mode\n- staged rollout"]
+  P2["Monitoring\n- PnL attribution\n- drift detection\n- risk limits"]
+  P3["Incident Response\n- alert triage\n- rollback\n- post-incident audit"]
+  P4["Gate G5: Live Safety" ]
+  P5["TaskCard: OPS_6" ]
+  P1 --> P2 --> P3 --> P4 --> P5
+end
+
+%% -------------------------
+%% Stage 7: Learning Loop (Promotion)
+%% -------------------------
+subgraph ST7["Stage 7 · Post-mortem & Spec Promotion" ]
+  direction TB
+  L1["Post-mortem\n- what failed\n- what was expensive\n- what was fragile"]
+  L2["Spec Updates (L2)\n- pipeline tweaks\n- thresholds changes"]
+  L3["Promotion Proposal (L1/L0)\n- if broadly useful\n- adopt/pilot/reject"]
+  L4["TaskCard: GOV_7" ]
+  L1 --> L2 --> L3 --> L4
+end
+
+%% -------------------------
+%% Artifacts (First-class outputs)
+%% -------------------------
+subgraph ART["Key Artifacts (Must be versioned)" ]
+  direction TB
+  A_DATA["Data Snapshot\n- version id\n- checksums\n- metadata"]
+  A_FACT["Factor Library\n- definitions\n- lag/leakage rules"]
+  A_STRAT["Strategy Package\n- model + config\n- cost model\n- constraints"]
+  A_REP["Evaluation Report\n- performance\n- risk\n- robustness"]
+  A_RC["Release Candidate Bundle\n- pinned commit/data/config"]
+  A_RUN["Runbook & Monitors\n- alerts\n- rollback steps"]
+end
+
+%% -------------------------
+%% Gates (Explicit) - referenced by project specs
+%% -------------------------
+subgraph GATES["Gates (Enforced by CI + Project Pipeline Spec)" ]
+  direction TB
+  GQ1["G1 Data Quality\n- schema + missingness\n- leakage checks\n- snapshot immutability"]
+  GQ2["G2 Sanity\n- unit tests\n- no look-ahead\n- cost assumptions"]
+  GQ3["G3 Robustness\n- OOS stability\n- stress tests\n- regime checks"]
+  GQ4["G4 Approval\n- decision memo\n- risk spec compliance"]
+  GQ5["G5 Live Safety\n- kill switch\n- drift alerts\n- limits"]
+end
+
+%% -------------------------
+%% Pipeline Flow
+%% -------------------------
+SPEC --> ST0 --> ST1 --> ST2 --> ST3 --> ST4 --> ST5 --> ST6 --> ST7
+
+%% Link gates to stages
+ST2 --> GQ1
+ST3 --> GQ2
+ST4 --> GQ3
+ST5 --> GQ4
+ST6 --> GQ5
+
+%% Link stages to artifacts
+ST2 --> A_DATA
+ST2 --> A_FACT
+ST3 --> A_STRAT
+ST4 --> A_REP
+ST5 --> A_RC
+ST6 --> A_RUN
+
+%% Learning loop influences specs
+ST7 -.updates.-> S_PIPE
+ST7 -.may propose.-> S_REG
+
+%% =====================================================
+%% Notes (implicit)
+%% - Each stage is represented as one or more TaskCards
+%% - Gates must be encoded in project pipeline specs and CI checks
+%% - All artifacts are versioned and referenced in audits/decision logs
+%% =====================================================
+```

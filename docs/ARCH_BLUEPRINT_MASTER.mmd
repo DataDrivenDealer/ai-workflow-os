@@ -1,0 +1,72 @@
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% ARCH_BLUEPRINT_MASTER
+%% AI Workflow OS (Company Layer) + Quant Project Layer
+%% =====================================================
+
+%% =========================
+%% Layer A: AI Workflow OS (Company / Platform)
+%% =========================
+subgraph CO["Layer A · AI Workflow OS (Company / Platform Layer)"]
+  direction TB
+
+  CO_ENTRY["Unified Entry Points\n- CLI: ./os\n- Web Console (optional)\n- Chat / Agent Gateway (optional)"]
+
+  CO_ROUTER["Task Router & Queue Manager\n- task queues (research / data / dev / governance)\n- concurrency rules & locks\n- priority & scheduling"]
+
+  CO_KERNEL["Kernel Runtime (Execution Core)\n- state machine engine\n- task lifecycle control\n- spec-aware execution\n- audit & decision recording"]
+
+  CO_GOV["Governance Layer\n- Company Canon (L0 Specs)\n- Framework Specs (L1)\n- Decision Log (DRS)\n- Freeze Records"]
+
+  CO_MEM["Memory System\n- Git (source of truth)\n- Structured State (/state)\n- Audit & History (/ops)\n- Knowledge Base (optional)"]
+
+  CO_IF["Interface Layer\n- hooks (pre-commit / CI)\n- skills (tool wrappers)\n- MCP exposure (optional)"]
+
+  CO_SEC["Security & Trust Boundary\n- least-privilege tokens\n- environment isolation\n- full auditability"]
+
+  CO_ENTRY --> CO_ROUTER --> CO_KERNEL
+  CO_KERNEL --> CO_GOV
+  CO_KERNEL --> CO_MEM
+  CO_KERNEL --> CO_IF
+
+  CO_SEC -.enforces.-> CO_KERNEL
+  CO_SEC -.enforces.-> CO_IF
+end
+
+%% =========================
+%% Layer B: Quant Trading System Projects (Product Layer)
+%% =========================
+subgraph PRJ["Layer B · Quant Trading System Projects (Product / Delivery Layer)"]
+  direction TB
+
+  PRJ_SPEC["Project Spec System\n- Project Specs (L2)\n- inherits Company Framework\n- overrides explicitly declared\n- spec registry & versioning"]
+
+  PRJ_TASK["Project Tasks\n- TaskCards bound to specs\n- research / data / dev tasks\n- fully auditable"]
+
+  PRJ_PIPE["Project Verification Pipeline\n- data validation\n- research reproducibility\n- backtest & risk gates\n- regression tests"]
+
+  PRJ_ART["Project Artifacts\n- datasets & snapshots\n- factors & models\n- backtest reports\n- deployable packages"]
+
+  PRJ_REL["Release & Operation\n- versioned releases\n- rollout / rollback\n- monitoring & post-mortem"]
+
+  PRJ_SPEC --> PRJ_TASK --> PRJ_PIPE --> PRJ_ART --> PRJ_REL
+  PRJ_REL -.feedback.-> PRJ_SPEC
+end
+
+%% =========================
+%% Binding: Company OS governs Projects
+%% =========================
+CO_KERNEL -->|"executes & enforces"| PRJ_TASK
+CO_GOV -->|"policy & approval"| PRJ_SPEC
+CO_MEM -->|"records & traceability"| PRJ_ART
+CO_IF -->|"skills & tools"| PRJ_PIPE
+
+%% =========================
+%% Conceptual Notes (implicit)
+%% - Company OS never designs strategies
+%% - Projects never bypass governance
+%% - Specs are the contract between layers
+%% =====================================================
+```

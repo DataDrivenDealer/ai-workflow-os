@@ -1,0 +1,120 @@
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% KERNEL_V0_RUNTIME_FLOW
+%% From "Constitution" to a runnable OS kernel v0
+%% Focus: step-by-step operator actions + enforced checks
+%% =====================================================
+
+%% -------------------------
+%% Actors / Environments
+%% -------------------------
+subgraph ENV["Execution Environments" ]
+  direction LR
+  E_LOCAL["Local Dev (primary)\n- ./os CLI\n- git working copy\n- optional gh CLI"]
+  E_CI["GitHub CI (gates)\n- workflows\n- branch protection"]
+  E_CLOUD["Cloud Runtime (optional)\n- always-on runner\n- scheduled tasks"]
+end
+
+subgraph ACT["Actors" ]
+  direction LR
+  A_HUMAN["Human Operator\n(Planner / PM / Research Lead)"]
+  A_CODER["Coder Agent (optional)\n- implements changes\n- opens PR"]
+  A_REVIEW["Reviewer Agent (optional)\n- reviews PR\n- runs checks"]
+end
+
+%% -------------------------
+%% System Components (Kernel v0)
+%% -------------------------
+subgraph SYS["Kernel v0 Components" ]
+  direction TB
+
+  S_ENTRY["Entry: ./os (CLI)\nCommands:\n- os init\n- os spec register\n- os task new\n- os task start\n- os task finish\n- os audit"]
+
+  S_LOAD["Load & Validate\n- read spec_registry.yaml\n- read state_machine.yaml\n- read /state (project.yaml, tasks.yaml)\n- validate schema"]
+
+  S_POLICY["Policy Enforcement\n- scope-based edit rules (L0/L1/L2)\n- proposal required for L0/L1\n- deviation required for L2 overrides"]
+
+  S_TASKPARSE["Task Parsing\n- parse TaskCard frontmatter\n- bind to spec_id(s)\n- determine queue + branch"]
+
+  S_STATE["State Store\n- update tasks.yaml\n- lock queues\n- write transition events"]
+
+  S_RUN["Runner (half-automatic v0)\n- create branch\n- prepare PR draft\n- call skills (optional)\n- guide operator steps"]
+
+  S_AUDIT["Audit Writer\n- ops/audit/<task_id>.md\n- ops/decision-log/<id>.md\n- ops/freeze/<ver>.md (draft)"]
+
+  S_SKILLS["Skills Layer (optional)\n- git/gh wrappers\n- file ops\n- CI trigger\n- comment PR"]
+
+  S_HOOKS["Hooks & CI Gates\n- pre-commit / pre-push\n- CI workflows\n- branch protection"]
+
+  S_ENTRY --> S_LOAD --> S_POLICY --> S_TASKPARSE --> S_STATE --> S_RUN --> S_AUDIT
+  S_RUN -.calls.-> S_SKILLS
+  S_POLICY -.enforced by.-> S_HOOKS
+end
+
+%% -------------------------
+%% Primary Operator Flow (Happy Path)
+%% -------------------------
+subgraph FLOW["Happy Path: One Task End-to-End" ]
+  direction TB
+
+  F0["0) os init\n- create /state, /ops scaffolding\n- sanity check env"]
+
+  F1["1) os spec register (optional v0)\n- ensure spec_registry.yaml exists\n- validate spec entries for target scope"]
+
+  F2["2) os task new\n- generate TaskCard from template\n- require: spec_id(s), queue, verification"]
+
+  F3["3) os task start <task_id>\nChecks:\n- TaskCard valid\n- referenced specs exist in registry\n- scope rules satisfied\nActions:\n- lock queue\n- state: draft→ready→running\n- create branch"]
+
+  F4["4) Implement changes\n- human or coder agent edits files\n- local tests (optional)"]
+
+  F5["5) os task finish <task_id>\nChecks:\n- required artifacts prepared\n- impact analysis present if specs changed\nActions:\n- state: running→reviewing\n- create PR draft (optional gh)\n- write audit draft"]
+
+  F6["6) PR Review + CI\n- reviewer agent/human review\n- CI gates must pass\n- required approvals satisfied"]
+
+  F7["7) Merge + Post-merge\nActions:\n- state: reviewing→merged→released\n- write decision log\n- update registry links (PR/issue)\n- (optional) freeze draft for milestone"]
+
+  F0 --> F1 --> F2 --> F3 --> F4 --> F5 --> F6 --> F7
+end
+
+%% -------------------------
+%% Enforcement Branches (Key Guardrails)
+%% -------------------------
+subgraph GUARD["Guardrails (Hard Stops)" ]
+  direction TB
+
+  G1["Forbidden Edit\n- direct edit to L0/L1 spec\n- without matching proposal\n→ block commit/push/merge"]
+
+  G2["Missing Deviation\n- L2 override of L1 behavior\n- no deviation declaration\n→ block PR"]
+
+  G3["Missing Impact Analysis\n- spec changed\n- consumers not updated\n→ block PR"]
+
+  G4["State Violation\n- illegal transition\n→ os refuses to run"]
+end
+
+S_HOOKS --> G1
+S_HOOKS --> G2
+S_HOOKS --> G3
+S_STATE --> G4
+
+%% -------------------------
+%% Bindings to Environments / Actors
+%% -------------------------
+A_HUMAN -->|"runs"| S_ENTRY
+A_CODER -.optional.-> S_RUN
+A_REVIEW -.optional.-> F6
+
+S_HOOKS --> E_CI
+S_ENTRY --> E_LOCAL
+S_SKILLS -.optional.-> E_LOCAL
+S_SKILLS -.optional.-> E_CLOUD
+
+%% =====================================================
+%% Notes (implicit)
+%% - v0 runner is allowed to be half-automatic; correctness via gates
+%% - The registry/state machine are treated as authoritative inputs
+%% - Hooks/CI are the enforcement arm; kernel is the decision brain
+%% =====================================================
+```
+

@@ -1,0 +1,145 @@
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% SECURITY_TRUST_BOUNDARY (v0)
+%% Purpose:
+%% - Define trust zones, privileged boundaries, and token scopes
+%% - Prevent over-privileged agents from causing catastrophic damage
+%% - Make auditability mandatory across all write actions
+%% =====================================================
+
+%% -------------------------
+%% Trust Zones
+%% -------------------------
+subgraph ZONES["Trust Zones" ]
+  direction LR
+  Z1["Zone 1: Human-Controlled\n- governance decisions\n- approvals\n- secret custody"]
+  Z2["Zone 2: Controlled Automation\n(Kernel + Hooks/CI)\n- policy enforcement\n- auditable state changes"]
+  Z3["Zone 3: Tool Execution\n(Skills/MCP)\n- repo/PR operations\n- data/build actions"]
+  Z4["Zone 4: External Systems\n- brokers\n- data vendors\n- cloud services"]
+end
+
+%% -------------------------
+%% Assets & Systems
+%% -------------------------
+subgraph ASSETS["Critical Assets" ]
+  direction TB
+  A_REPO["Git Repository\n(specs + code + history)"]
+  A_STATE["State Store\n(/state YAML/SQLite)"]
+  A_OPS["Audit & Decision Logs\n(/ops)"]
+  A_SECRETS["Secrets Vault\n(GitHub Secrets / local vault)"]
+  A_DATA["Data Storage\n(snapshots, checksums)"]
+  A_BROKER["Broker / Execution\n(STRICTLY ISOLATED)"]
+end
+
+%% -------------------------
+%% Identities / Principals
+%% -------------------------
+subgraph IDS["Principals (Identities)" ]
+  direction TB
+  P_HUMAN["Human Maintainer\n- owns approvals\n- owns secret rotation"]
+  P_KERNEL["Kernel Service Identity\n- reads registry/state\n- writes audit/state"]
+  P_CODER["Coder Agent Identity\n- can propose changes\n- cannot approve merges"]
+  P_REVIEW["Reviewer Agent Identity\n- can review/comment\n- cannot change secrets"]
+  P_CI["CI Runner Identity\n- runs checks\n- limited repo write"]
+end
+
+%% -------------------------
+%% Token Scopes (Least Privilege)
+%% -------------------------
+subgraph TOK["Token Scopes (Least Privilege)" ]
+  direction TB
+
+  T_READ["T0 Read-only\n- clone/fetch\n- read issues/PRs"]
+  T_WRITE_CODE["T1 Write Code\n- push branches\n- open PR\n- NO merge"]
+  T_REVIEW["T2 Review\n- comment/review\n- label/assign\n- NO push"]
+  T_MERGE["T3 Merge (human-only)\n- approve + merge\n- protected branch"]
+  T_DOCS["T4 Docs/Audit Write\n- write /ops outputs\n- update registry links"]
+  T_CI["T5 CI Exec\n- run workflows\n- upload artifacts"]
+  T_BROKER["T6 Broker Exec\n- trade permissions\n- ALWAYS isolated\n- ideally manual gate"]
+end
+
+%% -------------------------
+%% Execution Environments
+%% -------------------------
+subgraph ENV["Execution Environments" ]
+  direction LR
+  E_LOCAL["Local Dev\n- sandboxed env\n- no broker keys"]
+  E_CI["CI Runners\n- ephemeral\n- minimal secrets"]
+  E_CLOUD["Cloud Runner (optional)\n- containerized\n- short-lived tokens"]
+  E_BROKER["Broker Box (separate)\n- separate machine/account\n- strict network rules"]
+end
+
+%% -------------------------
+%% Mandatory Controls
+%% -------------------------
+subgraph CTRL["Mandatory Controls" ]
+  direction TB
+  C1["No Secret in Repo\n- secrets only in vault\n- scanning enabled"]
+  C2["Two-Person / Two-Step for High Risk\n- merge requires approval\n- broker actions require manual gate"]
+  C3["Full Audit Trail for Writes\n- every write action logs ops/audit\n- decision ref for governance"]
+  C4["Environment Isolation\n- container/devcontainer\n- least-privilege OS user"]
+  C5["Kill Switch\n- revoke tokens\n- disable automations\n- rollback releases"]
+end
+
+%% -------------------------
+%% Boundaries & Allowed Paths
+%% -------------------------
+Z1 -->|"approves"| P_HUMAN
+P_HUMAN -->|"holds"| A_SECRETS
+
+Z2 --> P_KERNEL
+P_KERNEL -->|"reads"| A_REPO
+P_KERNEL -->|"writes"| A_STATE
+P_KERNEL -->|"writes"| A_OPS
+
+Z3 --> P_CODER
+Z3 --> P_REVIEW
+Z2 -->|"calls"| Z3
+
+P_CODER -->|"T1"| A_REPO
+P_REVIEW -->|"T2"| A_REPO
+P_CI -->|"T5"| A_REPO
+
+A_REPO --> A_STATE
+A_STATE --> A_OPS
+
+%% Token bindings
+P_CODER -.uses.-> T_WRITE_CODE
+P_REVIEW -.uses.-> T_REVIEW
+P_CI -.uses.-> T_CI
+P_HUMAN -.uses.-> T_MERGE
+P_KERNEL -.uses.-> T_READ
+P_KERNEL -.uses.-> T_DOCS
+
+%% Environments
+P_CODER --> E_LOCAL
+P_KERNEL --> E_LOCAL
+P_CI --> E_CI
+P_REVIEW --> E_CI
+
+%% External systems isolation
+Z4 --> A_BROKER
+A_BROKER <-->|"T6"| E_BROKER
+
+%% Controls apply
+CTRL -.applies.-> E_LOCAL
+CTRL -.applies.-> E_CI
+CTRL -.applies.-> E_CLOUD
+CTRL -.applies.-> E_BROKER
+CTRL -.applies.-> A_REPO
+CTRL -.applies.-> A_SECRETS
+
+%% Hard rule: broker isolation
+E_LOCAL -.NO BROKER KEYS.-> A_BROKER
+E_CI -.NO BROKER KEYS.-> A_BROKER
+E_CLOUD -.NO BROKER KEYS.-> A_BROKER
+
+%% =====================================================
+%% Notes (implicit)
+%% - Treat repo write as medium-risk; broker exec as highest-risk
+%% - Prefer ephemeral tokens; rotate secrets
+%% - Human approval is a feature, not a bug
+%% =====================================================
+```

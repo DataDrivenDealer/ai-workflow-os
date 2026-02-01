@@ -1,0 +1,19 @@
+specs:
+  - spec_id: ARCH_BLUEPRINT_MASTER
+    scope: canon
+    consumers:
+      - architecture
+      - governance
+    change_control: governance-review
+  - spec_id: SECURITY_TRUST_BOUNDARY
+    scope: canon
+    consumers:
+      - security
+      - governance
+    change_control: security-review
+  - spec_id: TASK_STATE_MACHINE
+    scope: framework
+    consumers:
+      - execution
+      - governance
+    change_control: framework-review

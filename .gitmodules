@@ -1,0 +1,3 @@
+[submodule "projects/dgsf/repo"]
+	path = projects/dgsf/repo
+	url = https://github.com/DataDrivenDealer/DGSF.git
