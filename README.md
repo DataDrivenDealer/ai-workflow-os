@@ -29,3 +29,8 @@ Copy-Item -Force hooks\pre-push .git\hooks\pre-push
 ```
 
 Then ensure your `python` resolves to the intended environment.
+
+## Install local hooks
+```powershell
+.\scripts\install_hooks.ps1
+```
