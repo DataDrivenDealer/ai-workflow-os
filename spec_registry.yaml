@@ -1,19 +1,126 @@
+registry_version: 0.1
+updated_at: "2026-02-01"
+owners:
+  company_governance:
+    name: "AI Workflow OS Governance"
+    contact: ""
+  registry_maintainer:
+    name: "Registry Maintainer"
+
 specs:
-  - spec_id: ARCH_BLUEPRINT_MASTER
-    scope: canon
+  - spec_id: "ARCH_BLUEPRINT_MASTER"
+    title: "Architecture Blueprint Master"
+    scope: "canon"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "docs/ARCH_BLUEPRINT_MASTER.mmd"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
     consumers:
-      - architecture
-      - governance
-    change_control: governance-review
-  - spec_id: SECURITY_TRUST_BOUNDARY
-    scope: canon
+      - kind: "kernel"
+        ref: "kernel"
+      - kind: "hook"
+        ref: "hooks"
+      - kind: "pipeline"
+        ref: ".github/workflows"
+    compatibility:
+      level: "strict"
+      notes: "Defines canonical architecture boundaries and invariants."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/audit/*"
+        - "ops/decision-log/*"
+        - "ops/freeze/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "SECURITY_TRUST_BOUNDARY"
+    title: "Security Trust Boundary"
+    scope: "canon"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "docs/SECURITY_TRUST_BOUNDARY.mmd"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
     consumers:
-      - security
-      - governance
-    change_control: security-review
-  - spec_id: TASK_STATE_MACHINE
-    scope: framework
+      - kind: "kernel"
+        ref: "kernel"
+      - kind: "hook"
+        ref: "hooks"
+      - kind: "pipeline"
+        ref: ".github/workflows"
+    compatibility:
+      level: "strict"
+      notes: "Defines trust zones, boundaries, and required controls."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/audit/*"
+        - "ops/decision-log/*"
+        - "ops/freeze/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "TASK_STATE_MACHINE"
+    title: "Task State Machine"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "docs/TASK_STATE_MACHINE.mmd"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
     consumers:
-      - execution
-      - governance
-    change_control: framework-review
+      - kind: "kernel"
+        ref: "kernel"
+      - kind: "hook"
+        ref: "hooks"
+      - kind: "pipeline"
+        ref: ".github/workflows"
+    compatibility:
+      level: "compatible"
+      notes: "Backwards-compatible transitions preferred; changes require migration planning."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "framework_upgrade"
+      required_artifacts:
+        - "ops/audit/*"
+        - "ops/decision-log/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+proposals: []
+
+deviations: []
