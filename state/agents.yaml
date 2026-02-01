@@ -1,4 +1,6 @@
 version: '0.1'
+# Cleaned by DevOps Engineer on 2026-02-01
+# Removed 36 test agent records, retained production agents only
 agents:
   ai_claude-7ea8f842:
     agent_id: ai_claude-7ea8f842
@@ -6,9 +8,9 @@ agents:
     display_name: Claude AI Assistant
     registered_at: '2026-02-01T16:45:07.908675+00:00'
     allowed_role_modes:
-    - architect
-    - builder
     - executor
+    - builder
+    - architect
     - planner
     metadata:
       description: Primary AI assistant for workflow operations
@@ -18,211 +20,9 @@ agents:
     display_name: E2E Test Agent (Archived)
     registered_at: '2026-02-01T16:51:34.875214+00:00'
     allowed_role_modes:
-    - builder
     - executor
+    - builder
     metadata:
       note: Consolidated test agent record - archived for audit trail
       cleanup_date: '2026-02-01'
       cleanup_by: Zhang Platform Engineer
-  ai_test-3e636ca9:
-    agent_id: ai_test-3e636ca9
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:51:50.724517+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_assistant-07a2d6c6:
-    agent_id: ai_assistant-07a2d6c6
-    agent_type: ai_assistant
-    display_name: Test Assistant
-    registered_at: '2026-02-01T17:51:50.743517+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-9f925a57:
-    agent_id: ai_test-9f925a57
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.713527+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_assistant-1a926689:
-    agent_id: ai_assistant-1a926689
-    agent_type: ai_assistant
-    display_name: Test Assistant
-    registered_at: '2026-02-01T17:52:59.727531+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_assistant-cef44f78:
-    agent_id: ai_assistant-cef44f78
-    agent_type: ai_assistant
-    display_name: Multi-Role Agent
-    registered_at: '2026-02-01T17:52:59.742529+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    - planner
-    metadata: {}
-  ai_test-8bfcdcc6:
-    agent_id: ai_test-8bfcdcc6
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.761335+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    metadata: {}
-  ai_test-3d9a1cfd:
-    agent_id: ai_test-3d9a1cfd
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.791334+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    metadata: {}
-  ai_test-50e71ff6:
-    agent_id: ai_test-50e71ff6
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.822332+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    metadata: {}
-  ai_test-c6deeba8:
-    agent_id: ai_test-c6deeba8
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.854332+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-54461d2c:
-    agent_id: ai_test-54461d2c
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.885652+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-94a6eea3:
-    agent_id: ai_test-94a6eea3
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.944653+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-807b1381:
-    agent_id: ai_test-807b1381
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:52:59.976674+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-6ec83904:
-    agent_id: ai_test-6ec83904
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T17:53:00.027523+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-d249f1b7:
-    agent_id: ai_test-d249f1b7
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.367306+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_assistant-955d2a96:
-    agent_id: ai_assistant-955d2a96
-    agent_type: ai_assistant
-    display_name: Test Assistant
-    registered_at: '2026-02-01T18:07:22.397308+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_assistant-5dc35580:
-    agent_id: ai_assistant-5dc35580
-    agent_type: ai_assistant
-    display_name: Multi-Role Agent
-    registered_at: '2026-02-01T18:07:22.425307+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    - planner
-    metadata: {}
-  ai_test-41b480be:
-    agent_id: ai_test-41b480be
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.465557+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    metadata: {}
-  ai_test-3afc68c9:
-    agent_id: ai_test-3afc68c9
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.530556+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    metadata: {}
-  ai_test-40db23d6:
-    agent_id: ai_test-40db23d6
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.593312+00:00'
-    allowed_role_modes:
-    - builder
-    - executor
-    metadata: {}
-  ai_test-503caea5:
-    agent_id: ai_test-503caea5
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.651309+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-abc13f7f:
-    agent_id: ai_test-abc13f7f
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.702572+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-8a17d238:
-    agent_id: ai_test-8a17d238
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.806211+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-e2d80cfe:
-    agent_id: ai_test-e2d80cfe
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.862211+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
-  ai_test-4607d533:
-    agent_id: ai_test-4607d533
-    agent_type: ai_test
-    display_name: Test Agent
-    registered_at: '2026-02-01T18:07:22.929212+00:00'
-    allowed_role_modes:
-    - executor
-    metadata: {}
