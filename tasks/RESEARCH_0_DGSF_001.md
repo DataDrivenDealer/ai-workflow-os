@@ -17,7 +17,7 @@ verification:
 # TaskCard: RESEARCH_0_DGSF_001 — DGSF项目分诊
 
 > **Stage**: 0 · Idea Intake & Triage  
-> **Status**: ✅ RUNNING  
+> **Status**: ✅ COMPLETED (Owner Accepted)  
 > **Decision**: PROCEED to Stage 1
 
 ## Summary
@@ -47,8 +47,16 @@ verification:
 - Authority: speculative (需Owner accept后生效)
 
 ## 输出 Artifacts
-- [ ] Triage Report: `ops/decision-log/RESEARCH_0_DGSF_001_triage.md`
-- [ ] Project L2 Spec: `projects/dgsf/specs/PROJECT_DGSF.yaml`
+- [x] Triage Report: `ops/decision-log/RESEARCH_0_DGSF_001_triage.md`
+- [x] Project L2 Spec: `projects/dgsf/specs/PROJECT_DGSF.yaml`
+
+## Owner Acceptance
+| 字段 | 值 |
+|------|-----|
+| **Accepted By** | Project Owner |
+| **Date** | 2026-02-01 |
+| **Authority Upgrade** | speculative → accepted |
+| **Next Action** | Start RESEARCH_1_DGSF_001 |
 
 ## Verification
 - [x] Triage report completed with PROCEED decision
