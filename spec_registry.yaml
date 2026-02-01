@@ -121,6 +121,232 @@ specs:
       prs: []
       freeze_records: []
 
+  - spec_id: "GOVERNANCE_INVARIANTS"
+    title: "Governance Invariants (L0 Canon)"
+    scope: "canon"
+    status: "frozen"
+    version:
+      semver: "1.0.0"
+      frozen: true
+    location:
+      path: "specs/canon/GOVERNANCE_INVARIANTS.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
+    consumers:
+      - kind: "kernel"
+        ref: "kernel/governance_gate.py"
+    compatibility:
+      level: "strict"
+      notes: "Non-negotiable constitutional constraints. Cannot be overridden."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/freeze/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "AUTHORITY_CANON"
+    title: "Authority Canon (L0)"
+    scope: "canon"
+    status: "frozen"
+    version:
+      semver: "1.0.0"
+      frozen: true
+    location:
+      path: "specs/canon/AUTHORITY_CANON.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "GOVERNANCE_INVARIANTS"
+    consumers:
+      - kind: "kernel"
+        ref: "kernel/agent_auth.py"
+    compatibility:
+      level: "strict"
+      notes: "Defines authority delegation and acceptance rules."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/freeze/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "ROLE_MODE_CANON"
+    title: "Role Mode Canon (L0)"
+    scope: "canon"
+    status: "frozen"
+    version:
+      semver: "1.0.0"
+      frozen: true
+    location:
+      path: "specs/canon/ROLE_MODE_CANON.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "AUTHORITY_CANON"
+    consumers:
+      - kind: "kernel"
+        ref: "kernel/agent_auth.py"
+    compatibility:
+      level: "strict"
+      notes: "Defines Role Modes: architect, planner, executor, builder."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/freeze/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "MULTI_AGENT_CANON"
+    title: "Multi-Agent Canon (L0)"
+    scope: "canon"
+    status: "frozen"
+    version:
+      semver: "1.0.0"
+      frozen: true
+    location:
+      path: "specs/canon/MULTI_AGENT_CANON.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "ROLE_MODE_CANON"
+    consumers:
+      - kind: "kernel"
+        ref: "kernel/agent_auth.py"
+      - kind: "kernel"
+        ref: "kernel/mcp_server.py"
+    compatibility:
+      level: "strict"
+      notes: "Defines multi-agent coordination and session management rules."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/freeze/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "CO_OS_CAPABILITY_MAP"
+    title: "Company OS Capability Map"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "docs/CO_OS_CAPABILITY_MAP.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "ARCH_BLUEPRINT_MASTER"
+    consumers:
+      - kind: "documentation"
+        ref: "README.md"
+    compatibility:
+      level: "compatible"
+      notes: "Capability inventory - updated as features are implemented."
+    change_control:
+      edit_policy: "direct_edit"
+      proposal_type: null
+      required_artifacts: []
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "OS_OPERATING_MODEL"
+    title: "OS Operating Model"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "docs/OS_OPERATING_MODEL.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "ROLE_MODE_CANON"
+    consumers:
+      - kind: "documentation"
+        ref: "README.md"
+    compatibility:
+      level: "compatible"
+      notes: "Day-to-day operating procedures."
+    change_control:
+      edit_policy: "direct_edit"
+      proposal_type: null
+      required_artifacts: []
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
+  - spec_id: "PROJECT_PLAYBOOK"
+    title: "Project Delivery Playbook"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "docs/PROJECT_PLAYBOOK.md"
+      format: "markdown"
+    applies_to:
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "TASK_STATE_MACHINE"
+    consumers:
+      - kind: "template"
+        ref: "templates/pipeline/*"
+    compatibility:
+      level: "compatible"
+      notes: "Project delivery guide with stage gates."
+    change_control:
+      edit_policy: "direct_edit"
+      proposal_type: null
+      required_artifacts: []
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
 proposals: []
 
 deviations: []

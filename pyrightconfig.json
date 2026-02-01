@@ -1,0 +1,13 @@
+{
+  "include": [
+    "kernel",
+    "scripts"
+  ],
+  "extraPaths": [
+    "kernel"
+  ],
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": false,
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic"
+}

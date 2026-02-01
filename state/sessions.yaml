@@ -1,0 +1,52 @@
+﻿version: '0.1'
+sessions:
+  # === Archived Sessions (for audit trail) ===
+  # Production session example
+  sess-0d429e5c56c8e5f7a8c5e2071cf04068:
+    session_token: sess-0d429e5c56c8e5f7a8c5e2071cf04068
+    agent_id: ai_claude-7ea8f842
+    role_mode: executor
+    state: terminated
+    started_at: '2026-02-01T16:45:07.911675+00:00'
+    authorized_by: user_request
+    expires_at: '2026-02-02T00:45:07.911675+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T16:45:07.911675+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: user_request
+    - timestamp: '2026-02-01T16:45:07.930860+00:00'
+      action: session_terminated
+      details:
+        reason: work_complete
+    pending_artifacts: []
+    
+  # E2E Test session (archived)
+  sess-49a2b22a5af2eabce0b13fcef51a9a3e:
+    session_token: sess-49a2b22a5af2eabce0b13fcef51a9a3e
+    agent_id: e2e_test-f611927d
+    role_mode: executor
+    state: terminated
+    started_at: '2026-02-01T16:51:34.880216+00:00'
+    authorized_by: e2e_test
+    expires_at: '2026-02-02T00:51:34.880216+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-01T16:51:34.880216+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: e2e_test
+    - timestamp: '2026-02-01T16:51:34.900817+00:00'
+      action: session_terminated
+      details:
+        reason: e2e_test_complete
+    pending_artifacts: []
+    metadata:
+      note: Archived for audit - all other test sessions cleaned up
+      cleanup_date: '2026-02-01'
+      cleanup_by: Zhang Platform Engineer

@@ -100,6 +100,129 @@ A blueprint may be frozen only if **all** of the following are true:
 
 ---
 
+### 2.3 GOVERNANCE_INVARIANTS
+
+- **Blueprint ID**: GOVERNANCE_INVARIANTS
+- **File**: `specs/canon/GOVERNANCE_INVARIANTS.md`
+- **Blueprint Version**: v1.0.0
+- **Pack Version**: v0.1.0
+- **Type**: Constitutional (L0 Canon)
+- **Owner**: Company Governance
+- **Frozen On**: 2026‑02‑01
+- **Proposal Reference**: PROP_20260201_CANON_FREEZE
+
+**Freeze Rationale**:
+- Defines 12 non-negotiable constitutional invariants
+- Foundation for all governance decisions
+- Artifact-over-conversation, explicit authority principles
+
+**Allowed Changes After Freeze**:
+- Clarifications (wording only)
+- Explicitly approved additions that strengthen invariants
+
+**Disallowed Changes**:
+- Weakening any invariant
+- Removing invariants
+- Adding exceptions that bypass invariants
+
+**Migration Notes**:
+- N/A (initial freeze)
+
+---
+
+### 2.4 AUTHORITY_CANON
+
+- **Blueprint ID**: AUTHORITY_CANON
+- **File**: `specs/canon/AUTHORITY_CANON.md`
+- **Blueprint Version**: v1.0.0
+- **Pack Version**: v0.1.0
+- **Type**: Constitutional (L0 Canon)
+- **Owner**: Company Governance
+- **Frozen On**: 2026‑02‑01
+- **Proposal Reference**: PROP_20260201_CANON_FREEZE
+- **Depends On**: GOVERNANCE_INVARIANTS
+
+**Freeze Rationale**:
+- Defines Authority Triad (Authority ≠ Legitimacy ≠ Validity)
+- Establishes artifact-centric authority model
+- Specifies acceptance and freeze as sole authority mechanisms
+
+**Allowed Changes After Freeze**:
+- Clarifications (wording only)
+- Tightening authority constraints
+
+**Disallowed Changes**:
+- Granting implicit authority
+- Allowing authority accumulation through execution
+- Bypassing acceptance/freeze requirements
+
+**Migration Notes**:
+- N/A (initial freeze)
+
+---
+
+### 2.5 ROLE_MODE_CANON
+
+- **Blueprint ID**: ROLE_MODE_CANON
+- **File**: `specs/canon/ROLE_MODE_CANON.md`
+- **Blueprint Version**: v1.0.0
+- **Pack Version**: v0.1.0
+- **Type**: Constitutional (L0 Canon)
+- **Owner**: Company Governance
+- **Frozen On**: 2026‑02‑01
+- **Proposal Reference**: PROP_20260201_CANON_FREEZE
+- **Depends On**: AUTHORITY_CANON
+
+**Freeze Rationale**:
+- Defines 4 canonical Role Modes: Architect, Planner, Executor, Builder
+- Establishes permission matrix and violation rules
+- Ensures legitimacy is evaluated relative to Role Mode
+
+**Allowed Changes After Freeze**:
+- Clarifications (wording only)
+- Adding explicit prohibitions
+
+**Disallowed Changes**:
+- Adding new Role Modes without canon amendment
+- Allowing Role Mode self-escalation
+- Merging or combining Role Modes implicitly
+
+**Migration Notes**:
+- N/A (initial freeze)
+
+---
+
+### 2.6 MULTI_AGENT_CANON
+
+- **Blueprint ID**: MULTI_AGENT_CANON
+- **File**: `specs/canon/MULTI_AGENT_CANON.md`
+- **Blueprint Version**: v1.0.0
+- **Pack Version**: v0.1.0
+- **Type**: Constitutional (L0 Canon)
+- **Owner**: Company Governance
+- **Frozen On**: 2026‑02‑01
+- **Proposal Reference**: PROP_20260201_CANON_FREEZE
+- **Depends On**: ROLE_MODE_CANON
+
+**Freeze Rationale**:
+- Defines multi-agent coexistence model
+- Establishes session isolation and artifact-level arbitration
+- Prohibits collective agency and emergent authority
+
+**Allowed Changes After Freeze**:
+- Clarifications (wording only)
+- Tightening isolation requirements
+
+**Disallowed Changes**:
+- Allowing collective agency
+- Permitting authority amplification through concurrency
+- Bypassing artifact-mediated interaction
+
+**Migration Notes**:
+- N/A (initial freeze)
+
+---
+
 ## 3. Blueprints Marked Ready‑to‑Freeze (Not Yet Frozen)
 
 The following blueprints are **stable but not yet frozen**. They may change until a freeze entry is added.

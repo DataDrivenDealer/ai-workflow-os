@@ -1,0 +1,331 @@
+# Gate Configuration
+# Defines thresholds and rules for PROJECT_DELIVERY_PIPELINE gates
+
+version: "1.0.0"
+
+gates:
+  # ===========================================================================
+  # G1: Data Quality Gate (Stage 2 Exit)
+  # ===========================================================================
+  G1:
+    name: "Data Quality"
+    stage: 2
+    description: "Ensures data integrity, schema compliance, and no leakage"
+    
+    checks:
+      schema_valid:
+        description: "All data conforms to defined schema"
+        threshold: true
+        severity: error
+        auto_check: true
+        
+      missing_rate:
+        description: "Overall missing data rate"
+        threshold: 0.05  # 5% maximum
+        severity: error
+        auto_check: true
+        
+      no_lookahead:
+        description: "No future data leakage in features"
+        threshold: true
+        severity: error
+        auto_check: true
+        scripts:
+          - "scripts/check_lookahead.py"
+          
+      snapshot_immutable:
+        description: "Data snapshot has not been modified"
+        threshold: true
+        severity: error
+        auto_check: true
+        verify_method: checksum
+        
+      checksum_present:
+        description: "All data files have checksums"
+        threshold: true
+        severity: error
+        auto_check: true
+        
+      survivorship_handled:
+        description: "Survivorship bias properly handled"
+        threshold: true
+        severity: warning
+        auto_check: false
+        manual_review: true
+
+  # ===========================================================================
+  # G2: Sanity Checks Gate (Stage 3 Exit)
+  # ===========================================================================
+  G2:
+    name: "Sanity Checks"
+    stage: 3
+    description: "Validates code quality, tests, and basic assumptions"
+    
+    checks:
+      unit_tests_pass:
+        description: "All unit tests pass"
+        threshold: true
+        severity: error
+        auto_check: true
+        command: "pytest tests/ -v"
+        
+      no_lookahead:
+        description: "No look-ahead in signal generation"
+        threshold: true
+        severity: error
+        auto_check: true
+        
+      cost_assumptions_valid:
+        description: "Transaction cost assumptions are realistic"
+        threshold: true
+        severity: error
+        auto_check: false
+        bounds:
+          commission_bps: [0, 10]
+          slippage_bps: [0, 50]
+          
+      signal_range_valid:
+        description: "Signal values within expected range"
+        threshold: true
+        severity: error
+        auto_check: true
+        expected_range: [-1, 1]
+        
+      reproducible:
+        description: "Same seed produces same results"
+        threshold: true
+        severity: error
+        auto_check: true
+        
+      type_hints:
+        description: "Type hints present in core modules"
+        threshold: 0.8  # 80% coverage
+        severity: warning
+        auto_check: true
+        command: "mypy src/ --ignore-missing-imports"
+
+  # ===========================================================================
+  # G3: Performance & Robustness Gate (Stage 4 Exit)
+  # ===========================================================================
+  G3:
+    name: "Performance & Robustness"
+    stage: 4
+    description: "Validates strategy performance and stability"
+    
+    checks:
+      oos_sharpe:
+        description: "Out-of-sample Sharpe ratio"
+        threshold: 0.5
+        severity: error
+        auto_check: false
+        
+      sharpe_decay:
+        description: "Sharpe decay from IS to OOS"
+        threshold: 0.5  # max 50% decay
+        severity: warning
+        auto_check: false
+        
+      max_drawdown:
+        description: "Maximum drawdown"
+        threshold: 0.25  # 25%
+        severity: error
+        auto_check: false
+        
+      calmar_ratio:
+        description: "Calmar ratio (annual return / max DD)"
+        threshold: 0.5
+        severity: warning
+        auto_check: false
+        
+      subperiod_stability:
+        description: "All subperiods have positive Sharpe"
+        threshold: true
+        severity: warning
+        auto_check: false
+        subperiods: yearly
+        
+      param_sensitivity:
+        description: "Performance stable across parameter variations"
+        threshold: "low"  # low, medium, high
+        severity: warning
+        auto_check: false
+        variation_range: 0.2  # ±20%
+        
+      stress_test_survival:
+        description: "Strategy survives stress scenarios"
+        threshold: true
+        severity: error
+        auto_check: false
+        scenarios:
+          - name: "2008 Crisis"
+            period: ["2008-09-01", "2009-03-31"]
+          - name: "COVID Crash"
+            period: ["2020-02-01", "2020-04-30"]
+          - name: "2022 Bear"
+            period: ["2022-01-01", "2022-12-31"]
+
+  # ===========================================================================
+  # G4: Approval Gate (Stage 5 Exit)
+  # ===========================================================================
+  G4:
+    name: "Approval"
+    stage: 5
+    description: "Final review before deployment"
+    
+    checks:
+      g3_passed:
+        description: "G3 gate has been passed"
+        threshold: true
+        severity: error
+        auto_check: true
+        
+      decision_memo_complete:
+        description: "Decision memo is complete"
+        threshold: true
+        severity: error
+        auto_check: true
+        required_sections:
+          - "Strategy Overview"
+          - "Why It Works"
+          - "Failure Modes"
+          - "Kill-switch Criteria"
+          
+      kill_switch_defined:
+        description: "Kill-switch criteria defined"
+        threshold: true
+        severity: error
+        auto_check: true
+        required_triggers:
+          - drawdown_threshold
+          - daily_loss_threshold
+          
+      risk_spec_compliant:
+        description: "Complies with Risk & Compliance Spec (L2)"
+        threshold: true
+        severity: error
+        auto_check: true
+        
+      runbook_ready:
+        description: "Operational runbook is ready"
+        threshold: true
+        severity: warning
+        auto_check: true
+        required_sections:
+          - "Daily Operations"
+          - "Emergency Contacts"
+          - "Rollback Procedure"
+          
+      code_review_complete:
+        description: "Code review completed and approved"
+        threshold: true
+        severity: error
+        auto_check: false
+        manual_review: true
+
+  # ===========================================================================
+  # G5: Live Safety Gate (Stage 6 Continuous)
+  # ===========================================================================
+  G5:
+    name: "Live Safety"
+    stage: 6
+    description: "Continuous operational safety checks"
+    check_frequency: "continuous"  # every trade / daily / on-demand
+    
+    checks:
+      kill_switch_available:
+        description: "Kill-switch is operational"
+        threshold: true
+        severity: error
+        auto_check: true
+        check_frequency: "every_trade"
+        
+      monitoring_active:
+        description: "Monitoring system is active"
+        threshold: true
+        severity: error
+        auto_check: true
+        check_frequency: "hourly"
+        
+      data_feed_healthy:
+        description: "Data feed is healthy"
+        threshold: true
+        severity: error
+        auto_check: true
+        check_frequency: "minute"
+        max_staleness_seconds: 60
+        
+      execution_channel_healthy:
+        description: "Execution channel is operational"
+        threshold: true
+        severity: error
+        auto_check: true
+        check_frequency: "minute"
+        
+      risk_limits_enforced:
+        description: "Risk limits are being enforced"
+        threshold: true
+        severity: error
+        auto_check: true
+        check_frequency: "every_trade"
+        limits:
+          max_position_pct: 0.05
+          max_daily_turnover: 0.20
+          max_leverage: 1.0
+          
+      drift_detection:
+        description: "No significant model drift detected"
+        threshold: true
+        severity: warning
+        auto_check: true
+        check_frequency: "daily"
+        drift_threshold_std: 2.0
+
+# ===========================================================================
+# CI/CD Integration
+# ===========================================================================
+ci:
+  # Gates to run in CI pipeline
+  enabled_gates:
+    - G2  # Always run unit tests
+    
+  # Additional CI-specific checks
+  additional_checks:
+    policy_check:
+      command: "python scripts/policy_check.py --mode ci"
+      severity: error
+      
+    governance_check:
+      command: "python scripts/gate_check.py --ci"
+      severity: error
+      
+  # Artifact paths for reports
+  report_paths:
+    gate_reports: "reports/gates/"
+    test_reports: "reports/tests/"
+
+# ===========================================================================
+# Governance Integration
+# ===========================================================================
+governance:
+  # Link gates to governance dimensions
+  gate_governance_map:
+    G1:
+      - state_integrity  # Data must be artifact-backed
+    G2:
+      - role_mode_integrity  # Tests run by executor/builder
+    G3:
+      - state_integrity  # Results must be reproducible
+    G4:
+      - authority_integrity  # Only owner can approve
+      - workflow_spine_integrity  # Must follow pipeline
+    G5:
+      - authority_integrity  # Live changes need authority
+      - concurrency_isolation  # No conflicting operations
+      
+  # Authority required for gate passage
+  approval_authority:
+    G1: project_member
+    G2: project_member
+    G3: project_member
+    G4: project_owner  # Only owner can approve release
+    G5: ops_team

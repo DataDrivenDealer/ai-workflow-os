@@ -1,0 +1,107 @@
+{
+  "name": "ai-workflow-os",
+  "version": "0.1.0",
+  "description": "AI Workflow OS - Multi-Agent Quantitative Research Platform",
+  "homepage": "https://github.com/your-org/ai-workflow-os",
+  "license": "MIT",
+  "author": {
+    "name": "AI Workflow OS Team"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ai-workflow-os.git"
+  },
+  "runtime": "python",
+  "command": {
+    "windows": {
+      "command": "python",
+      "args": ["-m", "kernel.mcp_stdio"]
+    },
+    "darwin": {
+      "command": "python3",
+      "args": ["-m", "kernel.mcp_stdio"]
+    },
+    "linux": {
+      "command": "python3",
+      "args": ["-m", "kernel.mcp_stdio"]
+    }
+  },
+  "env": {
+    "PYTHONPATH": "."
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true
+  },
+  "tools": [
+    {
+      "name": "session_create",
+      "description": "Create a new authorized session for an agent"
+    },
+    {
+      "name": "session_validate",
+      "description": "Validate that a session is active"
+    },
+    {
+      "name": "session_terminate",
+      "description": "Terminate an active session"
+    },
+    {
+      "name": "task_list",
+      "description": "List tasks in the system"
+    },
+    {
+      "name": "task_get",
+      "description": "Get details of a specific task"
+    },
+    {
+      "name": "task_start",
+      "description": "Start working on a task"
+    },
+    {
+      "name": "task_finish",
+      "description": "Mark a task as complete"
+    },
+    {
+      "name": "governance_check",
+      "description": "Verify output against governance rules"
+    },
+    {
+      "name": "artifact_read",
+      "description": "Read a file from the workspace"
+    },
+    {
+      "name": "artifact_list",
+      "description": "List files in a directory"
+    },
+    {
+      "name": "spec_list",
+      "description": "List registered specifications"
+    }
+  ],
+  "resources": [
+    {
+      "pattern": "file://specs/canon/*.md",
+      "description": "Canon specifications"
+    },
+    {
+      "pattern": "file://tasks/TASK_*.md",
+      "description": "TaskCards"
+    },
+    {
+      "pattern": "file://spec_registry.yaml",
+      "description": "Spec registry"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "create_task",
+      "description": "Template for creating a new task"
+    },
+    {
+      "name": "governance_check",
+      "description": "Verify output against governance rules"
+    }
+  ]
+}

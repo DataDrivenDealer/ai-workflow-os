@@ -1,0 +1,29 @@
+﻿version: '0.1'
+agents:
+  # === Production Agents ===
+  ai_claude-7ea8f842:
+    agent_id: ai_claude-7ea8f842
+    agent_type: ai_claude
+    display_name: Claude AI Assistant
+    registered_at: '2026-02-01T16:45:07.908675+00:00'
+    allowed_role_modes:
+    - architect
+    - builder
+    - executor
+    - planner
+    metadata:
+      description: Primary AI assistant for workflow operations
+      
+  # === Consolidated Test Records (for audit) ===
+  e2e_test-f611927d:
+    agent_id: e2e_test-f611927d
+    agent_type: e2e_test
+    display_name: E2E Test Agent (Archived)
+    registered_at: '2026-02-01T16:51:34.875214+00:00'
+    allowed_role_modes:
+    - builder
+    - executor
+    metadata:
+      note: Consolidated test agent record - archived for audit trail
+      cleanup_date: '2026-02-01'
+      cleanup_by: Zhang Platform Engineer
