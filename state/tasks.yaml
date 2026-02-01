@@ -1,6 +1,5 @@
 version: '0.1'
 queues:
-  dev: RESEARCH_1_DGSF_001
   data: DATA_2_DGSF_001
 tasks:
   TASK_DEMO_0001:
@@ -49,16 +48,20 @@ tasks:
       from: merged
       to: released
   RESEARCH_1_DGSF_001:
-    status: running
+    status: reviewing
     queue: dev
     branch: feature/RESEARCH_1_DGSF_001
     priority: P2
-    last_updated: '2026-02-01T17:59:33.620662+00:00'
+    last_updated: '2026-02-01T18:18:28.626042+00:00'
     events:
     - timestamp: '2026-02-01T17:59:33.620662+00:00'
       action: task_start
       from: draft
       to: running
+    - timestamp: '2026-02-01T18:18:28.626042+00:00'
+      action: task_finish
+      from: running
+      to: reviewing
   DATA_2_DGSF_001:
     status: running
     queue: data

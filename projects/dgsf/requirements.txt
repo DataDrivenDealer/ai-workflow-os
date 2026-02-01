@@ -1,0 +1,23 @@
+# DGSF Project Dependencies
+# For DATA_2_DGSF_001 and subsequent stages
+
+# Core Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=14.0.0  # Parquet support
+
+# Exchange API
+ccxt>=4.0.0
+
+# Backtesting (for Stage 3+)
+# vectorbt>=0.26.0
+
+# Visualization
+matplotlib>=3.7.0
+plotly>=5.15.0
+
+# Configuration
+pyyaml>=6.0
+
+# Utilities
+tqdm>=4.65.0
