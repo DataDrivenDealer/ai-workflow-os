@@ -1,0 +1,23 @@
+states:
+  - draft
+  - ready
+  - running
+  - reviewing
+  - merged
+  - released
+  - blocked
+  - abandoned
+
+transitions:
+  - from: draft
+    to: ready
+  - from: draft
+    to: running
+  - from: ready
+    to: running
+  - from: running
+    to: reviewing
+  - from: reviewing
+    to: merged
+  - from: merged
+    to: released

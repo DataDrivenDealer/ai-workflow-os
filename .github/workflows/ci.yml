@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "feature/**"]
+  pull_request:
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install PyYAML
+      - name: Policy check
+        run: python scripts/policy_check.py --mode ci

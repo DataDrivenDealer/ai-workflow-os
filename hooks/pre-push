@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+python scripts/policy_check.py --mode prepush
