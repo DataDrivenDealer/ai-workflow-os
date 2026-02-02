@@ -7,9 +7,9 @@ agents:
     registered_at: '2026-02-01T16:45:07.908675+00:00'
     allowed_role_modes:
     - executor
-    - architect
     - builder
     - planner
+    - architect
     metadata:
       description: Primary AI assistant for workflow operations
   e2e_test-f611927d:
@@ -47,8 +47,8 @@ agents:
     registered_at: '2026-02-01T19:54:30.924349+00:00'
     allowed_role_modes:
     - executor
-    - planner
     - builder
+    - planner
     metadata: {}
   ai_test-9bdf467d:
     agent_id: ai_test-9bdf467d
@@ -140,8 +140,8 @@ agents:
     registered_at: '2026-02-01T20:41:12.866631+00:00'
     allowed_role_modes:
     - executor
-    - planner
     - builder
+    - planner
     metadata: {}
   ai_test-c2bd729c:
     agent_id: ai_test-c2bd729c
@@ -248,8 +248,8 @@ agents:
     display_name: Multi-Role Agent
     registered_at: '2026-02-01T20:43:07.417545+00:00'
     allowed_role_modes:
-    - reviewer
     - builder
+    - reviewer
     metadata: {}
   ai_builder-f451d775:
     agent_id: ai_builder-f451d775
@@ -433,8 +433,8 @@ agents:
     display_name: Same Agent
     registered_at: '2026-02-02T09:43:43.978871+00:00'
     allowed_role_modes:
-    - reviewer
     - builder
+    - reviewer
     metadata: {}
   ai_builder-f13ee4eb:
     agent_id: ai_builder-f13ee4eb
@@ -458,8 +458,8 @@ agents:
     display_name: Same Agent
     registered_at: '2026-02-02T09:44:31.410002+00:00'
     allowed_role_modes:
-    - reviewer
     - builder
+    - reviewer
     metadata: {}
   ai_builder-30d37d25:
     agent_id: ai_builder-30d37d25
@@ -483,8 +483,8 @@ agents:
     display_name: Same Agent
     registered_at: '2026-02-02T09:44:48.903836+00:00'
     allowed_role_modes:
-    - reviewer
     - builder
+    - reviewer
     metadata: {}
   ai_test-9e4df309:
     agent_id: ai_test-9e4df309
@@ -509,8 +509,8 @@ agents:
     registered_at: '2026-02-02T10:17:00.729888+00:00'
     allowed_role_modes:
     - executor
-    - planner
     - builder
+    - planner
     metadata: {}
   ai_test-7b3a9a9a:
     agent_id: ai_test-7b3a9a9a
@@ -601,8 +601,8 @@ agents:
     display_name: Same Agent
     registered_at: '2026-02-02T10:17:02.478432+00:00'
     allowed_role_modes:
-    - reviewer
     - builder
+    - reviewer
     metadata: {}
   ai_test-b3c9844e:
     agent_id: ai_test-b3c9844e
@@ -627,8 +627,8 @@ agents:
     registered_at: '2026-02-02T14:52:50.548740+00:00'
     allowed_role_modes:
     - executor
-    - planner
     - builder
+    - planner
     metadata: {}
   ai_test-5e8c58ed:
     agent_id: ai_test-5e8c58ed
@@ -719,6 +719,242 @@ agents:
     display_name: Same Agent
     registered_at: '2026-02-02T14:52:52.436504+00:00'
     allowed_role_modes:
-    - reviewer
     - builder
+    - reviewer
+    metadata: {}
+  ai_test-607ce2f1:
+    agent_id: ai_test-607ce2f1
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:08.757964+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_assistant-b22accc9:
+    agent_id: ai_assistant-b22accc9
+    agent_type: ai_assistant
+    display_name: Test Assistant
+    registered_at: '2026-02-02T15:00:08.882069+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_assistant-a141f23d:
+    agent_id: ai_assistant-a141f23d
+    agent_type: ai_assistant
+    display_name: Multi-Role Agent
+    registered_at: '2026-02-02T15:00:09.000160+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    - planner
+    metadata: {}
+  ai_test-295ccb98:
+    agent_id: ai_test-295ccb98
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:09.182162+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    metadata: {}
+  ai_test-8cf40b15:
+    agent_id: ai_test-8cf40b15
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:09.408165+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    metadata: {}
+  ai_test-e35dd0a1:
+    agent_id: ai_test-e35dd0a1
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:09.641027+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    metadata: {}
+  ai_test-0ec6a72a:
+    agent_id: ai_test-0ec6a72a
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:09.844827+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-d43746cd:
+    agent_id: ai_test-d43746cd
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:10.019203+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-c07bbd3a:
+    agent_id: ai_test-c07bbd3a
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:10.401552+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-6ffb9ea7:
+    agent_id: ai_test-6ffb9ea7
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:10.568573+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-4ee9c143:
+    agent_id: ai_test-4ee9c143
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:00:10.760716+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_builder-15582781:
+    agent_id: ai_builder-15582781
+    agent_type: ai_builder
+    display_name: Builder Agent
+    registered_at: '2026-02-02T15:00:10.913132+00:00'
+    allowed_role_modes:
+    - builder
+    metadata: {}
+  ai_reviewer-75e9ab48:
+    agent_id: ai_reviewer-75e9ab48
+    agent_type: ai_reviewer
+    display_name: Reviewer Agent
+    registered_at: '2026-02-02T15:00:10.958974+00:00'
+    allowed_role_modes:
+    - reviewer
+    metadata: {}
+  ai_agent-5c643b89:
+    agent_id: ai_agent-5c643b89
+    agent_type: ai_agent
+    display_name: Same Agent
+    registered_at: '2026-02-02T15:00:11.157011+00:00'
+    allowed_role_modes:
+    - builder
+    - reviewer
+    metadata: {}
+  ai_test-3e75a6a9:
+    agent_id: ai_test-3e75a6a9
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:12.552194+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_assistant-cc237728:
+    agent_id: ai_assistant-cc237728
+    agent_type: ai_assistant
+    display_name: Test Assistant
+    registered_at: '2026-02-02T15:01:12.893746+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_assistant-f228c4c4:
+    agent_id: ai_assistant-f228c4c4
+    agent_type: ai_assistant
+    display_name: Multi-Role Agent
+    registered_at: '2026-02-02T15:01:13.237706+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    - planner
+    metadata: {}
+  ai_test-0d989173:
+    agent_id: ai_test-0d989173
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:13.790707+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    metadata: {}
+  ai_test-98320bdb:
+    agent_id: ai_test-98320bdb
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:14.467077+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    metadata: {}
+  ai_test-e07b0ff7:
+    agent_id: ai_test-e07b0ff7
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:15.149458+00:00'
+    allowed_role_modes:
+    - executor
+    - builder
+    metadata: {}
+  ai_test-969f767d:
+    agent_id: ai_test-969f767d
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:15.775643+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-6760fd47:
+    agent_id: ai_test-6760fd47
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:16.292890+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-cf2ef234:
+    agent_id: ai_test-cf2ef234
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:17.461620+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-ac40c2b5:
+    agent_id: ai_test-ac40c2b5
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:17.951812+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-f9966de8:
+    agent_id: ai_test-f9966de8
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T15:01:18.497228+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_builder-27596238:
+    agent_id: ai_builder-27596238
+    agent_type: ai_builder
+    display_name: Builder Agent
+    registered_at: '2026-02-02T15:01:18.850782+00:00'
+    allowed_role_modes:
+    - builder
+    metadata: {}
+  ai_reviewer-0261a9bb:
+    agent_id: ai_reviewer-0261a9bb
+    agent_type: ai_reviewer
+    display_name: Reviewer Agent
+    registered_at: '2026-02-02T15:01:18.984291+00:00'
+    allowed_role_modes:
+    - reviewer
+    metadata: {}
+  ai_agent-c59904b9:
+    agent_id: ai_agent-c59904b9
+    agent_type: ai_agent
+    display_name: Same Agent
+    registered_at: '2026-02-02T15:01:19.581299+00:00'
+    allowed_role_modes:
+    - builder
+    - reviewer
     metadata: {}
