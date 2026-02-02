@@ -15,6 +15,7 @@ Usage:
 """
 
 from pathlib import Path
+from typing import Optional
 
 # ============================================================================
 # Root Directories
@@ -75,6 +76,7 @@ DONE_CRITERIA_CHECKLIST_PATH = TEMPLATES_DIR / "DONE_CRITERIA_CHECKLIST.md"
 OPS_AUDIT_DIR = OPS_DIR / "audit"
 OPS_DECISION_LOG_DIR = OPS_DIR / "decision-log"
 OPS_FREEZE_DIR = OPS_DIR / "freeze"
+OPS_ACCEPTANCE_DIR = OPS_DIR / "acceptance"
 OPS_DEVIATIONS_DIR = OPS_DIR / "deviations"
 OPS_PROPOSALS_DIR = OPS_DIR / "proposals"
 
@@ -125,7 +127,7 @@ def ensure_dirs() -> None:
         dir_path.mkdir(parents=True, exist_ok=True)
 
 
-def get_task_path(task_id: str, status: str = None) -> Path:
+def get_task_path(task_id: str, status: Optional[str] = None) -> Path:
     """
     Get the file path for a TaskCard.
     

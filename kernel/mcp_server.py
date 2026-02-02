@@ -24,12 +24,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Add kernel to path
+# Add repo root to path for package imports
 KERNEL_DIR = Path(__file__).parent
-sys.path.insert(0, str(KERNEL_DIR))
+ROOT_DIR = KERNEL_DIR.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from agent_auth import AgentAuthManager, RoleMode, SessionState, get_auth_manager
-from governance_gate import GovernanceGate, verify_governance, has_violations, get_all_violations
+from kernel.agent_auth import AgentAuthManager, RoleMode, SessionState, get_auth_manager
+from kernel.governance_gate import GovernanceGate, verify_governance, has_violations, get_all_violations
 
 
 class MCPServer:
@@ -574,6 +576,43 @@ class MCPServer:
                     "required": ["session_token", "task_id", "dimension"]
                 }
             },
+            # Artifact Locking
+            {
+                "name": "agent_lock_artifact",
+                "description": "Acquire exclusive lock on an artifact to prevent concurrent modifications.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "artifact_path": {
+                            "type": "string",
+                            "description": "Path to artifact to lock"
+                        }
+                    },
+                    "required": ["session_token", "artifact_path"]
+                }
+            },
+            {
+                "name": "agent_unlock_artifact",
+                "description": "Release lock on an artifact.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "artifact_path": {
+                            "type": "string",
+                            "description": "Path to artifact to unlock"
+                        }
+                    },
+                    "required": ["session_token", "artifact_path"]
+                }
+            },
         ]
     
     # =========================================================================
@@ -613,6 +652,9 @@ class MCPServer:
             "review_respond": self._review_respond,
             "review_approve": self._review_approve,
             "review_get_prompts": self._review_get_prompts,
+            # Artifact Locking
+            "agent_lock_artifact": self._agent_lock_artifact,
+            "agent_unlock_artifact": self._agent_unlock_artifact,
         }
         
         if name not in tool_map:
@@ -692,7 +734,7 @@ class MCPServer:
     def _session_validate(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Validate a session."""
         session = self.auth_manager.get_session(args["session_token"])
-        if not session:
+        if session is None:
             return {"valid": False, "error": "SESSION_NOT_FOUND"}
         
         return {
@@ -784,6 +826,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         
         # Check Role Mode permissions
         if session.role_mode not in (RoleMode.EXECUTOR, RoleMode.BUILDER):
@@ -836,6 +880,11 @@ class MCPServer:
             # Import os.py functions (avoid naming conflict with stdlib os)
             import importlib.util
             spec = importlib.util.spec_from_file_location("kernel_os", KERNEL_DIR / "os.py")
+            if spec is None or spec.loader is None:
+                return {
+                    "error": "KERNEL_IMPORT_FAILED",
+                    "message": "Failed to load kernel/os.py module spec",
+                }
             kernel_os = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(kernel_os)
             
@@ -867,6 +916,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         
         # Check Role Mode permissions
         if session.role_mode not in (RoleMode.EXECUTOR, RoleMode.BUILDER):
@@ -897,6 +948,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         
         results = verify_governance(
             output_text=args.get("output_text"),
@@ -1018,6 +1071,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         task_id = args["task_id"]
         artifact_paths = args.get("artifact_paths", [])
         notes = args.get("notes", "")
@@ -1099,6 +1154,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         task_id = args["task_id"]
         personas = args.get("personas", [])
         
@@ -1189,6 +1246,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         review_session_id = args["review_session_id"]
         
         quality_issues = args.get("quality_issues", [])
@@ -1442,6 +1501,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         task_id = args["task_id"]
         action = args["action"]
         notes = args.get("notes", "")
@@ -1495,6 +1556,8 @@ class MCPServer:
             return error
         
         session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
         task_id = args["task_id"]
         review_session_id = args["review_session_id"]
         final_notes = args.get("final_notes", "")
@@ -1749,6 +1812,34 @@ Apply your specialized expertise. For each finding:
   "file_path": "path",
   "remediation": "Steps to fix"
 }}"""
+
+    # =========================================================================
+    # Artifact Locking
+    # =========================================================================
+
+    def _agent_lock_artifact(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Acquire exclusive lock on an artifact."""
+        session_token = args["session_token"]
+        artifact_path = args["artifact_path"]
+        
+        result = self.auth_manager.lock_artifact(
+            session_token=session_token,
+            artifact_path=artifact_path,
+        )
+        
+        return result
+
+    def _agent_unlock_artifact(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Release lock on an artifact."""
+        session_token = args["session_token"]
+        artifact_path = args["artifact_path"]
+        
+        result = self.auth_manager.unlock_artifact(
+            session_token=session_token,
+            artifact_path=artifact_path,
+        )
+        
+        return result
 
 
 def create_server() -> MCPServer:

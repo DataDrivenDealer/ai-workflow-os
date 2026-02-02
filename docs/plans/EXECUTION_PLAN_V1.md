@@ -1,11 +1,34 @@
-# AI Workflow OS - 执行计划 V1.0
+# AI Workflow OS - 执行计划 V1.1
 
 **文档ID**: EXECUTION_PLAN_V1  
 **创建日期**: 2026-02-02  
+**最后更新**: 2026-02-02T02:30:00Z（基于漂移审计）  
 **状态**: ACTIVE  
-**基于**: 2026-02-02 六专家委员会诊断报告  
-**目标周期**: 2026-02-03 至 2026-03-02 (4周)  
+**基于**: DRIFT_REPORT_20260202 + MINIMAL_PATCHLIST  
+**目标周期**: 2026-02-03 至 2026-02-10 (8天)  
 **WIP限制**: 最多3个并行工作流
+
+**关联文档**: 
+- [漂移报告](../audits/DRIFT_REPORT_20260202.md)
+- [最小补丁列表](MINIMAL_PATCHLIST.md)
+- [TODO_NEXT](TODO_NEXT.md)
+
+---
+
+## ⚠️ 重大更新说明
+
+本次执行计划基于 2026-02-02 完成的**全面漂移审计**进行了重大调整：
+
+**关键发现**:
+1. ✅ **核心功能已完成75%** - 173个测试通过，RoleMode/AgentSession/GovernanceGate已实现
+2. 🔴 **CI管道失败** - 阻塞所有后续工作，必须立即修复
+3. 🔴 **治理操作缺失** - Freeze/Acceptance未实现，违反架构不变量
+4. 🟡 **验证覆盖不完整** - 10个不变量中仅5个有自动化验证
+
+**调整策略**:
+- 取消原Week 3-4计划（度量体系建设延后）
+- 聚焦P0和P1漂移修复
+- 压缩周期从4周到8天（紧急冲刺）
 
 ---
 
@@ -27,76 +50,126 @@
 
 ## 1. Current State Summary（当前状态摘要）
 
-**证据来源**: Git analysis @ 2026-02-02
+**证据来源**: Git analysis @ 2026-02-02T23:00:00Z
 
 ### 1.1 系统健康度
-| 维度 | 评分 | 证据 |
-|-----|------|------|
-| 架构设计 | 85/100 | ✅ 清晰的三层分离（kernel/projects/specs），MCP协议隔离 |
-| 代码质量 | 72/100 | ✅ 128个单元测试通过，⚠️ 缺少projects层测试 |
-| 流程自动化 | 65/100 | ✅ Git hooks存在，⚠️ 手动安装，无CI/CD |
-| 可观测性 | 45/100 | ⚠️ 有audit日志但无度量仪表板 |
-| 文档覆盖 | 80/100 | ✅ 13个架构蓝图，⚠️ 4个标记为"planned" |
+| 维度 | 评分 | 证据 | 变化 |
+|-----|------|------|------|
+| 架构设计 | 85/100 | ✅ 清晰的三层分离（kernel/projects/specs），MCP协议隔离 | ↔️ |
+| 代码质量 | 75/100 | ✅ 172个单元测试通过，覆盖率71%，⚠️ 低覆盖模块：os(23%), governance_gate(29%) | ↑+3 |
+| 流程自动化 | 68/100 | ✅ Git hooks存在，G1自动化完成，⚠️ G2-G6缺少可执行脚本 | ↑+3 |
+| 可观测性 | 48/100 | ✅ Audit日志，⚠️ 无度量Dashboard，无DORA指标 | ↑+3 |
+| 文档覆盖 | 82/100 | ✅ 13个架构蓝图，执行计划V1，⚠️ 缺少系统不变量文档 | ↑+2 |
 
-**综合评分**: 69/100（架构优秀但运维滞后）
+**综合评分**: 72/100（架构优秀，自动化提升中，可观测性仍是短板）  
+**较上次变化**: +3分（路径重构、G1自动化、pyright集成）
 
-### 1.2 关键风险
-- 🔴 **P0 Risk**: state/ YAML文件无并发控制，可能发生race condition
-- 🟠 **P1 Risk**: 依赖版本未锁定，生产环境可能不一致
-- 🟠 **P1 Risk**: 无WIP限制，多任务并行导致上下文切换成本高
+### 1.2 最新完成改进（2026-02-02）
+✅ **第二轮自动化执行**（2026-02-02T21:40:00Z完成）:
+- P2-1: 7个scripts路径重构 - [d6f3a65](../../kernel/paths.py)
+- P2-2: Gate G1可执行脚本 - [scripts/run_gate_g1.py](../../scripts/run_gate_g1.py), 提交 3d01aad
+- P2-4: pre-commit pyright hook - [hooks/pre-commit](../../hooks/pre-commit), 提交 40a393c
 
-### 1.3 未提交变更
-- 8个modified文件（主要是state/和configs/）
-- 3个untracked执行计划文档
+**累计完成**: 7/15任务 (47%)  
+**剩余工作**: 8个任务（2个P0, 5个P1, 1个P2）
+
+### 1.3 关键风险（更新）
+- 🔴 **P0 Risk**: kernel导入路径混乱，使用相对导入而非绝对导入，可能导致循环依赖
+  - 证据: [kernel/os.py#L12-L18](../../kernel/os.py)
+- 🟠 **P1 Risk**: State Machine定义存在但未验证，状态转换可能违规
+  - 证据: [kernel/state_machine.yaml](../../kernel/state_machine.yaml) 未被引用
+- 🟠 **P1 Risk**: G2-G6 Gate检查部分手动，容易遗漏
+  - 证据: 仅 [scripts/run_gate_g1.py](../../scripts/run_gate_g1.py) 存在
+
+### 1.4 未提交变更
+- [docs/state/PROJECT_STATE.md](../../docs/state/PROJECT_STATE.md) - 待提交最新执行日志
+- [docs/plans/EXECUTION_PLAN_V1.md](EXECUTION_PLAN_V1.md) - 本次更新
 
 ---
 
 ## 2. Workstreams（工作流 - 最多3个并行）
 
-### Workstream 1: 核心稳定性（P0优先级）
+### Workstream 1: 架构一致性与稳定性（P0-P1优先级）
 **Owner**: Platform Engineer  
 **Duration**: Week 1-2  
-**Goal**: 消除阻塞性技术风险
+**Goal**: 消除架构违规和阻塞性风险
 
 **Milestones**:
-- **M1.1** (Week 1 Day 3): State store并发锁实现
-- **M1.2** (Week 1 Day 5): 依赖版本锁定生成
-- **M1.3** (Week 2 Day 2): 路径管理重构完成
+- **M1.1** (Week 1 Day 2): 修复kernel导入路径混乱 → P0-1
+- **M1.2** (Week 1 Day 3): 创建系统不变量文档 → P0-2
+- **M1.3** (Week 1 Day 5): State Machine验证器实现 → P1-1
+- **M1.4** (Week 2 Day 2): 完成state_store并发测试 → P1-3
+- **M1.5** (Week 2 Day 3): 更新README依赖锁定说明 → P1-2
 
-### Workstream 2: 自动化增强（P1优先级）
+### Workstream 2: 治理自动化（P1-P2优先级）
 **Owner**: DevOps Engineer  
 **Duration**: Week 2-3  
-**Goal**: 建立CI/CD流水线
+**Goal**: 建立完整的Gate自动化检查
 
 **Milestones**:
-- **M2.1** (Week 2 Day 4): GitHub Actions配置完成
-- **M2.2** (Week 2 Day 5): 状态验证脚本集成
-- **M2.3** (Week 3 Day 3): WIP限制逻辑部署
+- **M2.1** (Week 2 Day 4): 合并CI配置文件 → P1-4
+- **M2.2** (Week 2-3): 为G2-G6创建可执行脚本 → P1-5 (12h, 拆分为3天执行)
+- **M2.3** (Week 3 Day 4): 提取YAML工具模块 → P2-1
+- **M2.4** (Week 3 Day 5): 添加架构测试 → P2-5
 
-### Workstream 3: 可观测性（P2优先级）
+### Workstream 3: 可观测性建设（P2优先级）
 **Owner**: Data Engineer  
 **Duration**: Week 3-4  
-**Goal**: 建立度量体系
+**Goal**: 建立度量体系和Dashboard
 
 **Milestones**:
-- **M3.1** (Week 3 Day 5): Metrics dashboard原型
-- **M3.2** (Week 4 Day 2): Coverage报告自动生成
-- **M3.3** (Week 4 Day 5): 历史趋势可视化
+- **M3.1** (Week 3 Day 3): 创建看板可视化 → P2-3
+- **M3.2** (Week 4 Day 1-2): 实现Metrics收集脚本 → P2-2 (6h)
+- **M3.3** (Week 4 Day 3-4): 实现度量Dashboard → P2-4 (8h)
+- **M3.4** (Week 4 Day 5): Tech Debt Registry建立 → P2-6
 
 ---
 
 ## 3. Week-by-Week Sequence（周序列）
 
-### Week 1: 突破阻塞（UNBLOCK）
-**Theme**: 消除P0风险
+### Week 1: 架构稳定化（STABILIZE）
+**Theme**: 修复架构违规，建立不变量
 
 | Day | Task | Owner | Output | Verification |
 |-----|------|-------|--------|-------------|
-| Mon | B-1: State store并发锁 | Platform | `kernel/state_store.py` | 并发测试通过 |
-| Tue | B-2: 生成requirements-lock | Platform | `requirements-lock.txt` | `pip-sync`无错误 |
-| Wed | B-3: 提交执行计划 | Platform | Git commit | `git status` clean |
-| Thu | B-4: 路径管理重构(1/2) | Platform | `kernel/paths.py` | Import测试通过 |
-| Fri | B-4: 路径管理重构(2/2) | Platform | 所有scripts迁移 | Smoke test通过 |
+| Mon | P0-1: 修复kernel导入路径 | Platform | kernel/*.py全部使用绝对导入 | pytest通过 + pyright无错 |
+| Tue | P0-2: 系统不变量文档 | Platform | [docs/SYSTEM_INVARIANTS.md](../../docs/SYSTEM_INVARIANTS.md) | 专家评审 |
+| Wed | P1-2: 更新README依赖说明 | Platform | [README_START_HERE.md](../../README_START_HERE.md) | 新环境安装测试 |
+| Thu | P1-1: State Machine验证器(1/2) | Platform | [scripts/verify_state_transitions.py](../../scripts/verify_state_transitions.py) | 基础验证通过 |
+| Fri | P1-1: State Machine验证器(2/2) | Platform | 完整验证逻辑 | 历史任务状态合法 |
+
+### Week 2: 治理自动化启动（AUTOMATE）
+**Theme**: Gate自动化和测试增强
+
+| Day | Task | Owner | Output | Verification |
+|-----|------|-------|--------|-------------|
+| Mon | P1-3: state_store并发测试 | Platform | test_state_store_concurrency.py补充 | 覆盖率>95% |
+| Tue | P1-4: 合并CI配置文件 | DevOps | 删除ci.yaml | GitHub Actions运行成功 |
+| Wed | P1-5: Gate G2脚本 | DevOps | [scripts/run_gate_g2.py](../../scripts/run_gate_g2.py) | G2检查可执行 |
+| Thu | P1-5: Gate G3脚本 | DevOps | [scripts/run_gate_g3.py](../../scripts/run_gate_g3.py) | G3检查可执行 |
+| Fri | P1-5: Gate G4脚本 | DevOps | [scripts/run_gate_g4.py](../../scripts/run_gate_g4.py) | G4检查可执行 |
+
+### Week 3: 自动化完成+可观测性启动（OBSERVE）
+**Theme**: 完成Gate自动化，建立度量基础
+
+| Day | Task | Owner | Output | Verification |
+|-----|------|-------|--------|-------------|
+| Mon | P1-5: Gate G5脚本 | DevOps | [scripts/run_gate_g5.py](../../scripts/run_gate_g5.py) | G5检查可执行 |
+| Tue | P1-5: Gate G6脚本 | DevOps | [scripts/run_gate_g6.py](../../scripts/run_gate_g6.py) | G6检查可执行 |
+| Wed | P2-3: 看板可视化 | Data | [scripts/generate_kanban.py](../../scripts/generate_kanban.py) | 输出Markdown看板 |
+| Thu | P2-1: YAML工具模块 | DevOps | [kernel/yaml_utils.py](../../kernel/yaml_utils.py) | 重构后测试通过 |
+| Fri | P2-5: 架构测试 | Platform | [kernel/tests/test_architecture.py](../../kernel/tests/test_architecture.py) | 验证依赖方向 |
+
+### Week 4: 度量体系建设（MEASURE）
+**Theme**: Dashboard和持续改进机制
+
+| Day | Task | Owner | Output | Verification |
+|-----|------|-------|--------|-------------|
+| Mon | P2-2: Metrics收集脚本(1/2) | Data | 基础度量收集 | Cycle Time计算正确 |
+| Tue | P2-2: Metrics收集脚本(2/2) | Data | [scripts/collect_metrics.py](../../scripts/collect_metrics.py) | 完整度量报告 |
+| Wed | P2-4: 度量Dashboard(1/2) | Data | Dashboard框架 | HTML生成成功 |
+| Thu | P2-4: 度量Dashboard(2/2) | Data | [scripts/generate_metrics_dashboard.py](../../scripts/generate_metrics_dashboard.py) | Dashboard可视化 |
+| Fri | P2-6: Tech Debt Registry | Platform | [docs/TECH_DEBT_REGISTRY.md](../../docs/TECH_DEBT_REGISTRY.md) | 所有TODO分类 |
 
 ### Week 2: 自动化基础（AUTOMATE）
 **Theme**: CI/CD流水线

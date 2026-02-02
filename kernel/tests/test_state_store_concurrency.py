@@ -66,6 +66,26 @@ def test_concurrent_task_updates():
             assert "last_updated" in final_state["tasks"][task_id]
 
 
+def test_high_volume_concurrent_writes():
+    """测试高并发写入（1000次）无数据损坏"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_path = Path(tmpdir) / "test.yaml"
+
+        def write_worker(worker_id):
+            with atomic_update(test_path) as data:
+                for i in range(200):
+                    data[f"w{worker_id}_k{i}"] = i
+
+        # 5个worker * 200次 = 1000次写入
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(write_worker, i) for i in range(5)]
+            for future in futures:
+                future.result()
+
+        final_data = read_yaml(test_path)
+        assert len(final_data) == 1000, f"Expected 1000 keys, got {len(final_data)}"
+
+
 def test_lock_timeout():
     """测试锁超时机制"""
     with tempfile.TemporaryDirectory() as tmpdir:

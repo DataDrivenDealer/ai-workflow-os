@@ -5,17 +5,21 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import yaml
 
-from audit import write_audit
-from paths import (
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from kernel.audit import write_audit
+from kernel.paths import (
     ROOT, STATE_MACHINE_PATH, REGISTRY_PATH,
     TASKCARD_TEMPLATE_PATH as TEMPLATE_PATH, TASKS_DIR
 )
-from state_store import append_event, get_task, init_state, read_yaml, upsert_task, write_yaml
-from task_parser import parse_taskcard, validate_taskcard, get_priority, get_priority_order, PRIORITY_LEVELS
+from kernel.state_store import append_event, get_task, init_state, read_yaml, upsert_task, write_yaml
+from kernel.task_parser import parse_taskcard, validate_taskcard, get_priority, get_priority_order, PRIORITY_LEVELS
 
 
 MINIMAL_STATE_MACHINE = {
@@ -335,6 +339,81 @@ def cmd_task_status(args: argparse.Namespace) -> None:
     print(f"Task {args.task_id} status: {status}")
 
 
+def cmd_freeze(args: argparse.Namespace) -> None:
+    """Freeze an artifact to make it immutable."""
+    from kernel.governance_action import freeze_artifact
+    
+    artifact_path = Path(args.artifact)
+    
+    try:
+        record = freeze_artifact(
+            artifact_path=artifact_path,
+            frozen_by=args.frozen_by or "cli_user",
+            version=args.version,
+            metadata={"reason": args.reason or "Manual freeze via CLI"},
+        )
+        print(f"✅ Frozen: {artifact_path} → {record.version}")
+        print(f"   Hash: {record.content_hash[:12]}...")
+        print(f"   By: {record.frozen_by}")
+        print(f"   At: {record.frozen_at.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        
+        # Write audit log
+        audit_id = f"freeze_{args.version}_{record.frozen_at.strftime('%Y%m%d_%H%M%S')}"
+        write_audit(
+            root=ROOT,
+            task_id=audit_id,
+            status="artifact_frozen",
+            details={
+                "artifact_path": str(artifact_path),
+                "version": args.version,
+                "frozen_by": record.frozen_by,
+                "content_hash": record.content_hash,
+            },
+        )
+    except FileNotFoundError as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_accept(args: argparse.Namespace) -> None:
+    """Accept an artifact to confer it authority."""
+    from kernel.governance_action import accept_artifact
+    
+    artifact_path = Path(args.artifact)
+    
+    try:
+        record = accept_artifact(
+            artifact_path=artifact_path,
+            accepted_by=args.accepted_by or "cli_user",
+            authority=args.authority or "owner",
+            metadata={"reason": args.reason or "Manual acceptance via CLI"},
+        )
+        print(f"✅ Accepted: {artifact_path}")
+        print(f"   Hash: {record.content_hash[:12]}...")
+        print(f"   By: {record.accepted_by} (authority: {record.authority})")
+        print(f"   At: {record.accepted_at.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        
+        # Write audit log
+        audit_id = f"accept_{record.accepted_at.strftime('%Y%m%d_%H%M%S')}"
+        write_audit(
+            root=ROOT,
+            task_id=audit_id,
+            status="artifact_accepted",
+            details={
+                "artifact_path": str(artifact_path),
+                "accepted_by": record.accepted_by,
+                "authority": record.authority,
+                "content_hash": record.content_hash,
+            },
+        )
+    except FileNotFoundError as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def cmd_task_list(args: argparse.Namespace) -> None:
     """List tasks, optionally sorted by priority."""
     tasks_state_path = ROOT / "state" / "tasks.yaml"
@@ -384,17 +463,17 @@ def cmd_task_list(args: argparse.Namespace) -> None:
     print(f"\nTotal: {len(task_list)} task(s)")
 
 
-def get_sorted_task_ids(tasks_state: Dict[str, Any], status_filter: str = None, queue_filter: str = None) -> List[str]:
+def get_sorted_task_ids(tasks_state: Dict[str, Any], status_filter: Optional[str] = None, queue_filter: Optional[str] = None) -> List[str]:
     """Return task IDs sorted by priority (P0 first, then P1, etc.)."""
     tasks = tasks_state.get("tasks", {})
     
     filtered_tasks = []
     for task_id, task_data in tasks.items():
-        if status_filter and task_data.get("status") != status_filter:
+        if status_filter is not None and task_data.get("status") != status_filter:
             continue
-        if queue_filter and task_data.get("queue") != queue_filter:
+        if queue_filter is not None and task_data.get("queue") != queue_filter:
             continue
-        priority = task_data.get("priority", "P3")
+        priority = task_data.get("priority") or "P3"
         filtered_tasks.append((task_id, get_priority_order(priority)))
     
     # Sort by priority order (lower = higher priority), then by task_id
@@ -442,6 +521,22 @@ def build_parser() -> argparse.ArgumentParser:
     task_list.add_argument("--status", help="Filter by status (draft, running, reviewing, etc.)")
     task_list.add_argument("--queue", help="Filter by queue (dev, research, data, gov)")
     task_list.set_defaults(func=cmd_task_list)
+
+    # Freeze command (governance operation)
+    freeze_parser = subparsers.add_parser("freeze", help="Freeze an artifact to make it immutable")
+    freeze_parser.add_argument("artifact", help="Path to artifact (relative to root)")
+    freeze_parser.add_argument("version", help="Version identifier (e.g., v1.0.0)")
+    freeze_parser.add_argument("--frozen-by", help="Identity of freezer")
+    freeze_parser.add_argument("--reason", help="Reason for freezing")
+    freeze_parser.set_defaults(func=cmd_freeze)
+
+    # Accept command (governance operation)
+    accept_parser = subparsers.add_parser("accept", help="Accept an artifact to confer authority")
+    accept_parser.add_argument("artifact", help="Path to artifact (relative to root)")
+    accept_parser.add_argument("--accepted-by", help="Identity of acceptor")
+    accept_parser.add_argument("--authority", help="Authority source (owner/governance/vote)", default="owner")
+    accept_parser.add_argument("--reason", help="Reason for acceptance")
+    accept_parser.set_defaults(func=cmd_accept)
 
     return parser
 

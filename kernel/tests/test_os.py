@@ -18,14 +18,17 @@ import yaml
 
 import sys
 KERNEL_DIR = Path(__file__).parent.parent
-sys.path.insert(0, str(KERNEL_DIR))
+ROOT_DIR = KERNEL_DIR.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from state_store import read_yaml, write_yaml
+from kernel.state_store import read_yaml, write_yaml
 
 
 def load_kernel_os():
     """Load kernel/os.py as a module without naming conflict."""
     spec = importlib.util.spec_from_file_location("kernel_os", KERNEL_DIR / "os.py")
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -81,17 +84,17 @@ class TestLoadStateMachine:
         
         # Create a temp state machine path
         temp_sm_path = tmp_path / "kernel" / "state_machine.yaml"
-        original_path = kernel_os.STATE_MACHINE_PATH
+        original_path = getattr(kernel_os, "STATE_MACHINE_PATH")
         
         try:
-            kernel_os.STATE_MACHINE_PATH = temp_sm_path
+            setattr(kernel_os, "STATE_MACHINE_PATH", temp_sm_path)
             result = kernel_os.load_state_machine()
             
             assert temp_sm_path.exists()
             assert "states" in result
             assert "transitions" in result
         finally:
-            kernel_os.STATE_MACHINE_PATH = original_path
+            setattr(kernel_os, "STATE_MACHINE_PATH", original_path)
 
 
 class TestLoadRegistrySpecIds:
@@ -110,15 +113,15 @@ class TestLoadRegistrySpecIds:
         }
         write_yaml(registry_path, registry_data)
         
-        original_path = kernel_os.REGISTRY_PATH
+        original_path = getattr(kernel_os, "REGISTRY_PATH")
         try:
-            kernel_os.REGISTRY_PATH = registry_path
+            setattr(kernel_os, "REGISTRY_PATH", registry_path)
             result = kernel_os.load_registry_spec_ids()
             
             assert "SPEC_001" in result
             assert "SPEC_002" in result
         finally:
-            kernel_os.REGISTRY_PATH = original_path
+            setattr(kernel_os, "REGISTRY_PATH", original_path)
 
 
 class TestCmdInit:
@@ -128,14 +131,14 @@ class TestCmdInit:
         """cmd_init should create required directories."""
         kernel_os = load_kernel_os()
         
-        original_root = kernel_os.ROOT
-        original_tasks = kernel_os.TASKS_DIR
-        original_sm = kernel_os.STATE_MACHINE_PATH
+        original_root = getattr(kernel_os, "ROOT")
+        original_tasks = getattr(kernel_os, "TASKS_DIR")
+        original_sm = getattr(kernel_os, "STATE_MACHINE_PATH")
         
         try:
-            kernel_os.ROOT = tmp_path
-            kernel_os.TASKS_DIR = tmp_path / "tasks"
-            kernel_os.STATE_MACHINE_PATH = tmp_path / "kernel" / "state_machine.yaml"
+            setattr(kernel_os, "ROOT", tmp_path)
+            setattr(kernel_os, "TASKS_DIR", tmp_path / "tasks")
+            setattr(kernel_os, "STATE_MACHINE_PATH", tmp_path / "kernel" / "state_machine.yaml")
             
             args = argparse.Namespace()
             kernel_os.cmd_init(args)
@@ -145,9 +148,9 @@ class TestCmdInit:
             assert (tmp_path / "ops" / "decision-log").exists()
             assert (tmp_path / "state").exists()
         finally:
-            kernel_os.ROOT = original_root
-            kernel_os.TASKS_DIR = original_tasks
-            kernel_os.STATE_MACHINE_PATH = original_sm
+            setattr(kernel_os, "ROOT", original_root)
+            setattr(kernel_os, "TASKS_DIR", original_tasks)
+            setattr(kernel_os, "STATE_MACHINE_PATH", original_sm)
 
 
 class TestCmdTaskNew:
@@ -175,14 +178,14 @@ verification: []
 """
         template_path.write_text(template_content, encoding="utf-8")
         
-        original_root = kernel_os.ROOT
-        original_tasks = kernel_os.TASKS_DIR
-        original_template = kernel_os.TEMPLATE_PATH
+        original_root = getattr(kernel_os, "ROOT")
+        original_tasks = getattr(kernel_os, "TASKS_DIR")
+        original_template = getattr(kernel_os, "TEMPLATE_PATH")
         
         try:
-            kernel_os.ROOT = tmp_path
-            kernel_os.TASKS_DIR = tasks_dir
-            kernel_os.TEMPLATE_PATH = template_path
+            setattr(kernel_os, "ROOT", tmp_path)
+            setattr(kernel_os, "TASKS_DIR", tasks_dir)
+            setattr(kernel_os, "TEMPLATE_PATH", template_path)
             
             args = argparse.Namespace(task_id="TASK_TEST_001")
             kernel_os.cmd_task_new(args)
@@ -193,9 +196,9 @@ verification: []
             content = created_file.read_text(encoding="utf-8")
             assert "TASK_TEST_001" in content
         finally:
-            kernel_os.ROOT = original_root
-            kernel_os.TASKS_DIR = original_tasks
-            kernel_os.TEMPLATE_PATH = original_template
+            setattr(kernel_os, "ROOT", original_root)
+            setattr(kernel_os, "TASKS_DIR", original_tasks)
+            setattr(kernel_os, "TEMPLATE_PATH", original_template)
 
     def test_cmd_task_new_raises_if_exists(self, tmp_path: Path):
         """cmd_task_new should raise error if TaskCard already exists."""
@@ -207,14 +210,14 @@ verification: []
         existing_task = tasks_dir / "TASK_EXISTING.md"
         existing_task.write_text("existing content", encoding="utf-8")
         
-        original_tasks = kernel_os.TASKS_DIR
+        original_tasks = getattr(kernel_os, "TASKS_DIR")
         
         try:
-            kernel_os.TASKS_DIR = tasks_dir
+            setattr(kernel_os, "TASKS_DIR", tasks_dir)
             
             args = argparse.Namespace(task_id="TASK_EXISTING")
             
             with pytest.raises(RuntimeError, match="already exists"):
                 kernel_os.cmd_task_new(args)
         finally:
-            kernel_os.TASKS_DIR = original_tasks
+            setattr(kernel_os, "TASKS_DIR", original_tasks)

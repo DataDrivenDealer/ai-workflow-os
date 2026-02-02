@@ -33,5 +33,13 @@ if [ -f "scripts/gate_check.py" ]; then
     fi
 fi
 
+# Run state machine transition validation (graceful degradation)
+if [ -f "scripts/verify_state_transitions.py" ]; then
+    $PYTHON scripts/verify_state_transitions.py 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "[WARN] State transition validation failed (push allowed)"
+    fi
+fi
+
 echo "[OK] Pre-push checks complete"
 exit 0

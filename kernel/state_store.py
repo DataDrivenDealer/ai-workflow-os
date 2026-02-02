@@ -6,7 +6,7 @@ import os
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import yaml
 
@@ -152,7 +152,7 @@ def get_running_tasks_count(tasks_state: Dict[str, Any]) -> int:
     return sum(1 for task in tasks.values() if task.get("status") == "running")
 
 
-def check_wip_limit(tasks_state: Dict[str, Any], limit: int = None) -> None:
+def check_wip_limit(tasks_state: Dict[str, Any], limit: Optional[int] = None) -> None:
     """
     Check WIP (Work-In-Progress) limit and raise error if exceeded.
     
@@ -168,11 +168,7 @@ def check_wip_limit(tasks_state: Dict[str, Any], limit: int = None) -> None:
     """
     if limit is None:
         # Import here to avoid circular dependency
-        try:
-            from kernel.config import config
-        except ModuleNotFoundError:
-            # Fallback for tests or standalone usage
-            from config import config
+        from kernel.config import config
         limit = config.get_wip_limit()
     
     count = get_running_tasks_count(tasks_state)

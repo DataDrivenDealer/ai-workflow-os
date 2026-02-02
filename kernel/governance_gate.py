@@ -117,6 +117,7 @@ class GovernanceGate:
                     self._config = yaml.safe_load(f) or {}
             else:
                 self._config = {}
+        assert self._config is not None
         return self._config
     
     def verify_all(
@@ -415,7 +416,7 @@ class GovernanceGate:
         """
         result = GateResult(gate_name="concurrency_isolation")
         
-        if not concurrent_sessions or not artifact_changes:
+        if not agent_session or not concurrent_sessions or not artifact_changes:
             return result
         
         # Get artifacts being modified by current session

@@ -91,6 +91,7 @@ class AgentSession:
     parent_session: Optional[str] = None  # For delegation tracking
     events: List[Dict[str, Any]] = field(default_factory=list)
     pending_artifacts: Set[str] = field(default_factory=set)  # For concurrency tracking
+    locked_artifacts: Set[str] = field(default_factory=set)  # Artifact locking
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -105,6 +106,7 @@ class AgentSession:
             "parent_session": self.parent_session,
             "events": self.events,
             "pending_artifacts": list(self.pending_artifacts),
+            "locked_artifacts": list(self.locked_artifacts),
         }
     
     @classmethod
@@ -121,6 +123,7 @@ class AgentSession:
             parent_session=data.get("parent_session"),
             events=data.get("events", []),
             pending_artifacts=set(data.get("pending_artifacts", [])),
+            locked_artifacts=set(data.get("locked_artifacts", [])),
         )
     
     @property
@@ -467,53 +470,79 @@ class AgentAuthManager:
     # Concurrency Control
     # =========================================================================
     
-    def lock_artifact(self, session_token: str, artifact_path: str) -> bool:
+    def lock_artifact(
+        self,
+        session_token: str,
+        artifact_path: str,
+        timeout_seconds: float = 300.0,
+    ) -> Dict[str, Any]:
         """
-        Lock an artifact for modification by a session.
+        Acquire lock on artifact for session.
         
         Args:
             session_token: Session requesting the lock
             artifact_path: Path to artifact
+            timeout_seconds: Lock timeout (currently unused, for future extension)
         
         Returns:
-            True if lock acquired, False if already locked by another session
+            {"success": bool, "session": AgentSession | None, "error": str | None}
         """
         session = self._sessions.get(session_token)
         if not session or not session.is_active:
-            return False
+            return {"success": False, "session": None, "error": "Invalid or inactive session"}
         
-        # Check if already locked by another session
+        # Check if artifact already locked by another session
         for other_token, other_session in self._sessions.items():
             if other_token == session_token:
                 continue
-            if other_session.is_active and artifact_path in other_session.pending_artifacts:
-                return False
+            if other_session.is_active and artifact_path in other_session.locked_artifacts:
+                return {
+                    "success": False,
+                    "session": None,
+                    "error": f"Artifact locked by session {other_token[:8]}",
+                }
         
-        session.pending_artifacts.add(artifact_path)
+        # Acquire lock
+        session.locked_artifacts.add(artifact_path)
         session.add_event("artifact_locked", {"artifact": artifact_path})
         
         self._save_state()
-        return True
+        return {"success": True, "session": session, "error": None}
     
-    def unlock_artifact(self, session_token: str, artifact_path: str) -> bool:
-        """Release lock on an artifact."""
+    def unlock_artifact(
+        self,
+        session_token: str,
+        artifact_path: str,
+    ) -> Dict[str, Any]:
+        """
+        Release lock on artifact.
+        
+        Args:
+            session_token: Session releasing the lock
+            artifact_path: Path to artifact
+        
+        Returns:
+            {"success": bool, "session": AgentSession | None, "error": str | None}
+        """
         session = self._sessions.get(session_token)
         if not session:
-            return False
+            return {"success": False, "session": None, "error": "Session not found"}
         
-        if artifact_path in session.pending_artifacts:
-            session.pending_artifacts.remove(artifact_path)
-            session.add_event("artifact_unlocked", {"artifact": artifact_path})
-            self._save_state()
-            return True
+        if artifact_path not in session.locked_artifacts:
+            return {"success": False, "session": None, "error": "Artifact not locked by this session"}
         
-        return False
+        # Release lock
+        session.locked_artifacts.remove(artifact_path)
+        session.add_event("artifact_unlocked", {"artifact": artifact_path})
+        
+        self._save_state()
+        return {"success": True, "session": session, "error": None}
     
-    def get_artifact_lock_holder(self, artifact_path: str) -> Optional[str]:
-        """Get the session token that holds a lock on an artifact."""
-        for token, session in self._sessions.items():
-            if session.is_active and artifact_path in session.pending_artifacts:
-                return token
+    def get_artifact_lock_holder(self, artifact_path: str) -> Optional[AgentSession]:
+        """Get session that holds lock on artifact."""
+        for session in self._sessions.values():
+            if artifact_path in session.locked_artifacts:
+                return session
         return None
 
 
@@ -557,8 +586,8 @@ if __name__ == "__main__":
     print(f"Session active: {session.is_active}")
     
     # Lock an artifact
-    locked = manager.lock_artifact(session.session_token, "tasks/TASK_001.md")
-    print(f"Artifact locked: {locked}")
+    result = manager.lock_artifact(session.session_token, "tasks/TASK_001.md")
+    print(f"Artifact lock result: {result}")
     
     # Terminate session
     manager.terminate_session(session.session_token, "completed")

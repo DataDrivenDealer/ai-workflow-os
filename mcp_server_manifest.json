@@ -114,6 +114,14 @@
     {
       "name": "review_get_prompts",
       "description": "Get review prompts"
+    },
+    {
+      "name": "agent_lock_artifact",
+      "description": "Acquire exclusive lock on an artifact"
+    },
+    {
+      "name": "agent_unlock_artifact",
+      "description": "Release lock on an artifact"
     }
   ],
   "resources": [

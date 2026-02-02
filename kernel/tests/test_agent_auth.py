@@ -386,6 +386,7 @@ class TestAgentAuthManager:
         
         # Session state should be TERMINATED
         updated = auth_manager.get_session(session.session_token)
+        assert updated is not None
         assert updated.state == SessionState.TERMINATED
 
     def test_suspend_and_resume_session(self, auth_manager: AgentAuthManager):
@@ -400,12 +401,14 @@ class TestAgentAuthManager:
         # Suspend
         auth_manager.suspend_session(session.session_token)
         updated = auth_manager.get_session(session.session_token)
+        assert updated is not None
         assert updated.state == SessionState.SUSPENDED
         assert updated.is_active is False
         
         # Resume
         auth_manager.resume_session(session.session_token)
         updated = auth_manager.get_session(session.session_token)
+        assert updated is not None
         assert updated.state == SessionState.ACTIVE
 
     def test_get_active_sessions(self, auth_manager: AgentAuthManager):
@@ -457,6 +460,7 @@ class TestAgentAuthManager:
         assert result is True
         
         updated = auth_manager.get_session(session.session_token)
+        assert updated is not None
         assert updated.role_mode == RoleMode.EXECUTOR
 
     def test_switch_role_mode_escalation_blocked(self, auth_manager: AgentAuthManager):
@@ -481,11 +485,11 @@ class TestAgentAuthManager:
             )
 
     # =========================================================================
-    # Concurrency Control Tests
+    # Concurrency Control Tests (Artifact Locking)
     # =========================================================================
 
     def test_lock_artifact(self, auth_manager: AgentAuthManager):
-        """lock_artifact should acquire lock."""
+        """lock_artifact should acquire lock and return success dict."""
         agent = auth_manager.register_agent("ai_test", "Test Agent")
         session = auth_manager.create_session(
             agent_id=agent.agent_id,
@@ -493,12 +497,15 @@ class TestAgentAuthManager:
             authorized_by="test",
         )
         
-        locked = auth_manager.lock_artifact(session.session_token, "tasks/TASK_001.md")
-        assert locked is True
+        result = auth_manager.lock_artifact(session.session_token, "tasks/TASK_001.md")
+        assert result["success"] is True
+        assert result["error"] is None
+        assert result["session"] is not None
         
         # Verify lock is recorded
         updated = auth_manager.get_session(session.session_token)
-        assert "tasks/TASK_001.md" in updated.pending_artifacts
+        assert updated is not None
+        assert "tasks/TASK_001.md" in updated.locked_artifacts
 
     def test_lock_artifact_conflict(self, auth_manager: AgentAuthManager):
         """lock_artifact should fail if already locked by another session."""
@@ -517,11 +524,13 @@ class TestAgentAuthManager:
         )
         
         # Session 1 locks artifact
-        auth_manager.lock_artifact(session1.session_token, "tasks/TASK_001.md")
+        result1 = auth_manager.lock_artifact(session1.session_token, "tasks/TASK_001.md")
+        assert result1["success"] is True
         
         # Session 2 cannot lock same artifact
-        locked = auth_manager.lock_artifact(session2.session_token, "tasks/TASK_001.md")
-        assert locked is False
+        result2 = auth_manager.lock_artifact(session2.session_token, "tasks/TASK_001.md")
+        assert result2["success"] is False
+        assert "locked by session" in result2["error"]
 
     def test_unlock_artifact(self, auth_manager: AgentAuthManager):
         """unlock_artifact should release lock."""
@@ -533,10 +542,14 @@ class TestAgentAuthManager:
         )
         
         auth_manager.lock_artifact(session.session_token, "tasks/TASK_001.md")
-        auth_manager.unlock_artifact(session.session_token, "tasks/TASK_001.md")
+        result = auth_manager.unlock_artifact(session.session_token, "tasks/TASK_001.md")
+        
+        assert result["success"] is True
+        assert result["error"] is None
         
         updated = auth_manager.get_session(session.session_token)
-        assert "tasks/TASK_001.md" not in updated.pending_artifacts
+        assert updated is not None
+        assert "tasks/TASK_001.md" not in updated.locked_artifacts
 
     def test_get_artifact_lock_holder(self, auth_manager: AgentAuthManager):
         """get_artifact_lock_holder should return locking session."""
@@ -550,7 +563,8 @@ class TestAgentAuthManager:
         auth_manager.lock_artifact(session.session_token, "tasks/TASK_001.md")
         
         holder = auth_manager.get_artifact_lock_holder("tasks/TASK_001.md")
-        assert holder == session.session_token
+        assert holder is not None
+        assert holder.session_token == session.session_token
 
     def test_get_artifact_lock_holder_none(self, auth_manager: AgentAuthManager):
         """get_artifact_lock_holder should return None if not locked."""

@@ -39,9 +39,10 @@ logger = logging.getLogger("mcp_stdio")
 # Add kernel to path
 KERNEL_DIR = Path(__file__).parent
 ROOT_DIR = KERNEL_DIR.parent
-sys.path.insert(0, str(KERNEL_DIR))
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from mcp_server import MCPServer, create_server
+from kernel.mcp_server import MCPServer, create_server
 
 # =============================================================================
 # MCP Protocol Constants
