@@ -221,17 +221,31 @@ class CIGateReporter:
             return
         
         invalid = []
+        required_fields = [
+            "task_id",
+            "type",
+            "queue",
+            "branch",
+            "spec_ids",
+            "verification",
+        ]
         for md_file in tasks_dir.rglob("*.md"):
             if md_file.name == "README.md":
                 continue
             
             content = md_file.read_text(encoding="utf-8")
+            if not content.startswith("---"):
+                continue
             
-            # Check required sections
-            required_sections = ["元信息", "Authority", "Audit Trail"]
-            for section in required_sections:
-                if section not in content:
-                    invalid.append(f"{md_file.name}: missing '{section}' section")
+            parts = content.split("---", 2)
+            if len(parts) < 3:
+                invalid.append(f"{md_file.name}: frontmatter not closed with '---'")
+                continue
+            
+            frontmatter = yaml.safe_load(parts[1]) or {}
+            missing = [field for field in required_fields if field not in frontmatter]
+            if missing:
+                invalid.append(f"{md_file.name}: missing frontmatter fields {', '.join(missing)}")
         
         self.report.checks.append(CICheckResult(
             name="TaskCard Format",

@@ -36,6 +36,10 @@
   },
   "tools": [
     {
+      "name": "agent_register",
+      "description": "Register new AI agent, get agent_id"
+    },
+    {
       "name": "session_create",
       "description": "Create a new authorized session for an agent"
     },
@@ -78,6 +82,38 @@
     {
       "name": "spec_list",
       "description": "List registered specifications"
+    },
+    {
+      "name": "review_submit",
+      "description": "Submit code artifacts for review"
+    },
+    {
+      "name": "review_create_session",
+      "description": "Create a review session"
+    },
+    {
+      "name": "review_conduct",
+      "description": "Submit review findings"
+    },
+    {
+      "name": "review_get_status",
+      "description": "Get current review status"
+    },
+    {
+      "name": "review_get_report",
+      "description": "Get review report"
+    },
+    {
+      "name": "review_respond",
+      "description": "Submit revision response"
+    },
+    {
+      "name": "review_approve",
+      "description": "Approve review and advance task"
+    },
+    {
+      "name": "review_get_prompts",
+      "description": "Get review prompts"
     }
   ],
   "resources": [

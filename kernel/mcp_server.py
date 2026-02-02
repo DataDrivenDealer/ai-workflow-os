@@ -75,7 +75,7 @@ class MCPServer:
                             "type": "array",
                             "items": {
                                 "type": "string",
-                                "enum": ["architect", "planner", "executor", "builder"]
+                                "enum": ["architect", "planner", "executor", "builder", "reviewer"]
                             },
                             "description": "Role modes this agent is allowed to use"
                         }
@@ -96,7 +96,7 @@ class MCPServer:
                         },
                         "role_mode": {
                             "type": "string",
-                            "enum": ["architect", "planner", "executor", "builder"],
+                            "enum": ["architect", "planner", "executor", "builder", "reviewer"],
                             "description": "Requested Role Mode"
                         },
                         "authorized_by": {
@@ -921,7 +921,14 @@ class MCPServer:
         if error:
             return error
         
-        artifact_path = self.root / args["path"]
+        try:
+            requested = Path(args["path"])
+            artifact_path = (self.root / requested).resolve()
+            if self.root not in artifact_path.parents and artifact_path != self.root:
+                return {"error": "INVALID_PATH", "message": "Artifact path escapes workspace root"}
+        except Exception as e:
+            return {"error": "INVALID_PATH", "message": str(e)}
+        
         if not artifact_path.exists():
             return {"error": "NOT_FOUND", "message": f"Artifact not found: {args['path']}"}
         
@@ -941,7 +948,14 @@ class MCPServer:
         if error:
             return error
         
-        dir_path = self.root / args["path"]
+        try:
+            requested = Path(args["path"])
+            dir_path = (self.root / requested).resolve()
+            if self.root not in dir_path.parents and dir_path != self.root:
+                return {"error": "INVALID_PATH", "message": "Directory path escapes workspace root"}
+        except Exception as e:
+            return {"error": "INVALID_PATH", "message": str(e)}
+        
         if not dir_path.exists():
             return {"error": "NOT_FOUND", "message": f"Directory not found: {args['path']}"}
         
@@ -950,10 +964,14 @@ class MCPServer:
         
         items = []
         for item in sorted(dir_path.iterdir()):
+            try:
+                relative_path = item.resolve().relative_to(self.root)
+            except Exception:
+                continue
             items.append({
                 "name": item.name,
                 "type": "directory" if item.is_dir() else "file",
-                "path": str(item.relative_to(self.root)),
+                "path": str(relative_path),
             })
         
         return {"path": args["path"], "items": items}

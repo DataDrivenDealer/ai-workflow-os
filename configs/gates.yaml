@@ -102,7 +102,7 @@ gates:
         threshold: 0.8  # 80% coverage
         severity: warning
         auto_check: true
-        command: "mypy src/ --ignore-missing-imports"
+        command: "python -m pyright kernel scripts"
 
   # ===========================================================================
   # G3: Performance & Robustness Gate (Stage 4 Exit)

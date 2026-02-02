@@ -7,8 +7,8 @@ agents:
     registered_at: '2026-02-01T16:45:07.908675+00:00'
     allowed_role_modes:
     - architect
-    - builder
     - planner
+    - builder
     - executor
     metadata:
       description: Primary AI assistant for workflow operations
@@ -46,8 +46,8 @@ agents:
     display_name: Multi-Role Agent
     registered_at: '2026-02-01T19:54:30.924349+00:00'
     allowed_role_modes:
-    - builder
     - planner
+    - builder
     - executor
     metadata: {}
   ai_test-9bdf467d:
@@ -139,8 +139,8 @@ agents:
     display_name: Multi-Role Agent
     registered_at: '2026-02-01T20:41:12.866631+00:00'
     allowed_role_modes:
-    - builder
     - planner
+    - builder
     - executor
     metadata: {}
   ai_test-c2bd729c:
@@ -482,6 +482,124 @@ agents:
     agent_type: ai_agent
     display_name: Same Agent
     registered_at: '2026-02-02T09:44:48.903836+00:00'
+    allowed_role_modes:
+    - builder
+    - reviewer
+    metadata: {}
+  ai_test-9e4df309:
+    agent_id: ai_test-9e4df309
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:00.523394+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_assistant-aaa36acb:
+    agent_id: ai_assistant-aaa36acb
+    agent_type: ai_assistant
+    display_name: Test Assistant
+    registered_at: '2026-02-02T10:17:00.611860+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_assistant-38c786c8:
+    agent_id: ai_assistant-38c786c8
+    agent_type: ai_assistant
+    display_name: Multi-Role Agent
+    registered_at: '2026-02-02T10:17:00.729888+00:00'
+    allowed_role_modes:
+    - planner
+    - builder
+    - executor
+    metadata: {}
+  ai_test-7b3a9a9a:
+    agent_id: ai_test-7b3a9a9a
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:00.891129+00:00'
+    allowed_role_modes:
+    - builder
+    - executor
+    metadata: {}
+  ai_test-79d0ad7f:
+    agent_id: ai_test-79d0ad7f
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:01.053509+00:00'
+    allowed_role_modes:
+    - builder
+    - executor
+    metadata: {}
+  ai_test-21ddd901:
+    agent_id: ai_test-21ddd901
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:01.214655+00:00'
+    allowed_role_modes:
+    - builder
+    - executor
+    metadata: {}
+  ai_test-711fce64:
+    agent_id: ai_test-711fce64
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:01.366674+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-c2120f05:
+    agent_id: ai_test-c2120f05
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:01.518818+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-bc52e306:
+    agent_id: ai_test-bc52e306
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:01.817070+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-ec69db67:
+    agent_id: ai_test-ec69db67
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:01.941161+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_test-a91966f2:
+    agent_id: ai_test-a91966f2
+    agent_type: ai_test
+    display_name: Test Agent
+    registered_at: '2026-02-02T10:17:02.138219+00:00'
+    allowed_role_modes:
+    - executor
+    metadata: {}
+  ai_builder-72f85ad9:
+    agent_id: ai_builder-72f85ad9
+    agent_type: ai_builder
+    display_name: Builder Agent
+    registered_at: '2026-02-02T10:17:02.247397+00:00'
+    allowed_role_modes:
+    - builder
+    metadata: {}
+  ai_reviewer-d339fb68:
+    agent_id: ai_reviewer-d339fb68
+    agent_type: ai_reviewer
+    display_name: Reviewer Agent
+    registered_at: '2026-02-02T10:17:02.280153+00:00'
+    allowed_role_modes:
+    - reviewer
+    metadata: {}
+  ai_agent-9a24651c:
+    agent_id: ai_agent-9a24651c
+    agent_type: ai_agent
+    display_name: Same Agent
+    registered_at: '2026-02-02T10:17:02.478432+00:00'
     allowed_role_modes:
     - builder
     - reviewer
