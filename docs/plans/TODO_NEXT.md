@@ -36,18 +36,39 @@
 
 ## 🔴 P0任务（立即执行）
 
-### P0-1: 配置pytest排除Legacy DGSF ⏳ **NEXT STEP**
+### P0-1: 配置pytest排除Legacy DGSF ✅ COMPLETED
 **DGSF关联**: 清除165个测试错误噪声，使DGSF开发者能专注  
 **Effort**: 5分钟  
-**Dependencies**: 无
+**Dependencies**: 无  
+**Status**: ✅ COMPLETED (2026-02-02T15:00)
 
-**Acceptance Criteria**:
-- [ ] pytest.ini或pyproject.toml包含`testpaths = ["kernel/tests"]`
-- [ ] 运行`pytest --collect-only`不显示legacy/相关错误
-- [ ] 验证：`pytest --collect-only 2>&1 | Select-String "ERROR" | Select-String "legacy" -NotMatch`应返回0个legacy错误
+**Result**: pytest.ini created with testpaths=["kernel/tests"], 0 legacy errors verified
 
-**Implementation**:
-```toml
+---
+
+### P0-2: Define DGSF Stage 4 SDF tasks ✅ COMPLETED
+**DGSF关联**: 解除项目已完成误导，启动SDF层模块开发  
+**User Input**: "Stage 4 的研究方向明确为：SDF层模块的开发"  
+**Effort**: 15分钟  
+**Dependencies**: 无  
+**Status**: ✅ COMPLETED (2026-02-02T17:10)
+
+**Result**: Added 5 SDF development tasks to PROJECT_DGSF.yaml:
+- SDF_DEV_001_T1: SDF Model Architecture Review (P0, 1 week)
+- SDF_DEV_001_T2: Fix SDF Test Failures (P0, 2 weeks)
+- SDF_DEV_001_T3: SDF Feature Engineering Module (P1, 3 weeks)
+- SDF_DEV_001_T4: SDF Training Pipeline Optimization (P1, 3 weeks)
+- SDF_DEV_001_T5: SDF Evaluation Framework (P2, 2 weeks)
+
+---
+
+### P0-3: 验证DGSF repo submodule状态 ✅ COMPLETED
+**DGSF关联**: 确保submodule同步  
+**Effort**: 2分钟  
+**Dependencies**: 无  
+**Status**: ✅ COMPLETED (2026-02-02T15:15)
+
+**Result**: submodule synced with origin/master (commit fb208e4), clean working tree
 # 在pyproject.toml的[tool.pytest.ini_options]添加：
 testpaths = ["kernel/tests"]
 
@@ -185,10 +206,47 @@ Write-Host "✅ All gates passed"
 
 ### 🟠 P1 任务（高价值 - 本周完成）
 
-#### P1-1: 实现INV-1验证脚本（状态转换合法性）
+#### P1-1: 提交pending changes到git ✅ COMPLETED
+**预计工时**: 3分钟  
+**依赖**: P0-1  
+**Status**: ✅ COMPLETED (2026-02-02T15:30)
+
+**Result**: Committed 5 files (762+/119-) as commit 4cb99e6
+
+---
+
+#### P1-2: 添加Legacy DGSF归档警告 ✅ COMPLETED
+**预计工时**: 5分钟  
+**依赖**: P1-1  
+**Status**: ✅ COMPLETED (2026-02-02T15:40)
+
+**Result**: Created projects/dgsf/legacy/README.md with 77-line archive warning
+
+---
+
+#### P1-3: 完善DGSF开发工作流文档 ✅ COMPLETED
+**预计工时**: 10分钟  
+**依赖**: P1-2  
+**Status**: ✅ COMPLETED (2026-02-02T15:55)
+
+**Result**: Expanded projects/dgsf/README.md from 10 to 250+ lines with Quick Start and workflow guide
+
+---
+
+#### P1-4: 更新PROJECT_DGSF.yaml Stage 4状态 ✅ COMPLETED
+**预计工时**: 5分钟  
+**依赖**: P0-2  
+**Status**: ✅ COMPLETED (2026-02-02T17:10)
+
+**Result**: Changed Stage 4 status from "completed" to "in_progress", updated pipeline_summary with current_stage=4
+
+---
+
+#### P1-5: 实现INV-1验证脚本（状态转换合法性） - DEFERRED
 **预计工时**: 3小时  
 **依赖**: 无  
 **专家共识**: Lamport (形式化验证)
+**Status**: ⏸ DEFERRED (does not meet DGSF Priority Override criteria)
 
 **问题描述**:
 [docs/SYSTEM_INVARIANTS.md](../SYSTEM_INVARIANTS.md#L11) 定义了INV-1（任务状态机），但验证脚本 scripts/verify_state_transitions.py 仅在TODO中提及，实际未实现。
@@ -461,10 +519,47 @@ python scripts/check_dependency_direction.py
 
 ### 🟡 P2 任务（质量改进 - 可延后）
 
-#### P2-1: 补充README架构快速链接
+#### P2-1: 检查DGSF repo测试状态 ✅ COMPLETED
+**预计工时**: 8分钟  
+**依赖**: P0-3  
+**Status**: ✅ COMPLETED (2026-02-02T16:00)
+
+**Result**: Found 26 collection errors, 3 test failures in test_de1_raw_loader.py, 85.7% pass rate (documented as non-blocking technical debt)
+
+---
+
+#### P2-2: 验证DGSF数据路径 ✅ COMPLETED
+**预计工时**: 5分钟  
+**依赖**: P1-3  
+**Status**: ✅ COMPLETED (2026-02-02T16:10)
+
+**Result**: Data directory empty (only .gitkeep), architecture ready for data ingestion (checksums.yaml template prepared)
+
+---
+
+#### P2-3: 审查DGSF适配器实现 ✅ COMPLETED
+**预计工时**: 10分钟  
+**依赖**: P1-3  
+**Status**: ✅ COMPLETED (2026-02-02T16:25)
+
+**Result**: 6 modules, 2137 LOC reviewed, grade A (comprehensive integration with AI Workflow OS)
+
+---
+
+#### P2-4: 生成DGSF健康报告 ✅ COMPLETED
+**预计工时**: 20分钟  
+**依赖**: P2-1, P2-2, P2-3  
+**Status**: ✅ COMPLETED (2026-02-02T17:00)
+
+**Result**: Created DGSF_HEALTH_REPORT_20260202.md (400+ lines), Overall Grade B+, identified P0-2 as critical blocker
+
+---
+
+#### P2-5: 补充README架构快速链接 - DEFERRED
 **预计工时**: 30分钟  
 **依赖**: 无  
 **专家共识**: Booch (文档导航)
+**Status**: ⏸ DEFERRED (does not meet DGSF Priority Override criteria)
 
 **问题描述**:
 [README.md](../../README.md) 缺少到核心架构图的快速链接，增加新人onboarding成本。

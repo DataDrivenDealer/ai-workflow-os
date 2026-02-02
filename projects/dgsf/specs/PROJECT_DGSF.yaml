@@ -255,32 +255,117 @@ pipeline:
         - "Baseline reproduction report ✅"
         - "Variance analysis report ✅"
     - id: 4
-      name: "Research Continuation"
-      status: "completed"
-      task_id: "RESEARCH_CONTINUE_001"
-      completed_date: "2026-02-01"
+      name: "SDF Layer Development"
+      status: "in_progress"
+      task_id: "SDF_DEV_001"
+      started_date: "2026-02-02"
       dependencies:
         - "REPRO_VERIFY_001"
+      description: |
+        Develop and validate SDF (Stochastic Discount Factor) layer modules,
+        focusing on neural network-based pricing models and factor generation.
+      tasks:
+        - task_id: "SDF_DEV_001_T1"
+          name: "SDF Model Architecture Review"
+          description: "Review existing SDF model implementations in repo/src/dgsf/sdf/"
+          priority: "P0"
+          estimated_effort: "1 week"
+          deliverables:
+            - "SDF architecture assessment report"
+            - "Model inventory (existing vs. needed)"
+            - "Dependency analysis"
+          verification:
+            - "Document covers all models in sdf/ directory"
+            - "Identifies technical debt and improvement areas"
+        
+        - task_id: "SDF_DEV_001_T2"
+          name: "Fix SDF Test Failures"
+          description: "Resolve 26 collection errors and test failures in tests/sdf/"
+          priority: "P0"
+          estimated_effort: "2 weeks"
+          dependencies: ["SDF_DEV_001_T1"]
+          deliverables:
+            - "All SDF tests passing (>95% pass rate)"
+            - "Test coverage report (target: >80%)"
+            - "Fixed import issues and schema errors"
+          verification:
+            - "pytest tests/sdf/ -v shows 0 errors"
+            - "pytest --cov=src/dgsf/sdf shows >80% coverage"
+        
+        - task_id: "SDF_DEV_001_T3"
+          name: "SDF Feature Engineering Module"
+          description: "Enhance feature construction for SDF inputs"
+          priority: "P1"
+          estimated_effort: "3 weeks"
+          dependencies: ["SDF_DEV_001_T2"]
+          deliverables:
+            - "Enhanced feature engineering pipeline"
+            - "Feature importance analysis"
+            - "Documentation of feature definitions"
+          verification:
+            - "Features align with SDF_SPEC v3.1"
+            - "Ablation study shows feature contribution"
+        
+        - task_id: "SDF_DEV_001_T4"
+          name: "SDF Training Pipeline Optimization"
+          description: "Improve training efficiency and hyperparameter tuning"
+          priority: "P1"
+          estimated_effort: "3 weeks"
+          dependencies: ["SDF_DEV_001_T2"]
+          deliverables:
+            - "Optimized training script (faster convergence)"
+            - "Hyperparameter search results"
+            - "Model checkpoint management system"
+          verification:
+            - "Training time reduced by >30%"
+            - "Model performance meets baseline (Sharpe >1.5)"
+        
+        - task_id: "SDF_DEV_001_T5"
+          name: "SDF Evaluation Framework"
+          description: "Implement comprehensive SDF model evaluation"
+          priority: "P2"
+          estimated_effort: "2 weeks"
+          dependencies: ["SDF_DEV_001_T3", "SDF_DEV_001_T4"]
+          deliverables:
+            - "Evaluation script (pricing error, Sharpe, alpha)"
+            - "Cross-sectional pricing accuracy metrics"
+            - "OOS (out-of-sample) validation report"
+          verification:
+            - "Evaluation covers all metrics in SDF_SPEC v3.1"
+            - "Results reproducible with fixed seed"
       deliverables:
-        - "Research roadmap (RESEARCH_ROADMAP_2026.md) ✅"
-        - "Experiment design (EXPERIMENT_DESIGN.md) ✅"
-        - "Publication plan (PUBLICATION_PLAN.md) ✅"
-        - "Experiment templates (experiments/templates/) ✅"
+        - "SDF model architecture assessment ✅" 
+        - "SDF test suite (>95% pass rate)"
+        - "Enhanced feature engineering pipeline"
+        - "Optimized training pipeline"
+        - "SDF evaluation framework"
+      current_progress:
+        - "Research roadmap completed (RESEARCH_ROADMAP_2026.md) ✅"
+        - "Experiment design completed (EXPERIMENT_DESIGN.md) ✅"
+        - "Publication plan completed (PUBLICATION_PLAN.md) ✅"
+        - "Experiment templates ready ✅"
+        - "Adapter layer integrated ✅"
+        - "Environment prepared (pytest configured, docs complete) ✅"
 
 # =============================================================================
 # PIPELINE COMPLETION STATUS
 # =============================================================================
 pipeline_summary:
-  status: "COMPLETE"
-  completed_date: "2026-02-01"
+  status: "IN_PROGRESS"
+  started_date: "2026-02-02"
+  current_stage: 4
+  current_stage_name: "SDF Layer Development"
   total_stages: 5
-  stages_completed: 5
+  stages_completed: 3
+  stages_in_progress: 1
   gates_passed:
     - "G1: Integration Review"
     - "G2: Data Migration"
     - "G3: Reproducibility"
     - "G4: Research Plan"
-  next_phase: "Research Execution (Q2 2026)"
+  current_focus: "SDF module development, test fixing, feature engineering"
+  next_milestone: "SDF test suite passing (>95%)"
+  estimated_completion: "Q2 2026"
 
 # =============================================================================
 # Section 5: Legacy Asset Registry
