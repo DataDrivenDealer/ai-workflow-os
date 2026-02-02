@@ -74,18 +74,37 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements-lock.txt', 'requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install dependencies
         run: |
-          pip install PyYAML pytest pytest-cov
+          pip install --upgrade pip
+          if [ -f requirements-lock.txt ]; then
+            pip install -r requirements-lock.txt
+          else
+            pip install -r requirements.txt
+          fi
       - name: Run kernel unit tests
         run: |
-          pytest kernel/tests/ -v --cov=kernel --cov-report=term-missing
-      - name: Upload coverage
+          pytest kernel/tests/ -v --cov=kernel --cov-report=term-missing --cov-report=html --cov-report=xml
+      - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: kernel-coverage
-          path: .coverage
+          name: kernel-coverage-html
+          path: htmlcov/
+          retention-days: 7
+      - name: Upload coverage XML
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kernel-coverage-xml
+          path: coverage.xml
           retention-days: 7
 
   # ===========================================================================
@@ -108,6 +127,14 @@ jobs:
           if [ -f projects/dgsf/repo/requirements.txt ]; then pip install -r projects/dgsf/repo/requirements.txt; fi
       - name: Run G2 gate checks
         run: python scripts/gate_check.py --gate G2 --output markdown
+        continue-on-error: true
+      - name: Verify state consistency
+        run: |
+          if [ -f scripts/verify_state.py ]; then
+            python scripts/verify_state.py
+          else
+            echo "⚠️ verify_state.py not found, skipping state verification"
+          fi
         continue-on-error: true
       - name: Upload gate report
         uses: actions/upload-artifact@v4
