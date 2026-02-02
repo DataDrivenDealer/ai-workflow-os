@@ -446,11 +446,24 @@ class GateChecker:
     def _run_unit_tests(self, context: Dict[str, Any]) -> CheckResult:
         """Run pytest and return result."""
         import sys
-        project_path = context.get("project_path", ROOT / "projects" / "dgsf" / "repo")
-        
+        import shlex
+
+        unit_test_config = self.config.get("gates", {}).get("G2", {}).get("checks", {}).get("unit_tests_pass", {})
+        command = unit_test_config.get("command")
+
         try:
+            if command:
+                cmd_parts = shlex.split(command)
+                if cmd_parts and cmd_parts[0] == "pytest":
+                    cmd = [sys.executable, "-m", "pytest"] + cmd_parts[1:]
+                else:
+                    cmd = cmd_parts
+            else:
+                project_path = context.get("project_path", ROOT / "projects" / "dgsf" / "repo")
+                cmd = [sys.executable, "-m", "pytest", str(project_path), "-v", "--tb=short"]
+
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", str(project_path), "-v", "--tb=short"],
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=300,

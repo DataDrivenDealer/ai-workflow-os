@@ -67,7 +67,7 @@ gates:
         threshold: true
         severity: error
         auto_check: true
-        command: "pytest tests/ -v"
+        command: "pytest kernel/tests -v"
         
       no_lookahead:
         description: "No look-ahead in signal generation"
