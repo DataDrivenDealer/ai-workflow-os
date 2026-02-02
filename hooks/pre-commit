@@ -35,6 +35,23 @@ if [ -f "scripts/policy_check.py" ]; then
     fi
 fi
 
+# Run pyright type checking on kernel/ (if pyright is available)
+if command -v pyright &> /dev/null; then
+    echo "Running pyright type checking on kernel/..."
+    pyright kernel/ --level warning 2>&1 | head -n 20
+    PYRIGHT_EXIT=$?
+    if [ $PYRIGHT_EXIT -ne 0 ]; then
+        echo "[WARN] Pyright found type issues (non-blocking)"
+        echo "   Run 'pyright kernel/' to see full report"
+        # Non-blocking: don't exit on pyright errors
+    else
+        echo "[OK] Pyright type checking passed"
+    fi
+else
+    echo "[INFO] Pyright not installed, skipping type checking"
+    echo "   Install with: npm install -g pyright"
+fi
+
 # Validate YAML files (if yaml module available)
 if [ "$SKIP_YAML" = "0" ]; then
     $PYTHON -c "
