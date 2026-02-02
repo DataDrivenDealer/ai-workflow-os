@@ -1,52 +1,55 @@
-# AI Workflow OS - TODO Next Steps（项目编排版）
+# TODO_NEXT - DGSF驱动的执行队列
 
-**文档ID**: TODO_NEXT_ORCHESTRATED  
-**创建日期**: 2026-02-02  
-**最后更新**: 2026-02-02T12:00:00Z  
-**状态**: ACTIVE  
-**编排依据**: 专家微型小组分析（Grady Booch + Gene Kim + Leslie Lamport）  
-**证据来源**: git status, pytest结果, docs/audits/DRIFT_REPORT_20260202.md  
-**WIP限制**: 最多3个任务同时进行
+**Created**: 2026-02-02  
+**Purpose**: DGSF项目的canonical execution queue  
+**Priority Order**: P0（阻塞解除）→ P1（预防）→ P2（优化）  
+**Primary Objective**: 推进DGSF（Dynamic Generative SDF Forest）项目的开发、验证与研究产出
 
 ---
 
-## ⚠️ 编排说明
+## 🎯 Global Priority Override Rule
 
-本文档由**项目编排者（Project Orchestrator）**基于证据驱动分析生成，替代原有TODO_NEXT.md。所有任务优先级经过三位虚拟专家共识评审。
+**DGSF Priority Override**: 当DGSF项目推进与AI Workflow OS层面的改进发生冲突时，**无条件以DGSF的开发与验证为最高优先级（P0）**。
 
-**关键发现**（基于2026-02-02T12:00:00Z状态扫描）:
-1. ✅ **186个测试全部通过** - 核心功能稳定
-2. 🔴 **6,572行未提交变更** - 存在工作丢失风险
-3. 🟡 **CI导入路径错误** - 阻塞远程pipeline
-4. 🟡 **4个不变量验证缺失** - INV-1/4/5/8未自动化
+所有OS层面的工作必须满足以下至少一条，才允许进入执行队列：
+- 直接解除DGSF的开发阻塞
+- 显著降低DGSF的实验/回测/迭代成本
+- 为DGSF的阶段性成果提供必要的可验证性与可追溯性
 
-**优先级原则**:
-- 🔴 **P0**: 阻塞性问题，立即执行（2小时内）
-- 🟠 **P1**: 高价值任务，本周完成（3天内）
-- 🟡 **P2**: 质量改进，可延后（2周内）
+否则，一律降级为**Deferred / P2**。
 
 ---
 
-## 🎯 前10个优先任务（P0 → P1 → P2）
+## 📊 Current Context（基于证据）
 
-### 🔴 P0 任务（阻塞性 - 立即执行）
+**DGSF项目状态**:
+- Pipeline: Stage 4 "Research Continuation" - 标记为completed（❌ 误导）
+- 代码: repo/（活跃）vs legacy/（过时，引发165个pytest错误）
+- 阻塞点: 无明确的下一步研究任务
 
-#### P0-1: 提交当前所有变更 ⏳ **NEXT STEP**
-**预计工时**: 10分钟  
-**依赖**: 无  
-**专家共识**: Booch + Kim + Lamport 全部推荐（3/3）
+**AI Workflow OS状态**:
+- 分支: feature/router-v0（领先origin 19个提交）
+- 测试: kernel/ 186个通过 ✅
+- 未提交: 2个文件（state logs）
 
-**问题描述**:
-根据 `git status` 输出，当前工作区有23个已修改文件和14个未追踪文件（总计6,572行新增），存在工作丢失风险。
+---
 
-**受影响文件**:
-- **Modified**: [.github/workflows/ci.yml](../../.github/workflows/ci.yml), [README.md](../../README.md), [kernel/os.py](../../kernel/os.py), [kernel/mcp_server.py](../../kernel/mcp_server.py), [docs/state/PROJECT_STATE.md](../state/PROJECT_STATE.md) 等23个
-- **Untracked**: [docs/SYSTEM_INVARIANTS.md](../SYSTEM_INVARIANTS.md), [kernel/governance_action.py](../../kernel/governance_action.py), scripts/check_*.py 等14个
+## 🔴 P0任务（立即执行）
 
-**操作步骤**:
-```powershell
-# 1. 审查变更（可选但推荐）
-git diff --stat
+### P0-1: 配置pytest排除Legacy DGSF ⏳ **NEXT STEP**
+**DGSF关联**: 清除165个测试错误噪声，使DGSF开发者能专注  
+**Effort**: 5分钟  
+**Dependencies**: 无
+
+**Acceptance Criteria**:
+- [ ] pytest.ini或pyproject.toml包含`testpaths = ["kernel/tests"]`
+- [ ] 运行`pytest --collect-only`不显示legacy/相关错误
+- [ ] 验证：`pytest --collect-only 2>&1 | Select-String "ERROR" | Select-String "legacy" -NotMatch`应返回0个legacy错误
+
+**Implementation**:
+```toml
+# 在pyproject.toml的[tool.pytest.ini_options]添加：
+testpaths = ["kernel/tests"]
 
 # 2. 添加所有文件
 git add -A
