@@ -304,6 +304,276 @@ class MCPServer:
                     "required": ["session_token"]
                 }
             },
+            # =====================================================================
+            # Pair Programming / Code Review Tools
+            # =====================================================================
+            {
+                "name": "review_submit",
+                "description": "Submit code artifacts for Pair Programming review. Transitions task to 'code_review' state.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token (builder agent)"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID being submitted for review"
+                        },
+                        "artifact_paths": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Relative paths to artifacts to review"
+                        },
+                        "notes": {
+                            "type": "string",
+                            "description": "Optional notes for the reviewer"
+                        }
+                    },
+                    "required": ["session_token", "task_id", "artifact_paths"]
+                }
+            },
+            {
+                "name": "review_create_session",
+                "description": "Create a review session to begin Pair Programming review. Must be called by reviewer agent.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token (reviewer agent)"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID to review"
+                        },
+                        "personas": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": ["security_expert", "performance_expert", "architecture_expert", "domain_expert", "testing_expert"]
+                            },
+                            "description": "Optional: Expert personas to apply"
+                        }
+                    },
+                    "required": ["session_token", "task_id"]
+                }
+            },
+            {
+                "name": "review_conduct",
+                "description": "Conduct a code review on submitted artifacts. Generates a comprehensive review report.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token (reviewer agent)"
+                        },
+                        "review_session_id": {
+                            "type": "string",
+                            "description": "Review session ID from review_create_session"
+                        },
+                        "quality_issues": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "check_id": {"type": "string"},
+                                    "severity": {"type": "string", "enum": ["CRITICAL", "MAJOR", "MINOR", "SUGGESTION"]},
+                                    "description": {"type": "string"},
+                                    "file_path": {"type": "string"},
+                                    "line_start": {"type": "integer"},
+                                    "suggested_fix": {"type": "string"}
+                                },
+                                "required": ["check_id", "severity", "description", "file_path"]
+                            },
+                            "description": "Quality check issues found"
+                        },
+                        "requirements_issues": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "check_id": {"type": "string"},
+                                    "severity": {"type": "string", "enum": ["CRITICAL", "MAJOR", "MINOR"]},
+                                    "description": {"type": "string"},
+                                    "file_path": {"type": "string"},
+                                    "requirement_ref": {"type": "string"}
+                                },
+                                "required": ["check_id", "severity", "description", "file_path"]
+                            },
+                            "description": "Requirements check issues found"
+                        },
+                        "completeness_issues": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "check_id": {"type": "string"},
+                                    "severity": {"type": "string", "enum": ["CRITICAL", "MAJOR", "MINOR"]},
+                                    "description": {"type": "string"},
+                                    "missing_item": {"type": "string"}
+                                },
+                                "required": ["check_id", "severity", "description"]
+                            },
+                            "description": "Completeness check issues found"
+                        },
+                        "optimization_suggestions": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "check_id": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "file_path": {"type": "string"},
+                                    "current_code": {"type": "string"},
+                                    "suggested_code": {"type": "string"},
+                                    "rationale": {"type": "string"},
+                                    "impact": {"type": "string", "enum": ["minor", "moderate", "significant"]}
+                                },
+                                "required": ["check_id", "description"]
+                            },
+                            "description": "Optimization suggestions"
+                        },
+                        "requirements_coverage_pct": {
+                            "type": "number",
+                            "description": "Percentage of requirements covered (0-100)"
+                        },
+                        "completeness_pct": {
+                            "type": "number",
+                            "description": "Percentage of task completeness (0-100)"
+                        }
+                    },
+                    "required": ["session_token", "review_session_id"]
+                }
+            },
+            {
+                "name": "review_get_status",
+                "description": "Get the current status of a code review for a task.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID to check"
+                        }
+                    },
+                    "required": ["session_token", "task_id"]
+                }
+            },
+            {
+                "name": "review_get_report",
+                "description": "Get the latest review report for a task.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID"
+                        },
+                        "report_id": {
+                            "type": "string",
+                            "description": "Optional: Specific report ID. If not provided, returns latest."
+                        },
+                        "format": {
+                            "type": "string",
+                            "enum": ["yaml", "markdown", "json"],
+                            "description": "Output format (default: json)"
+                        }
+                    },
+                    "required": ["session_token", "task_id"]
+                }
+            },
+            {
+                "name": "review_respond",
+                "description": "Respond to a code review (builder accepts feedback or submits revision).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token (builder agent)"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID"
+                        },
+                        "action": {
+                            "type": "string",
+                            "enum": ["acknowledge", "revision_submitted", "request_clarification"],
+                            "description": "Response action"
+                        },
+                        "notes": {
+                            "type": "string",
+                            "description": "Optional response notes"
+                        }
+                    },
+                    "required": ["session_token", "task_id", "action"]
+                }
+            },
+            {
+                "name": "review_approve",
+                "description": "Approve a code review and advance task to 'reviewing' state. Only for reviewer agent.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token (reviewer agent)"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID to approve"
+                        },
+                        "review_session_id": {
+                            "type": "string",
+                            "description": "Review session ID"
+                        },
+                        "final_notes": {
+                            "type": "string",
+                            "description": "Optional final review notes"
+                        }
+                    },
+                    "required": ["session_token", "task_id", "review_session_id"]
+                }
+            },
+            {
+                "name": "review_get_prompts",
+                "description": "Get review prompts for conducting a Pair Programming review.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "task_id": {
+                            "type": "string",
+                            "description": "Task ID to review"
+                        },
+                        "dimension": {
+                            "type": "string",
+                            "enum": ["quality", "requirements", "completeness", "optimization", "all"],
+                            "description": "Which review dimension prompt to get"
+                        },
+                        "persona": {
+                            "type": "string",
+                            "enum": ["security_expert", "performance_expert", "architecture_expert", "domain_expert", "testing_expert"],
+                            "description": "Optional: Expert persona prompt"
+                        }
+                    },
+                    "required": ["session_token", "task_id", "dimension"]
+                }
+            },
         ]
     
     # =========================================================================
@@ -334,6 +604,15 @@ class MCPServer:
             "artifact_read": self._artifact_read,
             "artifact_list": self._artifact_list,
             "spec_list": self._spec_list,
+            # Pair Programming / Code Review
+            "review_submit": self._review_submit,
+            "review_create_session": self._review_create_session,
+            "review_conduct": self._review_conduct,
+            "review_get_status": self._review_get_status,
+            "review_get_report": self._review_get_report,
+            "review_respond": self._review_respond,
+            "review_approve": self._review_approve,
+            "review_get_prompts": self._review_get_prompts,
         }
         
         if name not in tool_map:
@@ -709,6 +988,749 @@ class MCPServer:
             })
         
         return {"specs": specs}
+    
+    # =========================================================================
+    # Pair Programming / Code Review Tool Implementations
+    # =========================================================================
+    
+    def _review_submit(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Submit code artifacts for Pair Programming review."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        task_id = args["task_id"]
+        artifact_paths = args.get("artifact_paths", [])
+        notes = args.get("notes", "")
+        
+        # Validate builder role
+        if session.role_mode not in (RoleMode.EXECUTOR, RoleMode.BUILDER):
+            return {
+                "error": "ROLE_MODE_VIOLATION",
+                "message": f"Role Mode '{session.role_mode.value}' cannot submit for review"
+            }
+        
+        # Check task exists and is in running state
+        import yaml
+        tasks_file = self.root / "state" / "tasks.yaml"
+        if not tasks_file.exists():
+            return {"error": "TASK_NOT_FOUND", "message": f"Task {task_id} not found"}
+        
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        task = tasks_data.get("tasks", {}).get(task_id, {})
+        if not task:
+            return {"error": "TASK_NOT_FOUND", "message": f"Task {task_id} not found"}
+        
+        current_status = task.get("status", "draft")
+        if current_status not in ("running", "revision_needed"):
+            return {
+                "error": "INVALID_STATE",
+                "message": f"Task must be in 'running' or 'revision_needed' state, currently: {current_status}"
+            }
+        
+        # Validate artifacts exist
+        missing = []
+        for path in artifact_paths:
+            full_path = self.root / path
+            if not full_path.exists():
+                missing.append(path)
+        
+        if missing:
+            return {
+                "error": "ARTIFACTS_NOT_FOUND",
+                "message": f"Artifacts not found: {', '.join(missing)}"
+            }
+        
+        # Create review submission record
+        from datetime import datetime, timezone
+        review_data = tasks_data.setdefault("reviews", {}).setdefault(task_id, {})
+        submission = {
+            "submitted_at": datetime.now(timezone.utc).isoformat(),
+            "submitted_by": session.agent_id,
+            "artifacts": artifact_paths,
+            "notes": notes,
+            "revision_number": review_data.get("revision_count", 0) + 1,
+        }
+        review_data["current_submission"] = submission
+        review_data["revision_count"] = submission["revision_number"]
+        review_data["status"] = "pending_review"
+        
+        # Transition task to code_review state
+        task["status"] = "code_review"
+        task["last_updated"] = datetime.now(timezone.utc).isoformat()
+        tasks_data["tasks"][task_id] = task
+        
+        with tasks_file.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(tasks_data, f, default_flow_style=False, sort_keys=False)
+        
+        return {
+            "success": True,
+            "task_id": task_id,
+            "status": "code_review",
+            "submission": submission,
+            "message": f"Task {task_id} submitted for Pair Programming review (revision #{submission['revision_number']})"
+        }
+    
+    def _review_create_session(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a review session for Pair Programming."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        task_id = args["task_id"]
+        personas = args.get("personas", [])
+        
+        # Validate reviewer role
+        if session.role_mode != RoleMode.REVIEWER:
+            # Allow builder to also review (but not their own code)
+            if session.role_mode not in (RoleMode.REVIEWER, RoleMode.ARCHITECT, RoleMode.PLANNER):
+                return {
+                    "error": "ROLE_MODE_VIOLATION",
+                    "message": f"Role Mode '{session.role_mode.value}' cannot conduct reviews. Use 'reviewer' mode."
+                }
+        
+        # Get task and review data
+        import yaml
+        tasks_file = self.root / "state" / "tasks.yaml"
+        if not tasks_file.exists():
+            return {"error": "TASK_NOT_FOUND", "message": f"Task {task_id} not found"}
+        
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        task = tasks_data.get("tasks", {}).get(task_id, {})
+        review_data = tasks_data.get("reviews", {}).get(task_id, {})
+        
+        if not review_data.get("current_submission"):
+            return {
+                "error": "NO_SUBMISSION",
+                "message": f"No code submission pending for task {task_id}"
+            }
+        
+        # Check for self-review
+        builder_id = review_data["current_submission"].get("submitted_by")
+        if builder_id == session.agent_id:
+            return {
+                "error": "SELF_REVIEW_PROHIBITED",
+                "message": "Self-review is prohibited. A different agent must conduct the review."
+            }
+        
+        # Create review session
+        from datetime import datetime, timezone
+        import hashlib
+        
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_input = f"{task_id}-{session.agent_id}-{timestamp}"
+        short_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:8]
+        review_session_id = f"RSESS-{task_id}-{short_hash}"
+        
+        review_session = {
+            "review_session_id": review_session_id,
+            "reviewer_agent_id": session.agent_id,
+            "builder_agent_id": builder_id,
+            "task_id": task_id,
+            "artifacts": review_data["current_submission"]["artifacts"],
+            "revision_number": review_data["current_submission"]["revision_number"],
+            "personas": personas,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "status": "in_progress",
+        }
+        
+        review_data["current_session"] = review_session
+        review_data["status"] = "under_review"
+        
+        with tasks_file.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(tasks_data, f, default_flow_style=False, sort_keys=False)
+        
+        # Get TaskCard content for review context
+        taskcard_path = self.root / "tasks" / f"{task_id}.md"
+        taskcard_content = ""
+        if taskcard_path.exists():
+            taskcard_content = taskcard_path.read_text(encoding="utf-8")
+        
+        return {
+            "success": True,
+            "review_session_id": review_session_id,
+            "task_id": task_id,
+            "artifacts": review_session["artifacts"],
+            "revision_number": review_session["revision_number"],
+            "builder_agent_id": builder_id,
+            "taskcard_content": taskcard_content,
+            "personas": personas,
+            "message": "Review session created. Use review_conduct to submit findings."
+        }
+    
+    def _review_conduct(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Conduct a code review and generate report."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        review_session_id = args["review_session_id"]
+        
+        quality_issues = args.get("quality_issues", [])
+        requirements_issues = args.get("requirements_issues", [])
+        completeness_issues = args.get("completeness_issues", [])
+        optimization_suggestions = args.get("optimization_suggestions", [])
+        requirements_coverage = args.get("requirements_coverage_pct", 100.0)
+        completeness_pct = args.get("completeness_pct", 100.0)
+        
+        # Get review data
+        import yaml
+        tasks_file = self.root / "state" / "tasks.yaml"
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        # Find the task with this review session
+        task_id = None
+        review_data = None
+        for tid, rdata in tasks_data.get("reviews", {}).items():
+            if rdata.get("current_session", {}).get("review_session_id") == review_session_id:
+                task_id = tid
+                review_data = rdata
+                break
+        
+        if not review_data:
+            return {"error": "SESSION_NOT_FOUND", "message": f"Review session {review_session_id} not found"}
+        
+        current_session = review_data["current_session"]
+        if current_session.get("reviewer_agent_id") != session.agent_id:
+            return {
+                "error": "UNAUTHORIZED",
+                "message": "Only the assigned reviewer can submit review findings"
+            }
+        
+        # Count issues by severity
+        critical = sum(1 for i in quality_issues + requirements_issues + completeness_issues if i.get("severity") == "CRITICAL")
+        major = sum(1 for i in quality_issues + requirements_issues + completeness_issues if i.get("severity") == "MAJOR")
+        minor = sum(1 for i in quality_issues + requirements_issues + completeness_issues if i.get("severity") == "MINOR")
+        suggestions = len(optimization_suggestions) + sum(1 for i in quality_issues if i.get("severity") == "SUGGESTION")
+        
+        # Determine verdict
+        if critical > 0 or major > 0:
+            verdict = "NEEDS_REVISION"
+        else:
+            verdict = "APPROVED"
+        
+        # Create report
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        report_id = f"REV-{task_id}-{timestamp}-R{current_session['revision_number']}"
+        
+        report = {
+            "report_id": report_id,
+            "task_id": task_id,
+            "reviewer_agent_id": session.agent_id,
+            "builder_agent_id": current_session["builder_agent_id"],
+            "review_session_id": review_session_id,
+            "revision_number": current_session["revision_number"],
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "verdict": verdict,
+            "summary": {
+                "critical_count": critical,
+                "major_count": major,
+                "minor_count": minor,
+                "suggestion_count": suggestions,
+            },
+            "quality_check": {
+                "passed": not any(i.get("severity") in ("CRITICAL", "MAJOR") for i in quality_issues),
+                "issues": quality_issues,
+            },
+            "requirements_check": {
+                "passed": not any(i.get("severity") in ("CRITICAL", "MAJOR") for i in requirements_issues),
+                "issues": requirements_issues,
+                "coverage_percentage": requirements_coverage,
+            },
+            "completeness_check": {
+                "passed": not any(i.get("severity") in ("CRITICAL", "MAJOR") for i in completeness_issues),
+                "issues": completeness_issues,
+                "completeness_percentage": completeness_pct,
+            },
+            "optimization_check": {
+                "suggestions": optimization_suggestions,
+            },
+            "personas_used": current_session.get("personas", []),
+        }
+        
+        # Save report
+        current_session["report"] = report
+        current_session["status"] = "completed"
+        review_data["status"] = verdict.lower()
+        review_data.setdefault("reports", []).append(report)
+        
+        # Update task status based on verdict
+        task = tasks_data["tasks"][task_id]
+        if verdict == "NEEDS_REVISION":
+            task["status"] = "revision_needed"
+        # If approved, keep in code_review until explicit approval
+        task["last_updated"] = datetime.now(timezone.utc).isoformat()
+        
+        with tasks_file.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(tasks_data, f, default_flow_style=False, sort_keys=False)
+        
+        return {
+            "success": True,
+            "report_id": report_id,
+            "verdict": verdict,
+            "summary": report["summary"],
+            "message": f"Review completed with verdict: {verdict}"
+        }
+    
+    def _review_get_status(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Get review status for a task."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        task_id = args["task_id"]
+        
+        import yaml
+        tasks_file = self.root / "state" / "tasks.yaml"
+        if not tasks_file.exists():
+            return {"error": "TASK_NOT_FOUND"}
+        
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        task = tasks_data.get("tasks", {}).get(task_id, {})
+        review_data = tasks_data.get("reviews", {}).get(task_id, {})
+        
+        return {
+            "task_id": task_id,
+            "task_status": task.get("status"),
+            "review_status": review_data.get("status", "not_started"),
+            "revision_count": review_data.get("revision_count", 0),
+            "current_submission": review_data.get("current_submission"),
+            "current_session": review_data.get("current_session"),
+            "latest_verdict": review_data.get("reports", [{}])[-1].get("verdict") if review_data.get("reports") else None,
+        }
+    
+    def _review_get_report(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Get review report for a task."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        task_id = args["task_id"]
+        report_id = args.get("report_id")
+        output_format = args.get("format", "json")
+        
+        import yaml
+        tasks_file = self.root / "state" / "tasks.yaml"
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        review_data = tasks_data.get("reviews", {}).get(task_id, {})
+        reports = review_data.get("reports", [])
+        
+        if not reports:
+            return {"error": "NO_REPORTS", "message": f"No review reports for task {task_id}"}
+        
+        # Find specific report or get latest
+        report = None
+        if report_id:
+            for r in reports:
+                if r.get("report_id") == report_id:
+                    report = r
+                    break
+            if not report:
+                return {"error": "REPORT_NOT_FOUND", "message": f"Report {report_id} not found"}
+        else:
+            report = reports[-1]
+        
+        if output_format == "yaml":
+            return {"report": yaml.safe_dump(report, default_flow_style=False)}
+        elif output_format == "markdown":
+            # Generate markdown format
+            md = self._report_to_markdown(report)
+            return {"report": md}
+        else:
+            return {"report": report}
+    
+    def _report_to_markdown(self, report: Dict[str, Any]) -> str:
+        """Convert report to markdown format."""
+        lines = [
+            f"# Code Review Report: {report['report_id']}",
+            "",
+            f"**Task**: {report['task_id']}",
+            f"**Reviewer**: {report['reviewer_agent_id']}",
+            f"**Builder**: {report['builder_agent_id']}",
+            f"**Revision**: #{report['revision_number']}",
+            f"**Reviewed At**: {report['reviewed_at']}",
+            "",
+            "---",
+            "",
+            f"## Verdict: {report['verdict']}",
+            "",
+            "### Issue Summary",
+            "",
+            "| Severity | Count |",
+            "|----------|-------|",
+            f"| CRITICAL | {report['summary']['critical_count']} |",
+            f"| MAJOR | {report['summary']['major_count']} |",
+            f"| MINOR | {report['summary']['minor_count']} |",
+            f"| SUGGESTION | {report['summary']['suggestion_count']} |",
+            "",
+        ]
+        
+        # Add dimension details
+        for dim_name, dim_data in [
+            ("Quality Check", report["quality_check"]),
+            ("Requirements Check", report["requirements_check"]),
+            ("Completeness Check", report["completeness_check"]),
+        ]:
+            status = "✅ PASSED" if dim_data.get("passed") else "❌ FAILED"
+            lines.append(f"## {dim_name}: {status}")
+            lines.append("")
+            
+            if "coverage_percentage" in dim_data:
+                lines.append(f"**Coverage**: {dim_data['coverage_percentage']:.1f}%")
+                lines.append("")
+            if "completeness_percentage" in dim_data:
+                lines.append(f"**Completeness**: {dim_data['completeness_percentage']:.1f}%")
+                lines.append("")
+            
+            for issue in dim_data.get("issues", []):
+                lines.append(f"- **[{issue.get('severity', 'UNKNOWN')}]** {issue.get('check_id', 'N/A')}: {issue.get('description', 'No description')}")
+                if issue.get("file_path"):
+                    lines.append(f"  - File: `{issue['file_path']}`")
+                if issue.get("line_start"):
+                    lines.append(f"  - Line: {issue['line_start']}")
+                if issue.get("suggested_fix"):
+                    lines.append(f"  - Fix: {issue['suggested_fix']}")
+            lines.append("")
+        
+        # Optimization suggestions
+        lines.append("## Optimization Suggestions")
+        lines.append("")
+        for sugg in report.get("optimization_check", {}).get("suggestions", []):
+            lines.append(f"- **{sugg.get('check_id', 'O-???')}**: {sugg.get('description', 'No description')}")
+            if sugg.get("rationale"):
+                lines.append(f"  - Rationale: {sugg['rationale']}")
+            if sugg.get("impact"):
+                lines.append(f"  - Impact: {sugg['impact']}")
+        
+        return "\n".join(lines)
+    
+    def _review_respond(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Respond to a code review."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        task_id = args["task_id"]
+        action = args["action"]
+        notes = args.get("notes", "")
+        
+        import yaml
+        from datetime import datetime, timezone
+        
+        tasks_file = self.root / "state" / "tasks.yaml"
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        task = tasks_data.get("tasks", {}).get(task_id, {})
+        review_data = tasks_data.get("reviews", {}).get(task_id, {})
+        
+        # Validate builder is responding
+        builder_id = review_data.get("current_submission", {}).get("submitted_by")
+        if builder_id != session.agent_id:
+            return {
+                "error": "UNAUTHORIZED",
+                "message": "Only the original builder can respond to review feedback"
+            }
+        
+        response = {
+            "action": action,
+            "responded_at": datetime.now(timezone.utc).isoformat(),
+            "notes": notes,
+        }
+        
+        review_data.setdefault("responses", []).append(response)
+        
+        if action == "revision_submitted":
+            # Reset for new review
+            review_data["status"] = "pending_review"
+            task["status"] = "code_review"
+        
+        task["last_updated"] = datetime.now(timezone.utc).isoformat()
+        
+        with tasks_file.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(tasks_data, f, default_flow_style=False, sort_keys=False)
+        
+        return {
+            "success": True,
+            "action": action,
+            "message": f"Response '{action}' recorded for task {task_id}"
+        }
+    
+    def _review_approve(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Approve a code review and advance task."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        task_id = args["task_id"]
+        review_session_id = args["review_session_id"]
+        final_notes = args.get("final_notes", "")
+        
+        import yaml
+        from datetime import datetime, timezone
+        
+        tasks_file = self.root / "state" / "tasks.yaml"
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        review_data = tasks_data.get("reviews", {}).get(task_id, {})
+        current_session = review_data.get("current_session", {})
+        
+        # Validate reviewer
+        if current_session.get("reviewer_agent_id") != session.agent_id:
+            return {
+                "error": "UNAUTHORIZED",
+                "message": "Only the assigned reviewer can approve"
+            }
+        
+        # Check verdict allows approval
+        latest_report = review_data.get("reports", [{}])[-1]
+        if latest_report.get("verdict") == "NEEDS_REVISION":
+            return {
+                "error": "CANNOT_APPROVE",
+                "message": "Cannot approve - review verdict is NEEDS_REVISION. Issues must be addressed first."
+            }
+        
+        # Transition task to reviewing
+        task = tasks_data["tasks"][task_id]
+        task["status"] = "reviewing"
+        task["last_updated"] = datetime.now(timezone.utc).isoformat()
+        
+        review_data["status"] = "approved"
+        review_data["approved_at"] = datetime.now(timezone.utc).isoformat()
+        review_data["final_notes"] = final_notes
+        
+        with tasks_file.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(tasks_data, f, default_flow_style=False, sort_keys=False)
+        
+        return {
+            "success": True,
+            "task_id": task_id,
+            "new_status": "reviewing",
+            "message": f"Pair Programming review approved. Task {task_id} advanced to 'reviewing' state."
+        }
+    
+    def _review_get_prompts(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Get review prompts for Pair Programming."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        task_id = args["task_id"]
+        dimension = args["dimension"]
+        persona = args.get("persona")
+        
+        import yaml
+        
+        # Load state machine config for review checks
+        state_machine_path = self.root / "kernel" / "state_machine.yaml"
+        with state_machine_path.open("r", encoding="utf-8") as f:
+            sm_config = yaml.safe_load(f) or {}
+        
+        pp_config = sm_config.get("pair_programming", {})
+        dimensions_config = pp_config.get("review_dimensions", {})
+        personas_config = pp_config.get("personas", {})
+        
+        # Get TaskCard content
+        taskcard_path = self.root / "tasks" / f"{task_id}.md"
+        taskcard_content = ""
+        if taskcard_path.exists():
+            taskcard_content = taskcard_path.read_text(encoding="utf-8")
+        
+        # Get artifacts to review
+        tasks_file = self.root / "state" / "tasks.yaml"
+        with tasks_file.open("r", encoding="utf-8") as f:
+            tasks_data = yaml.safe_load(f) or {}
+        
+        review_data = tasks_data.get("reviews", {}).get(task_id, {})
+        artifacts = review_data.get("current_submission", {}).get("artifacts", [])
+        
+        # Read artifact content
+        artifact_contents = {}
+        for path in artifacts:
+            full_path = self.root / path
+            if full_path.exists():
+                artifact_contents[path] = full_path.read_text(encoding="utf-8")
+        
+        prompts = {}
+        
+        if dimension in ("quality", "all"):
+            checks = dimensions_config.get("quality_check", {}).get("checks", [])
+            prompts["quality"] = self._generate_quality_prompt(artifact_contents, taskcard_content, checks)
+        
+        if dimension in ("requirements", "all"):
+            checks = dimensions_config.get("requirements_check", {}).get("checks", [])
+            prompts["requirements"] = self._generate_requirements_prompt(artifact_contents, taskcard_content, checks)
+        
+        if dimension in ("completeness", "all"):
+            checks = dimensions_config.get("completeness_check", {}).get("checks", [])
+            prompts["completeness"] = self._generate_completeness_prompt(artifact_contents, taskcard_content, checks)
+        
+        if dimension in ("optimization", "all"):
+            checks = dimensions_config.get("optimization_check", {}).get("checks", [])
+            prompts["optimization"] = self._generate_optimization_prompt(artifact_contents, checks)
+        
+        if persona and persona in personas_config:
+            prompts["persona"] = self._generate_persona_prompt(persona, personas_config[persona], artifact_contents)
+        
+        return {
+            "task_id": task_id,
+            "artifacts": list(artifact_contents.keys()),
+            "prompts": prompts,
+        }
+    
+    def _generate_quality_prompt(self, artifacts: Dict[str, str], taskcard: str, checks: list) -> str:
+        """Generate quality review prompt."""
+        check_list = "\n".join([f"- {c['id']}: {c['name'].replace('_', ' ').title()}" for c in checks])
+        code_blocks = "\n\n".join([f"### File: `{path}`\n```\n{content}\n```" for path, content in artifacts.items()])
+        
+        return f"""You are a Senior Code Reviewer conducting a **Quality Check** (Q-Check).
+
+## Code to Review
+{code_blocks}
+
+## Task Context
+{taskcard}
+
+## Quality Checklist
+{check_list}
+
+## Instructions
+For each issue found, provide in JSON format:
+{{
+  "check_id": "Q-XXX",
+  "severity": "CRITICAL|MAJOR|MINOR|SUGGESTION",
+  "description": "Clear description",
+  "file_path": "path/to/file",
+  "line_start": 123,
+  "suggested_fix": "How to fix"
+}}
+
+Focus on: syntax, types, error handling, security, performance, duplication."""
+
+    def _generate_requirements_prompt(self, artifacts: Dict[str, str], taskcard: str, checks: list) -> str:
+        """Generate requirements review prompt."""
+        check_list = "\n".join([f"- {c['id']}: {c['name'].replace('_', ' ').title()}" for c in checks])
+        code_blocks = "\n\n".join([f"### File: `{path}`\n```\n{content}\n```" for path, content in artifacts.items()])
+        
+        return f"""You are a Senior Code Reviewer conducting a **Requirements Check** (R-Check).
+
+## Code to Review
+{code_blocks}
+
+## TaskCard (Requirements)
+{taskcard}
+
+## Requirements Checklist
+{check_list}
+
+## Instructions
+Verify each requirement is correctly implemented. For issues, provide:
+{{
+  "check_id": "R-XXX",
+  "severity": "CRITICAL|MAJOR|MINOR",
+  "description": "What requirement is violated/missing",
+  "file_path": "path/to/file",
+  "requirement_ref": "Reference to the requirement"
+}}
+
+Calculate and report requirements_coverage_pct (0-100)."""
+
+    def _generate_completeness_prompt(self, artifacts: Dict[str, str], taskcard: str, checks: list) -> str:
+        """Generate completeness review prompt."""
+        check_list = "\n".join([f"- {c['id']}: {c['name'].replace('_', ' ').title()}" for c in checks])
+        code_blocks = "\n\n".join([f"### File: `{path}`\n```\n{content}\n```" for path, content in artifacts.items()])
+        
+        return f"""You are a Senior Code Reviewer conducting a **Completeness Check** (C-Check).
+
+## Code to Review
+{code_blocks}
+
+## TaskCard (All Requirements)
+{taskcard}
+
+## Completeness Checklist
+{check_list}
+
+## Instructions
+Ensure ALL requirements are fully addressed. For missing items:
+{{
+  "check_id": "C-XXX",
+  "severity": "CRITICAL|MAJOR|MINOR",
+  "description": "What is missing",
+  "missing_item": "Specific missing functionality"
+}}
+
+Calculate and report completeness_pct (0-100)."""
+
+    def _generate_optimization_prompt(self, artifacts: Dict[str, str], checks: list) -> str:
+        """Generate optimization review prompt."""
+        check_list = "\n".join([f"- {c['id']}: {c['name'].replace('_', ' ').title()}" for c in checks])
+        code_blocks = "\n\n".join([f"### File: `{path}`\n```\n{content}\n```" for path, content in artifacts.items()])
+        
+        return f"""You are a Senior Code Reviewer conducting an **Optimization Review** (O-Check).
+
+## Code to Review
+{code_blocks}
+
+## Optimization Checklist
+{check_list}
+
+## Instructions
+Identify opportunities to improve while maintaining functionality. For each suggestion:
+{{
+  "check_id": "O-XXX",
+  "description": "What can be improved",
+  "file_path": "path/to/file",
+  "current_code": "snippet",
+  "suggested_code": "improved snippet",
+  "rationale": "Why this is better",
+  "impact": "minor|moderate|significant"
+}}
+
+These are SUGGESTIONS, not blocking issues."""
+
+    def _generate_persona_prompt(self, persona: str, config: Dict[str, Any], artifacts: Dict[str, str]) -> str:
+        """Generate expert persona prompt."""
+        description = config.get("description", "")
+        focus = config.get("focus", [])
+        code_blocks = "\n\n".join([f"### File: `{path}`\n```\n{content}\n```" for path, content in artifacts.items()])
+        
+        return f"""You are a **{persona.replace('_', ' ').title()}** reviewing code.
+
+## Your Expertise
+{description}
+
+## Focus Areas
+{', '.join(focus)}
+
+## Code to Review
+{code_blocks}
+
+## Instructions
+Apply your specialized expertise. For each finding:
+{{
+  "check_id": "Related check ID",
+  "severity": "CRITICAL|MAJOR|MINOR|SUGGESTION",
+  "description": "Technical details",
+  "file_path": "path",
+  "remediation": "Steps to fix"
+}}"""
 
 
 def create_server() -> MCPServer:

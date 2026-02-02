@@ -387,6 +387,186 @@ specs:
       prs: []
       freeze_records: []
 
+  # ============================================
+  # DGSF Layer Specifications (Inherited from Legacy)
+  # ============================================
+
+  - spec_id: "DGSF_DataEng_V4.2"
+    title: "DGSF Data Engineering Specification v4.2"
+    scope: "project"
+    status: "active"
+    version:
+      semver: "4.2.0"
+      frozen: true
+    location:
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF_DataEngineering_v4.2.md"
+      format: "markdown"
+    applies_to:
+      - "project:dgsf"
+    owners:
+      - "role:data_engineer"
+    depends_on:
+      - "GOVERNANCE_INVARIANTS"
+    consumers:
+      - kind: "task"
+        ref: "tasks/DATA_*"
+    compatibility:
+      level: "strict"
+      notes: "Causal data pipeline with no lookahead bias."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "spec_upgrade"
+    links: {}
+
+  - spec_id: "DATA_QUALITY_STANDARD"
+    title: "Data Quality Standard"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "specs/framework/DATA_QUALITY_STANDARD.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:data_engineer"
+    depends_on:
+      - "GOVERNANCE_INVARIANTS"
+    consumers:
+      - kind: "gate"
+        ref: "configs/gates.yaml#G1"
+    compatibility:
+      level: "compatible"
+      notes: "Data quality thresholds and validation rules."
+    change_control:
+      edit_policy: "direct_edit"
+    links: {}
+
+  - spec_id: "DGSF_SDF_V3.1"
+    title: "DGSF SDF Layer Specification v3.1"
+    scope: "project"
+    status: "active"
+    version:
+      semver: "3.1.0"
+      frozen: true
+    location:
+      path: "projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF_SDF_Layer_Specification_v3.1.md"
+      format: "markdown"
+    applies_to:
+      - "project:dgsf"
+    owners:
+      - "role:architect"
+    depends_on:
+      - "GOVERNANCE_INVARIANTS"
+    consumers:
+      - kind: "task"
+        ref: "tasks/SDF_*"
+    compatibility:
+      level: "strict"
+      notes: "SDF model architecture and constraints."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "spec_upgrade"
+    links: {}
+
+  - spec_id: "STATE_ENGINE_V1.0"
+    title: "State Engine Specification v1.0"
+    scope: "project"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: true
+    location:
+      path: "projects/dgsf/legacy/DGSF/docs/State_Engine_Spec_v1.0.txt"
+      format: "text"
+    applies_to:
+      - "project:dgsf"
+    owners:
+      - "role:architect"
+    depends_on:
+      - "DGSF_SDF_V3.1"
+    consumers:
+      - kind: "task"
+        ref: "tasks/SDF_DEV_001"
+    compatibility:
+      level: "strict"
+      notes: "Instrument basis construction specification."
+    change_control:
+      edit_policy: "proposal_required"
+    links: {}
+
+  - spec_id: "SDF_IMPLEMENTATION_GUIDE"
+    title: "SDF Implementation Guide"
+    scope: "project"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "projects/dgsf/docs/SDF_IMPLEMENTATION_GUIDE.md"
+      format: "markdown"
+    applies_to:
+      - "project:dgsf"
+    owners:
+      - "role:architect"
+    depends_on:
+      - "DGSF_SDF_V3.1"
+      - "STATE_ENGINE_V1.0"
+    consumers:
+      - kind: "task"
+        ref: "tasks/SDF_DEV_001"
+    compatibility:
+      level: "compatible"
+    links: {}
+
+  # ============================================
+  # Pair Programming Standards (NEW)
+  # ============================================
+  
+  - spec_id: "PAIR_PROGRAMMING_STANDARD"
+    title: "Pair Programming Standard"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "0.1.0"
+      frozen: false
+    location:
+      path: "specs/framework/PAIR_PROGRAMMING_STANDARD.md"
+      format: "markdown"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:platform_engineer"
+    depends_on:
+      - "ROLE_MODE_CANON"
+      - "TASKCARD_STANDARD"
+      - "GOVERNANCE_INVARIANTS"
+    consumers:
+      - kind: "kernel"
+        ref: "kernel/code_review.py"
+      - kind: "kernel"
+        ref: "kernel/mcp_server.py"
+      - kind: "template"
+        ref: "templates/TASKCARD_WITH_REVIEW.md"
+      - kind: "template"
+        ref: "templates/REVIEW_REPORT_TEMPLATE.md"
+    compatibility:
+      level: "compatible"
+      notes: "Automated code review workflow between code generation and merge."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "framework_upgrade"
+      required_artifacts:
+        - "ops/decision-log/*"
+    links:
+      issues: []
+      prs: []
+      freeze_records: []
+
 proposals: []
 
 deviations: []

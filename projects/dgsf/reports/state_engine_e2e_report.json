@@ -1,0 +1,130 @@
+{
+  "timestamp": "2026-02-01T15:24:52.416774",
+  "total_tests": 7,
+  "passed": 7,
+  "failed": 0,
+  "duration_sec": 0.7306387424468994,
+  "environment": {
+    "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "numpy_version": "2.4.2",
+    "pandas_available": true,
+    "project_root": "E:\\AI Tools\\AI Workflow OS\\projects\\dgsf"
+  },
+  "summary": "All 7 tests PASSED",
+  "results": [
+    {
+      "test_id": "E2E-001",
+      "test_name": "Single Asset Synthetic",
+      "passed": true,
+      "duration_sec": 0.0049970149993896484,
+      "metrics": {
+        "T": 250,
+        "N": 1,
+        "phi_shape": [
+          250,
+          4
+        ],
+        "V_t_mean": -0.0012708347945518215,
+        "V_t_std": 1.0019814717061069,
+        "L_t_mean": 0.005100917325830809,
+        "L_t_std": 0.9991682993030323,
+        "phi_t_shape": [
+          250,
+          4
+        ]
+      },
+      "errors": []
+    },
+    {
+      "test_id": "E2E-002",
+      "test_name": "Panel Data Pipeline",
+      "passed": true,
+      "duration_sec": 0.003999233245849609,
+      "metrics": {
+        "T": 120,
+        "N": 100,
+        "phi_shape": [
+          12000,
+          4
+        ],
+        "phi_mean": 0.275936925656782,
+        "phi_std": 0.9595205649827357
+      },
+      "errors": []
+    },
+    {
+      "test_id": "E2E-003",
+      "test_name": "Extended Engine (J=5)",
+      "passed": true,
+      "duration_sec": 0.0032291412353515625,
+      "metrics": {
+        "J": 5,
+        "phi_shape": [
+          200,
+          5
+        ],
+        "has_crowd": true,
+        "C_t_mean": -9.81412618453177e-18
+      },
+      "errors": []
+    },
+    {
+      "test_id": "E2E-004",
+      "test_name": "Causality Verification",
+      "passed": true,
+      "duration_sec": 0.001001119613647461,
+      "metrics": {
+        "rolling_max_diff": 0.0,
+        "rolling_causal": true,
+        "note": "standardization uses global stats (documented limitation)"
+      },
+      "errors": []
+    },
+    {
+      "test_id": "E2E-005",
+      "test_name": "Numerical Stability",
+      "passed": true,
+      "duration_sec": 0.0020074844360351562,
+      "metrics": {
+        "small_vol_finite": true,
+        "large_vol_finite": true,
+        "numerical_stable": true
+      },
+      "errors": []
+    },
+    {
+      "test_id": "E2E-006",
+      "test_name": "Performance Benchmark",
+      "passed": true,
+      "duration_sec": 0.281998872756958,
+      "metrics": {
+        "T": 2500,
+        "N": 800,
+        "elapsed_sec": 0.20199990272521973,
+        "throughput_obs_per_sec": 9900994.866916338,
+        "phi_shape": [
+          2000000,
+          4
+        ]
+      },
+      "errors": []
+    },
+    {
+      "test_id": "E2E-007",
+      "test_name": "DE5 Format Compatibility",
+      "passed": true,
+      "duration_sec": 0.4253420829772949,
+      "metrics": {
+        "de5_rows": 1200,
+        "data_T": 24,
+        "data_N": 50,
+        "phi_shape": [
+          1200,
+          4
+        ],
+        "format_compatible": true
+      },
+      "errors": []
+    }
+  ]
+}

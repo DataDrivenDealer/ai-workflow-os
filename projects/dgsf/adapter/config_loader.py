@@ -61,7 +61,7 @@ class DGSFConfigLoader:
         "rolling": ["window_size", "step_size"],
     }
     
-    def __init__(self, legacy_root: Path):
+    def __init__(self, legacy_root: Path, strict: bool = False):
         """
         Initialize config loader.
         
@@ -69,13 +69,25 @@ class DGSFConfigLoader:
         ----------
         legacy_root : Path
             Root path to Legacy DGSF
+        strict : bool
+            If True, raise error when configs_dir not found. Default False.
         """
         self.legacy_root = Path(legacy_root)
         self.configs_dir = self.legacy_root / "configs"
         self.cache: Dict[str, Dict[str, Any]] = {}
+        self.strict = strict
+        self._configs_available = self.configs_dir.exists()
         
         if yaml is None:
             logger.warning("PyYAML not installed, YAML loading disabled")
+        
+        if not self._configs_available and strict:
+            raise FileNotFoundError(f"Configs directory not found: {self.configs_dir}")
+    
+    @property
+    def is_available(self) -> bool:
+        """Check if configs directory is available."""
+        return self._configs_available
     
     def load(self, config_name: str, use_cache: bool = True) -> Dict[str, Any]:
         """

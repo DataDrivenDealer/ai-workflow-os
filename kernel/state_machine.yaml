@@ -1,6 +1,6 @@
 # AI Workflow OS State Machine Configuration
-# Version: 0.2.0
-# Derived From: GOVERNANCE_INVARIANTS, ROLE_MODE_CANON, MULTI_AGENT_CANON
+# Version: 0.3.0
+# Derived From: GOVERNANCE_INVARIANTS, ROLE_MODE_CANON, MULTI_AGENT_CANON, PAIR_PROGRAMMING_STANDARD
 
 # =============================================================================
 # TASK STATES
@@ -9,6 +9,8 @@ states:
   - draft
   - ready
   - running
+  - code_review      # NEW: Pair Programming - code submitted for review
+  - revision_needed  # NEW: Pair Programming - revision requested by reviewer
   - reviewing
   - merged
   - released
@@ -22,6 +24,23 @@ transitions:
     to: running
   - from: ready
     to: running
+  # Pair Programming transitions
+  - from: running
+    to: code_review
+    trigger: submit_for_review
+  - from: code_review
+    to: revision_needed
+    trigger: review_request_revision
+  - from: code_review
+    to: reviewing
+    trigger: review_approved
+  - from: revision_needed
+    to: code_review
+    trigger: revision_submitted
+  - from: revision_needed
+    to: running
+    trigger: major_rework_needed
+  # Legacy direct path (for non-code tasks)
   - from: running
     to: reviewing
   - from: reviewing
@@ -37,6 +56,10 @@ transitions:
     to: blocked
   - from: blocked
     to: reviewing
+  - from: code_review
+    to: blocked
+  - from: blocked
+    to: code_review
   # Abandon transitions
   - from: draft
     to: abandoned
@@ -45,6 +68,10 @@ transitions:
   - from: running
     to: abandoned
   - from: blocked
+    to: abandoned
+  - from: code_review
+    to: abandoned
+  - from: revision_needed
     to: abandoned
 
 # =============================================================================
@@ -133,6 +160,32 @@ role_modes:
       - self_validate
       - self_accept
     authority_level: none
+
+  reviewer:
+    description: "Code review and quality assurance - Pair Programming partner"
+    permissions:
+      - read_all_code_artifacts
+      - read_task_definitions
+      - read_task_requirements
+      - read_spec_references
+      - generate_review_report
+      - propose_code_improvements
+      - flag_quality_issues
+      - flag_security_issues
+      - flag_performance_issues
+      - request_revision
+      - approve_review
+    prohibitions:
+      - execute_code_changes_directly
+      - modify_code_artifacts
+      - accept_artifacts
+      - freeze_artifacts
+      - modify_task_scope
+      - self_review  # Cannot review own code
+      - modify_l0_artifacts
+      - modify_l1_artifacts
+      - create_tasks
+    authority_level: none  # All review outputs are speculative
 
 # =============================================================================
 # ROLE MODE TRANSITIONS
@@ -263,3 +316,165 @@ governance_gates:
       - no_authority_amplification
       - conflicting_drafts_isolated
       - no_collective_legitimacy
+# =============================================================================
+# PAIR PROGRAMMING CONFIGURATION
+# =============================================================================
+pair_programming:
+  enabled: true
+  
+  # Review dimensions and their checks
+  review_dimensions:
+    quality_check:
+      id: Q
+      description: "Code quality and bug detection"
+      checks:
+        - id: Q-001
+          name: syntax_correctness
+          severity_default: CRITICAL
+        - id: Q-002
+          name: type_safety
+          severity_default: MAJOR
+        - id: Q-003
+          name: error_handling
+          severity_default: MAJOR
+        - id: Q-004
+          name: null_handling
+          severity_default: MAJOR
+        - id: Q-005
+          name: resource_cleanup
+          severity_default: MAJOR
+        - id: Q-006
+          name: security_vulnerabilities
+          severity_default: CRITICAL
+        - id: Q-007
+          name: performance_antipatterns
+          severity_default: MINOR
+        - id: Q-008
+          name: code_duplication
+          severity_default: MINOR
+    
+    requirements_check:
+      id: R
+      description: "Requirements verification"
+      checks:
+        - id: R-001
+          name: functional_requirements_met
+          severity_default: CRITICAL
+        - id: R-002
+          name: input_validation
+          severity_default: MAJOR
+        - id: R-003
+          name: output_format
+          severity_default: MAJOR
+        - id: R-004
+          name: edge_cases_handled
+          severity_default: MAJOR
+        - id: R-005
+          name: integration_points
+          severity_default: MAJOR
+        - id: R-006
+          name: api_contracts
+          severity_default: CRITICAL
+    
+    completeness_check:
+      id: C
+      description: "Completeness verification"
+      checks:
+        - id: C-001
+          name: all_requirements_covered
+          severity_default: CRITICAL
+        - id: C-002
+          name: acceptance_criteria_addressed
+          severity_default: MAJOR
+        - id: C-003
+          name: referenced_specs_implemented
+          severity_default: MAJOR
+        - id: C-004
+          name: tests_included
+          severity_default: MINOR
+        - id: C-005
+          name: documentation_updated
+          severity_default: MINOR
+    
+    optimization_check:
+      id: O
+      description: "Code optimization opportunities"
+      checks:
+        - id: O-001
+          name: simplification_possible
+          severity_default: SUGGESTION
+        - id: O-002
+          name: algorithm_efficiency
+          severity_default: SUGGESTION
+        - id: O-003
+          name: abstraction_improvement
+          severity_default: SUGGESTION
+        - id: O-004
+          name: naming_clarity
+          severity_default: SUGGESTION
+        - id: O-005
+          name: idiomatic_code
+          severity_default: SUGGESTION
+        - id: O-006
+          name: complexity_reduction
+          severity_default: SUGGESTION
+
+  # Issue severity levels
+  severity_levels:
+    - name: CRITICAL
+      blocks_merge: true
+      description: "Security vulnerability, data loss risk, crash"
+    - name: MAJOR
+      blocks_merge: true
+      description: "Functional bug, missing requirement"
+    - name: MINOR
+      blocks_merge: false
+      description: "Code smell, minor bug"
+    - name: SUGGESTION
+      blocks_merge: false
+      description: "Optimization opportunity"
+
+  # Verdict determination rules
+  verdicts:
+    APPROVED:
+      condition: "no CRITICAL and no MAJOR issues"
+    NEEDS_REVISION:
+      condition: "has CRITICAL or MAJOR issues"
+    BLOCKED:
+      condition: "missing critical requirements or blocker found"
+
+  # Expert reviewer personas
+  personas:
+    security_expert:
+      focus: ["Q-006", "R-002"]
+      description: "OWASP, injection, auth, data protection"
+    performance_expert:
+      focus: ["Q-007", "O-002", "O-006"]
+      description: "Algorithms, caching, I/O optimization"
+    architecture_expert:
+      focus: ["O-003", "Q-008"]
+      description: "SOLID, design patterns, coupling, cohesion"
+    domain_expert:
+      focus: ["R-001", "R-004", "C-001"]
+      description: "Business logic, requirements alignment"
+    testing_expert:
+      focus: ["C-004", "R-004"]
+      description: "Test coverage, edge cases, assertions"
+
+  # Self-review prohibition
+  self_review_prohibited: true
+  
+  # Maximum revision cycles before escalation
+  max_revision_cycles: 3
+  
+  # Artifact types requiring review
+  review_required_for:
+    - "*.py"
+    - "*.js"
+    - "*.ts"
+    - "*.yaml"
+    - "*.json"
+  
+  review_optional_for:
+    - "*.md"
+    - "*.txt"

@@ -91,7 +91,85 @@ It answers:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 Command Reference (Daily Operations)
+### 2.3 Pair Programming Workflow (NEW)
+
+The Pair Programming feature adds automated code review between code generation and final review.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Pair Programming Workflow                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [Builder Agent]              [Reviewer Agent]           [Human]        │
+│        │                            │                       │           │
+│        │ 1. Generate Code           │                       │           │
+│        │ ─────────────>             │                       │           │
+│        │                            │                       │           │
+│        │ 2. review_submit           │                       │           │
+│        │ ─────────────────────────> │                       │           │
+│        │    [code_review state]     │                       │           │
+│        │                            │                       │           │
+│        │                     3. review_create_session       │           │
+│        │                     4. Quality Check (Q)           │           │
+│        │                     5. Requirements Check (R)      │           │
+│        │                     6. Completeness Check (C)      │           │
+│        │                     7. Optimization Check (O)      │           │
+│        │                            │                       │           │
+│        │ <──────────────────────────│                       │           │
+│        │    8. Review Report        │                       │           │
+│        │                            │                       │           │
+│   [If NEEDS_REVISION]               │                       │           │
+│        │                            │                       │           │
+│        │ 9. Revise Code             │                       │           │
+│        │ ─────────────────────────> │                       │           │
+│        │    (repeat 3-8)            │                       │           │
+│        │                            │                       │           │
+│   [If APPROVED]                     │                       │           │
+│        │                     10. review_approve             │           │
+│        │ <──────────────────────────│                       │           │
+│        │    [reviewing state]       │                       │           │
+│        │                            │                       │           │
+│        │                                                    │           │
+│        │ ──────────────────────────────────────────────────>│           │
+│        │                            11. Human Final Review  │           │
+│        │ <──────────────────────────────────────────────────│           │
+│        │                            12. Merge (authority)   │           │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.4 Review Dimensions
+
+The Pair Programming review covers four mandatory dimensions:
+
+| Dimension | Code | Focus |
+|-----------|------|-------|
+| Quality Check | Q | Bugs, type safety, error handling, security |
+| Requirements Check | R | Spec compliance, feature completeness |
+| Completeness Check | C | All requirements addressed, tests included |
+| Optimization Check | O | Code elegance, efficiency, maintainability |
+
+### 2.5 Review Verdicts
+
+| Verdict | Meaning | Next Action |
+|---------|---------|-------------|
+| APPROVED | All checks passed | Advance to `reviewing` |
+| NEEDS_REVISION | Critical/Major issues found | Revise and resubmit |
+| BLOCKED | Fundamental problem | Escalate to human |
+
+### 2.6 Expert Personas
+
+Reviewers can apply specialized perspectives:
+
+| Persona | Focus |
+|---------|-------|
+| `security_expert` | OWASP, injection, auth, data protection |
+| `performance_expert` | Algorithms, caching, I/O optimization |
+| `architecture_expert` | SOLID, design patterns, coupling |
+| `domain_expert` | Business logic, requirements alignment |
+| `testing_expert` | Test coverage, edge cases |
+
+### 2.7 Command Reference (Daily Operations)
 
 | Time | Command | Purpose |
 |------|---------|---------|

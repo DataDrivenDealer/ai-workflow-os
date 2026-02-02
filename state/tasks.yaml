@@ -1,6 +1,6 @@
 version: '0.1'
 queues:
-  data: null
+  data: DATA_EXPANSION_001
 tasks:
   TASK_DEMO_0001:
     status: released
@@ -47,7 +47,6 @@ tasks:
       action: task_release
       from: merged
       to: released
-  # RESEARCH_1_DGSF_001 and DATA_2_DGSF_001 removed - direction changed to inherit Legacy DGSF
   LEGACY_DGSF_ASSESS_001:
     status: released
     queue: research
@@ -57,7 +56,7 @@ tasks:
     events:
     - timestamp: '2026-02-01T22:00:00.000000+00:00'
       action: task_created
-      note: "Direction changed: inherit Legacy DGSF (SDF Asset Pricing Framework)"
+      note: 'Direction changed: inherit Legacy DGSF (SDF Asset Pricing Framework)'
     - timestamp: '2026-02-01T22:00:00.000000+00:00'
       action: task_start
       from: draft
@@ -66,7 +65,7 @@ tasks:
       action: task_finish
       from: running
       to: reviewing
-      note: "Four assessment reports completed"
+      note: Four assessment reports completed
     - timestamp: '2026-02-01T22:30:00.000000+00:00'
       action: task_merge
       from: reviewing
@@ -75,7 +74,7 @@ tasks:
       action: task_release
       from: merged
       to: released
-      note: "Integration recommendation approved by Project Owner"
+      note: Integration recommendation approved by Project Owner
   SPEC_INTEGRATION_001:
     status: released
     queue: dev
@@ -85,7 +84,7 @@ tasks:
     events:
     - timestamp: '2026-02-01T22:30:00.000000+00:00'
       action: task_created
-      note: "Created after LEGACY_DGSF_ASSESS_001 completion"
+      note: Created after LEGACY_DGSF_ASSESS_001 completion
     - timestamp: '2026-02-01T22:30:00.000000+00:00'
       action: task_start
       from: draft
@@ -94,7 +93,8 @@ tasks:
       action: task_finish
       from: running
       to: reviewing
-      note: "Deliverables: SPEC_MAPPING_PLAN.md, adapter layer, PROJECT_DGSF.yaml v2.1.0"
+      note: 'Deliverables: SPEC_MAPPING_PLAN.md, adapter layer, PROJECT_DGSF.yaml
+        v2.1.0'
     - timestamp: '2026-02-01T23:00:00.000000+00:00'
       action: task_merge
       from: reviewing
@@ -112,7 +112,7 @@ tasks:
     events:
     - timestamp: '2026-02-01T23:00:00.000000+00:00'
       action: task_created
-      note: "Next stage: Data Migration after SPEC_INTEGRATION_001 completion"
+      note: 'Next stage: Data Migration after SPEC_INTEGRATION_001 completion'
     - timestamp: '2026-02-01T23:00:00.000000+00:00'
       action: task_start
       from: draft
@@ -121,7 +121,7 @@ tasks:
       action: task_finish
       from: running
       to: reviewing
-      note: "Deliverables: DATA_PATH_VALIDATION.md, CAUSALITY_VERIFICATION.md, data_loader.py"
+      note: 'Deliverables: DATA_PATH_VALIDATION.md, CAUSALITY_VERIFICATION.md, data_loader.py'
     - timestamp: '2026-02-01T23:15:00.000000+00:00'
       action: task_merge
       from: reviewing
@@ -130,7 +130,7 @@ tasks:
       action: task_release
       from: merged
       to: released
-      note: "Gate G2 (Data Migration) PASSED"
+      note: Gate G2 (Data Migration) PASSED
   REPRO_VERIFY_001:
     status: released
     queue: dev
@@ -140,7 +140,7 @@ tasks:
     events:
     - timestamp: '2026-02-01T23:15:00.000000+00:00'
       action: task_created
-      note: "Next stage: Reproducibility Verification after DATA_MIGRATION_001 completion"
+      note: 'Next stage: Reproducibility Verification after DATA_MIGRATION_001 completion'
     - timestamp: '2026-02-01T23:15:00.000000+00:00'
       action: task_start
       from: draft
@@ -149,7 +149,8 @@ tasks:
       action: task_finish
       from: running
       to: reviewing
-      note: "Deliverables: reproduce_baselines.py, BASELINE_REPRODUCTION_REPORT.md, VARIANCE_ANALYSIS.md"
+      note: 'Deliverables: reproduce_baselines.py, BASELINE_REPRODUCTION_REPORT.md,
+        VARIANCE_ANALYSIS.md'
     - timestamp: '2026-02-01T23:30:00.000000+00:00'
       action: task_merge
       from: reviewing
@@ -158,7 +159,7 @@ tasks:
       action: task_release
       from: merged
       to: released
-      note: "Gate G3 (Reproducibility) PASSED"
+      note: Gate G3 (Reproducibility) PASSED
   RESEARCH_CONTINUE_001:
     status: released
     queue: research
@@ -168,7 +169,7 @@ tasks:
     events:
     - timestamp: '2026-02-01T23:30:00.000000+00:00'
       action: task_created
-      note: "Final stage: Research Continuation after REPRO_VERIFY_001 completion"
+      note: 'Final stage: Research Continuation after REPRO_VERIFY_001 completion'
     - timestamp: '2026-02-01T23:30:00.000000+00:00'
       action: task_start
       from: draft
@@ -177,7 +178,8 @@ tasks:
       action: task_finish
       from: running
       to: reviewing
-      note: "Deliverables: RESEARCH_ROADMAP_2026.md, EXPERIMENT_DESIGN.md, PUBLICATION_PLAN.md, experiment templates"
+      note: 'Deliverables: RESEARCH_ROADMAP_2026.md, EXPERIMENT_DESIGN.md, PUBLICATION_PLAN.md,
+        experiment templates'
     - timestamp: '2026-02-01T23:45:00.000000+00:00'
       action: task_merge
       from: reviewing
@@ -186,10 +188,7 @@ tasks:
       action: task_release
       from: merged
       to: released
-      note: "Gate G4 (Research Plan) PASSED - Pipeline COMPLETE"
-# =============================================================================
-# Phase 1: SDF Layer Development Tasks (Corrected Roadmap)
-# =============================================================================
+      note: Gate G4 (Research Plan) PASSED - Pipeline COMPLETE
   SDF_SPEC_REVIEW_001:
     status: released
     queue: research
@@ -199,17 +198,17 @@ tasks:
     events:
     - timestamp: '2026-02-01T23:50:00.000000+00:00'
       action: task_created
-      note: "SDF Layer specification review - corrected roadmap"
+      note: SDF Layer specification review - corrected roadmap
     - timestamp: '2026-02-01T23:50:00.000000+00:00'
       action: task_start
       from: draft
       to: running
-      note: "Expert panel review initiated"
+      note: Expert panel review initiated
     - timestamp: '2026-02-02T00:00:00.000000+00:00'
       action: task_finish
       from: running
       to: reviewing
-      note: "Expert panel review completed - all 6 modules decisions finalized"
+      note: Expert panel review completed - all 6 modules decisions finalized
     - timestamp: '2026-02-02T00:00:00.000000+00:00'
       action: task_merge
       from: reviewing
@@ -218,8 +217,7 @@ tasks:
       action: task_release
       from: merged
       to: released
-      note: "Deliverables: SDF_REVIEW_DECISIONS.md, SDF_IMPLEMENTATION_GUIDE.md, SDF_INTERFACE_CONTRACT.yaml"
-
+      note: 'Deliverables: SDF_REVIEW_DECISIONS.md, SDF_IMPLEMENTATION_GUIDE.md, SDF_INTERFACE_CONTRACT.yaml'
   SDF_DEV_001:
     status: running
     queue: dev
@@ -229,27 +227,30 @@ tasks:
     events:
     - timestamp: '2026-02-01T23:50:00.000000+00:00'
       action: task_created
-      note: "SDF Layer module development - 6 subtasks"
+      note: SDF Layer module development - 6 subtasks
     - timestamp: '2026-02-02T00:00:00.000000+00:00'
       action: task_start
       from: draft
       to: running
-      note: "Dependencies met (SDF_SPEC_REVIEW_001 released). Development phase started."
+      note: Dependencies met (SDF_SPEC_REVIEW_001 released). Development phase started.
     dependencies:
-      - SDF_SPEC_REVIEW_001
-
+    - SDF_SPEC_REVIEW_001
   DATA_EXPANSION_001:
-    status: draft
+    status: running
     queue: data
     branch: feature/DATA_EXPANSION_001
     priority: P1
-    last_updated: '2026-02-01T23:55:00.000000+00:00'
+    last_updated: '2026-02-01T19:58:21.768853+00:00'
     events:
     - timestamp: '2026-02-01T23:55:00.000000+00:00'
       action: task_created
-      note: "Full A-share data expansion - parallel task"
+      note: Full A-share data expansion - parallel task
+    - timestamp: '2026-02-01T19:58:21.768853+00:00'
+      action: task_start
+      from: draft
+      to: running
     parallel_with:
-      - SDF_DEV_001
-      - EA_DEV_001
+    - SDF_DEV_001
+    - EA_DEV_001
     downstream:
-      - BASELINE_REPRO_001
+    - BASELINE_REPRO_001

@@ -59,7 +59,7 @@ class SpecMapper:
         "tree": "panel_tree",
     }
     
-    def __init__(self, legacy_root: Path):
+    def __init__(self, legacy_root: Path, strict: bool = False):
         """
         Initialize spec mapper.
         
@@ -67,12 +67,21 @@ class SpecMapper:
         ----------
         legacy_root : Path
             Root path to Legacy DGSF
+        strict : bool
+            If True, raise error when specs_dir not found. Default False.
         """
         self.legacy_root = Path(legacy_root)
         self.specs_dir = self.legacy_root / "specs_v3"
+        self.strict = strict
+        self._specs_available = self.specs_dir.exists()
         
-        if not self.specs_dir.exists():
+        if not self._specs_available and strict:
             raise FileNotFoundError(f"Specs directory not found: {self.specs_dir}")
+    
+    @property
+    def is_available(self) -> bool:
+        """Check if specs directory is available."""
+        return self._specs_available
     
     def get_spec(self, spec_id: str) -> Dict[str, Any]:
         """

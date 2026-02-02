@@ -37,11 +37,12 @@ class SessionState(Enum):
 
 
 class RoleMode(Enum):
-    """Canonical Role Modes as per ROLE_MODE_CANON."""
+    """Canonical Role Modes as per ROLE_MODE_CANON and PAIR_PROGRAMMING_STANDARD."""
     ARCHITECT = "architect"
     PLANNER = "planner"
     EXECUTOR = "executor"
     BUILDER = "builder"
+    REVIEWER = "reviewer"  # NEW: Pair Programming code reviewer
 
 
 @dataclass

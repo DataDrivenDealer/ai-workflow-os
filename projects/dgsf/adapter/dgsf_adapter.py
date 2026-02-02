@@ -51,19 +51,24 @@ class DGSFAdapter:
         else:
             self.legacy_root = Path(legacy_root)
         
-        # Validate legacy root exists
-        if not self.legacy_root.exists():
-            raise FileNotFoundError(f"Legacy DGSF not found at: {self.legacy_root}")
+        # Track availability status
+        self._legacy_available = self.legacy_root.exists()
         
-        # Initialize components
-        self.spec_mapper = SpecMapper(self.legacy_root)
-        self.config_loader = DGSFConfigLoader(self.legacy_root)
+        # Initialize components (non-strict mode for graceful degradation)
+        self.spec_mapper = SpecMapper(self.legacy_root, strict=False)
+        self.config_loader = DGSFConfigLoader(self.legacy_root, strict=False)
         self.audit_bridge = DGSFAuditBridge()
         
-        # Add legacy src to Python path if not already present
-        legacy_src = self.legacy_root / "src"
-        if str(legacy_src) not in sys.path:
-            sys.path.insert(0, str(legacy_src))
+        # Add legacy src to Python path if available
+        if self._legacy_available:
+            legacy_src = self.legacy_root / "src"
+            if legacy_src.exists() and str(legacy_src) not in sys.path:
+                sys.path.insert(0, str(legacy_src))
+    
+    @property
+    def is_available(self) -> bool:
+        """Check if Legacy DGSF is available."""
+        return self._legacy_available
     
     def get_spec(self, spec_id: str) -> Dict[str, Any]:
         """
