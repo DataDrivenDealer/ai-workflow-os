@@ -27,10 +27,9 @@ from typing import Any, Dict, List, Optional, Set
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
-KERNEL_DIR = ROOT / "kernel"
-CONFIGS_DIR = ROOT / "configs"
-GATE_CONFIG_PATH = ROOT / "configs" / "gates.yaml"
+# Add kernel to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "kernel"))
+from paths import ROOT, KERNEL_DIR, CONFIGS_DIR, GATES_CONFIG_PATH as GATE_CONFIG_PATH
 
 
 @dataclass

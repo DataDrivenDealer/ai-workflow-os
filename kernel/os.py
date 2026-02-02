@@ -10,14 +10,12 @@ from typing import Any, Dict, List
 import yaml
 
 from audit import write_audit
+from paths import (
+    ROOT, STATE_MACHINE_PATH, REGISTRY_PATH,
+    TASKCARD_TEMPLATE_PATH as TEMPLATE_PATH, TASKS_DIR
+)
 from state_store import append_event, get_task, init_state, read_yaml, upsert_task, write_yaml
 from task_parser import parse_taskcard, validate_taskcard, get_priority, get_priority_order, PRIORITY_LEVELS
-
-ROOT = Path(__file__).resolve().parents[1]
-STATE_MACHINE_PATH = ROOT / "kernel" / "state_machine.yaml"
-REGISTRY_PATH = ROOT / "spec_registry.yaml"
-TEMPLATE_PATH = ROOT / "templates" / "TASKCARD_TEMPLATE.md"
-TASKS_DIR = ROOT / "tasks"
 
 
 MINIMAL_STATE_MACHINE = {
