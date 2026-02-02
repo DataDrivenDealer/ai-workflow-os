@@ -4,12 +4,13 @@
 |-------|-------|
 | **ID** | STATE_ENGINE_INTEGRATION_001 |
 | **Title** | StateEngine Real Data Integration Testing |
-| **Status** | ✅ VERIFIED |
+| **Status** | ⚠️ BLOCKED |
+| **Blocked By** | DATA_EXPANSION_001 (real data unavailable) |
 | **Priority** | P1 |
 | **Type** | Integration |
 | **Parent** | SDF_DEV_001 |
 | **Created** | 2026-02-01 |
-| **Verified** | 2026-02-01 |
+| **Last Updated** | 2026-02-02 |
 | **Author** | 王数据 + 陈量化 |
 
 ---
@@ -43,7 +44,7 @@
 | DE5 代码存在 | ✅ AVAILABLE | de5_microstructure_a0.py |
 | numpy/scipy 可用 | ✅ VERIFIED | Python 3.12 环境 |
 | pandas 可用 | ⚠️ CHECK | 需要验证 |
-| 真实数据文件 | ❌ MISSING | 需要下载或合成 |
+| 真实数据文件 | ❌ MISSING | **BLOCKING** - 等待 DATA_EXPANSION_001 完成 |
 
 ## 4. Implementation Plan
 

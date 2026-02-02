@@ -3,6 +3,30 @@
 
 version: "1.0.0"
 
+# ===========================================================================
+# WIP (Work-In-Progress) Limits - Kanban Flow Control
+# ===========================================================================
+# Inspired by Gene Kim's "The Phoenix Project" and Theory of Constraints
+# Limiting WIP prevents context switching overhead and identifies bottlenecks
+wip_limits:
+  max_running_tasks: 3
+  description: "Maximum number of tasks allowed in 'running' status simultaneously"
+  rationale: |
+    Based on The Phoenix Project principles:
+    - Prevents multitasking overhead (context switching costs 20-40% productivity)
+    - Forces prioritization (clear focus on P0/P1 tasks)
+    - Exposes bottlenecks early (when all 3 slots blocked)
+    - Improves flow efficiency (throughput over utilization)
+  enforcement: "hard"  # hard|soft|warn
+  applies_to:
+    - status: "running"
+      queues: ["dev", "research", "data"]
+  exceptions:
+    - task_type: "hotfix"
+      max_override: 4
+    - priority: "P0"
+      description: "P0 tasks can start even if WIP=3, but trigger alert"
+
 gates:
   # ===========================================================================
   # G1: Data Quality Gate (Stage 2 Exit)
