@@ -136,3 +136,58 @@ def append_event(tasks_state: Dict[str, Any], task_id: str, event: Dict[str, Any
     events.append(event)
     task["events"] = events
     tasks[task_id] = task
+
+
+def get_running_tasks_count(tasks_state: Dict[str, Any]) -> int:
+    """
+    Get the count of tasks currently in 'running' status.
+    
+    Args:
+        tasks_state: The tasks state dictionary
+        
+    Returns:
+        int: Number of tasks with status='running'
+    """
+    tasks = tasks_state.get("tasks", {})
+    return sum(1 for task in tasks.values() if task.get("status") == "running")
+
+
+def check_wip_limit(tasks_state: Dict[str, Any], limit: int = None) -> None:
+    """
+    Check WIP (Work-In-Progress) limit and raise error if exceeded.
+    
+    This implements Kanban-style WIP limits to prevent multitasking overhead
+    and improve flow efficiency (Gene Kim's Theory of Constraints).
+    
+    Args:
+        tasks_state: The tasks state dictionary
+        limit: Maximum number of running tasks (default: read from config)
+        
+    Raises:
+        RuntimeError: If WIP limit would be exceeded
+    """
+    if limit is None:
+        # Import here to avoid circular dependency
+        try:
+            from kernel.config import config
+        except ModuleNotFoundError:
+            # Fallback for tests or standalone usage
+            from config import config
+        limit = config.get_wip_limit()
+    
+    count = get_running_tasks_count(tasks_state)
+    
+    if count >= limit:
+        # Get running task IDs for helpful error message
+        running_tasks = [
+            task_id for task_id, task in tasks_state.get("tasks", {}).items()
+            if task.get("status") == "running"
+        ]
+        
+        raise RuntimeError(
+            f"WIP limit exceeded: {count}/{limit} tasks already running.\n"
+            f"Currently running: {', '.join(running_tasks)}\n\n"
+            f"To start a new task, first complete or pause one of the running tasks.\n"
+            f"This limit prevents multitasking overhead and improves flow efficiency.\n"
+            f"(Based on Gene Kim's Theory of Constraints and The Phoenix Project)"
+        )

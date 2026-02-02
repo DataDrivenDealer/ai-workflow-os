@@ -192,3 +192,107 @@ class TestTaskOperations:
         
         assert "events" in tasks_state["tasks"]["TASK_001"]
         assert len(tasks_state["tasks"]["TASK_001"]["events"]) == 1
+
+
+class TestWIPLimit:
+    """Tests for WIP (Work-In-Progress) limit functionality."""
+    
+    def test_get_running_tasks_count_empty(self):
+        """get_running_tasks_count should return 0 for empty state."""
+        from state_store import get_running_tasks_count
+        
+        tasks_state = {"tasks": {}}
+        count = get_running_tasks_count(tasks_state)
+        assert count == 0
+    
+    def test_get_running_tasks_count_with_running_tasks(self):
+        """get_running_tasks_count should count only running tasks."""
+        from state_store import get_running_tasks_count
+        
+        tasks_state = {
+            "tasks": {
+                "TASK_001": {"status": "running"},
+                "TASK_002": {"status": "running"},
+                "TASK_003": {"status": "draft"},
+                "TASK_004": {"status": "merged"},
+                "TASK_005": {"status": "running"},
+            }
+        }
+        count = get_running_tasks_count(tasks_state)
+        assert count == 3
+    
+    def test_check_wip_limit_under_limit(self):
+        """check_wip_limit should pass when under limit."""
+        from state_store import check_wip_limit
+        
+        tasks_state = {
+            "tasks": {
+                "TASK_001": {"status": "running"},
+                "TASK_002": {"status": "running"},
+            }
+        }
+        
+        # Should not raise with limit=3 and count=2
+        try:
+            check_wip_limit(tasks_state, limit=3)
+        except RuntimeError:
+            pytest.fail("check_wip_limit raised RuntimeError unexpectedly")
+    
+    def test_check_wip_limit_at_limit(self):
+        """check_wip_limit should fail when at limit."""
+        from state_store import check_wip_limit
+        
+        tasks_state = {
+            "tasks": {
+                "TASK_001": {"status": "running"},
+                "TASK_002": {"status": "running"},
+                "TASK_003": {"status": "running"},
+            }
+        }
+        
+        # Should raise with limit=3 and count=3
+        with pytest.raises(RuntimeError) as exc_info:
+            check_wip_limit(tasks_state, limit=3)
+        
+        assert "WIP limit exceeded" in str(exc_info.value)
+        assert "3/3" in str(exc_info.value)
+    
+    def test_check_wip_limit_over_limit(self):
+        """check_wip_limit should fail when over limit."""
+        from state_store import check_wip_limit
+        
+        tasks_state = {
+            "tasks": {
+                "TASK_001": {"status": "running"},
+                "TASK_002": {"status": "running"},
+                "TASK_003": {"status": "running"},
+                "TASK_004": {"status": "running"},
+            }
+        }
+        
+        # Should raise with limit=3 and count=4
+        with pytest.raises(RuntimeError) as exc_info:
+            check_wip_limit(tasks_state, limit=3)
+        
+        assert "WIP limit exceeded" in str(exc_info.value)
+        assert "4/3" in str(exc_info.value)
+    
+    def test_check_wip_limit_includes_task_ids(self):
+        """check_wip_limit error message should include running task IDs."""
+        from state_store import check_wip_limit
+        
+        tasks_state = {
+            "tasks": {
+                "TASK_A": {"status": "running"},
+                "TASK_B": {"status": "running"},
+                "TASK_C": {"status": "running"},
+            }
+        }
+        
+        with pytest.raises(RuntimeError) as exc_info:
+            check_wip_limit(tasks_state, limit=3)
+        
+        error_msg = str(exc_info.value)
+        assert "TASK_A" in error_msg
+        assert "TASK_B" in error_msg
+        assert "TASK_C" in error_msg
