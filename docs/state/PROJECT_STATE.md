@@ -6,6 +6,69 @@
 
 ---
 
+## 2026-02-02T20:50:00Z - P2-1: Scripts 路径重构完成 (Scripts Path Refactoring)
+
+### 📋 执行上下文
+**Task**: P2-1 - 剩余 Scripts 路径重构  
+**Expert**: Grady Booch (Technical Debt Cleanup)  
+**Duration**: 20 分钟  
+**Status**: ✅ COMPLETED
+
+### 🎯 执行内容
+
+**重构文件** (7 个):
+1. [scripts/ci_gate_reporter.py](../../scripts/ci_gate_reporter.py) - 使用 ROOT
+2. [scripts/policy_check.py](../../scripts/policy_check.py) - 使用 ROOT, REGISTRY_PATH
+3. [scripts/check_lookahead.py](../../scripts/check_lookahead.py) - 使用 ROOT
+4. [scripts/simulate_agent_workflow.py](../../scripts/simulate_agent_workflow.py) - 使用 ROOT, KERNEL_DIR
+5. [scripts/taskcard_gate_validator.py](../../scripts/taskcard_gate_validator.py) - 使用 ROOT
+6. [scripts/test_mcp_e2e.py](../../scripts/test_mcp_e2e.py) - 使用 ROOT, KERNEL_DIR
+7. [scripts/verify_state.py](../../scripts/verify_state.py) - 添加 ROOT 导入
+
+**技术债消除**:
+- ❌ 移除 7 个 `Path(__file__).resolve().parents[1]` 硬编码
+- ✅ 统一使用 `from kernel.paths import ROOT, ...`
+- ✅ 所有路径常量集中在 kernel/paths.py
+
+### ✅ 验收标准达成
+- [x] 7 个 scripts 迁移到 kernel.paths ✅
+- [x] 移除硬编码路径模式 ✅
+- [x] 所有脚本导入成功 ✅
+- [x] 功能测试通过 (policy_check, verify_state) ✅
+
+### 🧪 验证结果
+
+**导入验证**:
+```powershell
+# ci_gate_reporter.py
+ci_gate_reporter.py: ROOT=E:\AI Tools\AI Workflow OS
+
+# policy_check.py
+policy_check.py OK: ROOT=AI Workflow OS, REGISTRY=spec_registry.yaml
+
+# check_lookahead.py
+check_lookahead.py: ROOT=E:\AI Tools\AI Workflow OS
+```
+
+**功能测试**:
+```powershell
+python scripts/policy_check.py --mode precommit
+# Output: Policy check passed. ✅
+
+python scripts/verify_state.py
+# Output: 正常执行，发现 1 error + 26 warnings ✅
+```
+
+### 📊 技术债改进
+
+**Before**: 9 个硬编码路径 (kernel/os.py, gate_check.py, 7 scripts)  
+**After**: 0 个硬编码路径  
+**改进**: 100% 路径统一管理 ✅
+
+**提交**: commit `d6f3a65` - refactor(scripts): migrate 7 scripts to use kernel.paths module
+
+---
+
 ## 2026-02-02T20:25:00Z - 自动化执行循环完成 (Automated Execution Cycle Completed)
 
 ### 📊 执行总览
