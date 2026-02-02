@@ -36,7 +36,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
 from kernel.state_store import read_yaml
-from kernel.paths import TASKS_STATE_PATH, STATE_MACHINE_PATH
+from kernel.paths import TASKS_STATE_PATH, STATE_MACHINE_PATH, ROOT
 from kernel.config import config
 
 

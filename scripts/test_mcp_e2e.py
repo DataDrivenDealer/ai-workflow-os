@@ -22,9 +22,9 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-ROOT = Path(__file__).resolve().parents[1]
-KERNEL_DIR = ROOT / "kernel"
-sys.path.insert(0, str(KERNEL_DIR))
+# Add kernel to path for imports
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from kernel.paths import ROOT, KERNEL_DIR
 
 
 class MCPClient:

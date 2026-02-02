@@ -20,7 +20,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+# Add kernel to path for imports
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from kernel.paths import ROOT
 
 
 @dataclass

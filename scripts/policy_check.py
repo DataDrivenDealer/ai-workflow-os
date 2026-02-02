@@ -8,8 +8,9 @@ from typing import List, Set
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = ROOT / "spec_registry.yaml"
+# Add kernel to path for imports
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from kernel.paths import ROOT, REGISTRY_PATH
 
 CANON_PREFIX = Path("specs") / "canon"
 FRAMEWORK_PREFIX = Path("specs") / "framework"

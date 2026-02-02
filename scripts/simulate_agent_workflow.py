@@ -19,9 +19,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-ROOT = Path(__file__).resolve().parents[1]
-KERNEL_DIR = ROOT / "kernel"
-sys.path.insert(0, str(KERNEL_DIR))
+# Add kernel to path for imports
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from kernel.paths import ROOT, KERNEL_DIR
 
 from mcp_server import MCPServer, create_server
 from agent_auth import get_auth_manager
