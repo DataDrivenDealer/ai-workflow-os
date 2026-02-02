@@ -26,7 +26,7 @@ sessions:
     session_token: sess-f6d22ba9306507f67ec21257509be162
     agent_id: ai_test-c2bd729c
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:12.894631+00:00'
     authorized_by: test_harness
     expires_at: '2026-02-02T04:41:12.894631+00:00'
@@ -38,13 +38,19 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test_harness
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-7ef47b0d754fb8fc2b9559722f244d44:
     session_token: sess-7ef47b0d754fb8fc2b9559722f244d44
     agent_id: ai_test-a53e1a7f
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:12.931631+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:41:12.931631+00:00'
@@ -56,6 +62,12 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-460ecf758be998003cc73028c1de12e4:
@@ -84,7 +96,7 @@ sessions:
     session_token: sess-727008a9294a8a7ad6b881a50ed149a6
     agent_id: ai_test-6b3e7bed
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:13.013449+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:41:13.013449+00:00'
@@ -96,13 +108,19 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-fcd63a88673baea18ceb8c3a2fd69224:
     session_token: sess-fcd63a88673baea18ceb8c3a2fd69224
     agent_id: ai_test-d035c0f4
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:13.063447+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:41:13.063447+00:00'
@@ -114,13 +132,19 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-a4baa246d87cb2f2aa49df56f16988f9:
     session_token: sess-a4baa246d87cb2f2aa49df56f16988f9
     agent_id: ai_test-87cc6e17
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:13.132444+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:41:13.132444+00:00'
@@ -132,13 +156,19 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-c599f7f874fccf84b1868d30d90e120b:
     session_token: sess-c599f7f874fccf84b1868d30d90e120b
     agent_id: ai_test-bd140f77
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:13.171085+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:41:13.171085+00:00'
@@ -150,13 +180,19 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-55d5fa60784123559a3ef1af0435d5e7:
     session_token: sess-55d5fa60784123559a3ef1af0435d5e7
     agent_id: ai_test-86d5c9b2
     role_mode: executor
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:41:13.240081+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:41:13.240081+00:00'
@@ -168,13 +204,19 @@ sessions:
       details:
         role_mode: executor
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-28fca0122973a26723b81b29a98039e8:
     session_token: sess-28fca0122973a26723b81b29a98039e8
     agent_id: ai_builder-13218c79
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.232398+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:43:07.232398+00:00'
@@ -186,13 +228,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-c3f9383b5301b2f2c7e07bb6bb0c48cd:
     session_token: sess-c3f9383b5301b2f2c7e07bb6bb0c48cd
     agent_id: ai_reviewer-2b652ac0
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.241398+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:43:07.241398+00:00'
@@ -204,13 +252,19 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-5334022ba50c2976d270d02d016b7b7b:
     session_token: sess-5334022ba50c2976d270d02d016b7b7b
     agent_id: ai_builder-9c49db9e
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.359455+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:43:07.359455+00:00'
@@ -222,13 +276,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-f8a4d0e0b50f4dd61062d895a286536f:
     session_token: sess-f8a4d0e0b50f4dd61062d895a286536f
     agent_id: ai_reviewer-87c065ca
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.368456+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:43:07.368456+00:00'
@@ -240,13 +300,19 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-7dc0ab808acc3bff0a3287597552da72:
     session_token: sess-7dc0ab808acc3bff0a3287597552da72
     agent_id: ai_multi-330de189
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.427544+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:43:07.427544+00:00'
@@ -258,13 +324,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-f001340b2b4114d00dd4cdd107eba1ee:
     session_token: sess-f001340b2b4114d00dd4cdd107eba1ee
     agent_id: ai_builder-f451d775
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.508061+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:43:07.508061+00:00'
@@ -276,13 +348,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-ee2524e423460ed50e8cdc90ffff3c71:
     session_token: sess-ee2524e423460ed50e8cdc90ffff3c71
     agent_id: ai_reviewer-e50dc71b
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:43:07.519062+00:00'
     authorized_by: test
     expires_at: '2026-02-02T04:43:07.519062+00:00'
@@ -294,13 +372,19 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-4c630023bf4376cec17df4457427042f:
     session_token: sess-4c630023bf4376cec17df4457427042f
     agent_id: ai_builder-3146a90e
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:46:12.049058+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:46:12.049058+00:00'
@@ -312,13 +396,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-fc2d2e3b5e9fa5a35652168aa12eb309:
     session_token: sess-fc2d2e3b5e9fa5a35652168aa12eb309
     agent_id: ai_reviewer-81ddafe3
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:46:12.061056+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:46:12.061056+00:00'
@@ -330,13 +420,19 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-6a581956b5f650f82f6f7bf8cea258a5:
     session_token: sess-6a581956b5f650f82f6f7bf8cea258a5
     agent_id: ai_builder-1a79cb22
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:46:23.927343+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:46:23.927343+00:00'
@@ -348,13 +444,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-59d4372736b702cd1e0523e20898ab77:
     session_token: sess-59d4372736b702cd1e0523e20898ab77
     agent_id: ai_reviewer-6b99d305
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:46:23.941387+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:46:23.941387+00:00'
@@ -366,13 +468,19 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-eea314d29e465ed42222f2430c862d66:
     session_token: sess-eea314d29e465ed42222f2430c862d66
     agent_id: ai_builder-df9d609d
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:49:29.468826+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:49:29.468826+00:00'
@@ -384,13 +492,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-b0790c8fd77b18220088dfa61bf4e07e:
     session_token: sess-b0790c8fd77b18220088dfa61bf4e07e
     agent_id: ai_reviewer-93d122a8
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:49:29.481825+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:49:29.481825+00:00'
@@ -402,13 +516,19 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-e071d17f1ea772e217a1c2edcc9b0e08:
     session_token: sess-e071d17f1ea772e217a1c2edcc9b0e08
     agent_id: ai_builder-c34ab8cf
     role_mode: builder
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:49:36.059276+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:49:36.059276+00:00'
@@ -420,13 +540,19 @@ sessions:
       details:
         role_mode: builder
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-b67d33756ac6714bc19c2e747ffb6e53:
     session_token: sess-b67d33756ac6714bc19c2e747ffb6e53
     agent_id: ai_reviewer-78ee5e58
     role_mode: reviewer
-    state: active
+    state: terminated
     started_at: '2026-02-01T20:49:36.075274+00:00'
     authorized_by: test_operator
     expires_at: '2026-02-02T04:49:36.075274+00:00'
@@ -438,6 +564,12 @@ sessions:
       details:
         role_mode: reviewer
         authorized_by: test_operator
+    - timestamp: '2026-02-02T17:14:45.122551+00:00'
+      action: session_terminated
+      details:
+        reason: expired
+        auto_cleanup: true
+        cleanup_date: '2026-02-02T17:14:45.122551+00:00'
     pending_artifacts: []
     locked_artifacts: []
   sess-7cfc56ad9295862e6700b66c83e97545:
@@ -4180,6 +4312,230 @@ sessions:
     parent_session: null
     events:
     - timestamp: '2026-02-02T17:02:42.279158+00:00'
+      action: session_created
+      details:
+        role_mode: reviewer
+        authorized_by: test_operator
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-6a8d7783c4f28a2a022c17b0ec0a505b:
+    session_token: sess-6a8d7783c4f28a2a022c17b0ec0a505b
+    agent_id: ai_test-2f5beac7
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:04.689553+00:00'
+    authorized_by: test_harness
+    expires_at: '2026-02-03T01:11:04.689553+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:04.689553+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test_harness
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-ba09ac645954ab118663cca7dbf913a0:
+    session_token: sess-ba09ac645954ab118663cca7dbf913a0
+    agent_id: ai_test-36b64d60
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:04.981581+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:04.981581+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:04.981581+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-71718d1be4c44e50a1158b529199e471:
+    session_token: sess-71718d1be4c44e50a1158b529199e471
+    agent_id: ai_test-4acb42d2
+    role_mode: executor
+    state: terminated
+    started_at: '2026-02-02T17:11:05.269539+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:05.269539+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:05.269539+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    - timestamp: '2026-02-02T17:11:05.410590+00:00'
+      action: session_terminated
+      details:
+        reason: test_complete
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-1013d7c5fb974c5cd37c12a5d226806d:
+    session_token: sess-1013d7c5fb974c5cd37c12a5d226806d
+    agent_id: ai_test-60dd9d42
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:05.691395+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:05.691395+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:05.691395+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-1109cb01ba26c40ad0e3ffa89a5aec88:
+    session_token: sess-1109cb01ba26c40ad0e3ffa89a5aec88
+    agent_id: ai_test-01471452
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:05.991592+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:05.991592+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:05.991592+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-55c7769d2121219d8459febcedea889e:
+    session_token: sess-55c7769d2121219d8459febcedea889e
+    agent_id: ai_test-e10b8d56
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:06.277575+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:06.277575+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:06.277575+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-38fa20aff00c4bb79b57506eaeb787a0:
+    session_token: sess-38fa20aff00c4bb79b57506eaeb787a0
+    agent_id: ai_test-e62a8faf
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:06.563752+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:06.563752+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:06.563752+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-b56f46079340feae5bd8046b1ade466b:
+    session_token: sess-b56f46079340feae5bd8046b1ade466b
+    agent_id: ai_test-cffbc22c
+    role_mode: executor
+    state: active
+    started_at: '2026-02-02T17:11:06.877544+00:00'
+    authorized_by: test
+    expires_at: '2026-02-03T01:11:06.877544+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:06.877544+00:00'
+      action: session_created
+      details:
+        role_mode: executor
+        authorized_by: test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-b8d439962d14eb4b1ae6e737b05df7b3:
+    session_token: sess-b8d439962d14eb4b1ae6e737b05df7b3
+    agent_id: ai_builder-18cfe422
+    role_mode: builder
+    state: active
+    started_at: '2026-02-02T17:11:07.371228+00:00'
+    authorized_by: test_operator
+    expires_at: '2026-02-03T01:11:07.371228+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:07.371228+00:00'
+      action: session_created
+      details:
+        role_mode: builder
+        authorized_by: test_operator
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-029c54754565e1532249e1e31e73ecc6:
+    session_token: sess-029c54754565e1532249e1e31e73ecc6
+    agent_id: ai_reviewer-6457ed46
+    role_mode: reviewer
+    state: active
+    started_at: '2026-02-02T17:11:07.516446+00:00'
+    authorized_by: test_operator
+    expires_at: '2026-02-03T01:11:07.516446+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:07.516446+00:00'
+      action: session_created
+      details:
+        role_mode: reviewer
+        authorized_by: test_operator
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-36f00c81282d280fe22b27cf1dd76d36:
+    session_token: sess-36f00c81282d280fe22b27cf1dd76d36
+    agent_id: ai_agent-5b4512d0
+    role_mode: builder
+    state: terminated
+    started_at: '2026-02-02T17:11:07.877135+00:00'
+    authorized_by: test_operator
+    expires_at: '2026-02-03T01:11:07.877135+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:07.877135+00:00'
+      action: session_created
+      details:
+        role_mode: builder
+        authorized_by: test_operator
+    - timestamp: '2026-02-02T17:11:08.024594+00:00'
+      action: session_terminated
+      details:
+        reason: switching to reviewer role for self-review prevention test
+    pending_artifacts: []
+    locked_artifacts: []
+  sess-749128a47c3b2a04fa67a1fc16d9579b:
+    session_token: sess-749128a47c3b2a04fa67a1fc16d9579b
+    agent_id: ai_agent-5b4512d0
+    role_mode: reviewer
+    state: active
+    started_at: '2026-02-02T17:11:08.181674+00:00'
+    authorized_by: test_operator
+    expires_at: '2026-02-03T01:11:08.181674+00:00'
+    task_scope: []
+    parent_session: null
+    events:
+    - timestamp: '2026-02-02T17:11:08.181674+00:00'
       action: session_created
       details:
         role_mode: reviewer
