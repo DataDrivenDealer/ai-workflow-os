@@ -34,8 +34,11 @@ python -m venv .venv
 # Activate (Windows PowerShell)
 .venv\Scripts\Activate.ps1
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (locked versions for reproducibility)
+pip install -r requirements-lock.txt
+
+# Or install from base requirements (for development)
+# pip install -r requirements.txt
 ```
 
 ### Step 2: Initialize the OS
