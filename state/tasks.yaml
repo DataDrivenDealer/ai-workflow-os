@@ -260,3 +260,25 @@ tasks:
     - EA_DEV_001
     downstream:
     - BASELINE_REPRO_001
+  SDF_TEST_FIX_001:
+    status: running
+    queue: dev
+    branch: feature/router-v0
+    priority: P0
+    parent_task: SDF_DEV_001_T2
+    spec_refs:
+    - PROJECT_DGSF
+    - SDF_INTERFACE_CONTRACT
+    related_reports:
+    - projects/dgsf/reports/SDF_TEST_FAILURES.md
+    - projects/dgsf/reports/SDF_MODEL_INVENTORY.json
+    last_updated: '2026-02-02T19:35:00.000000+00:00'
+    events:
+    - timestamp: '2026-02-02T19:35:00.000000+00:00'
+      action: task_created
+      note: Created via P1-5 execution - Fix SDF test suite blocking import error
+    - timestamp: '2026-02-02T19:35:00.000000+00:00'
+      action: task_start
+      from: draft
+      to: running
+      note: Phase 1 (immediate unblocking) already completed in P0-3, now tracking full lifecycle
