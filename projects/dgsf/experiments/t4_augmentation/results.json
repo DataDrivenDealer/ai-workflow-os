@@ -1,0 +1,134 @@
+{
+  "config": {
+    "name": "T4.6 Data Augmentation Benchmark",
+    "timestamp": "2026-02-03T15:40:44.836105",
+    "training": {
+      "max_epochs": 50,
+      "learning_rate": 0.001,
+      "batch_size": 32,
+      "seed": 42,
+      "device": "cpu"
+    },
+    "model": {
+      "input_dim": 48,
+      "hidden_dim": 64,
+      "num_hidden_layers": 3,
+      "dropout": 0.4,
+      "l2_weight": 0.0001
+    },
+    "early_stopping": {
+      "patience": 10,
+      "min_delta": 0.0001
+    },
+    "augmentation": {
+      "noise_std": [
+        0.01,
+        0.05,
+        0.1
+      ],
+      "feature_mask_prob": [
+        0.05,
+        0.1,
+        0.2
+      ],
+      "augment_prob": 0.5
+    }
+  },
+  "results": [
+    {
+      "augmentation": "none",
+      "epochs_run": 33,
+      "best_epoch": 23,
+      "best_val_loss": 0.0016465330263599753,
+      "final_train_loss": 0.0013879621401429176,
+      "final_val_loss": 0.0016465330263599753,
+      "oos_is_ratio": 1.186295345340207,
+      "total_time_sec": 0.3503291606903076
+    },
+    {
+      "augmentation": "gaussian_noise_std=0.01",
+      "epochs_run": 27,
+      "best_epoch": 17,
+      "best_val_loss": 0.0016941768117249012,
+      "final_train_loss": 0.0014262888580560684,
+      "final_val_loss": 0.0016941768117249012,
+      "oos_is_ratio": 1.187821668910704,
+      "total_time_sec": 0.2722759246826172
+    },
+    {
+      "augmentation": "gaussian_noise_std=0.05",
+      "epochs_run": 27,
+      "best_epoch": 17,
+      "best_val_loss": 0.0016963231610134244,
+      "final_train_loss": 0.001427474315278232,
+      "final_val_loss": 0.0016963231610134244,
+      "oos_is_ratio": 1.1883388323402446,
+      "total_time_sec": 0.2933967113494873
+    },
+    {
+      "augmentation": "gaussian_noise_std=0.1",
+      "epochs_run": 27,
+      "best_epoch": 17,
+      "best_val_loss": 0.0016981962835416198,
+      "final_train_loss": 0.0014292924897745252,
+      "final_val_loss": 0.0016981962835416198,
+      "oos_is_ratio": 1.1881376944823343,
+      "total_time_sec": 0.3001747131347656
+    },
+    {
+      "augmentation": "feature_mask_prob=0.05",
+      "epochs_run": 33,
+      "best_epoch": 23,
+      "best_val_loss": 0.0016294070519506931,
+      "final_train_loss": 0.0013806360075250268,
+      "final_val_loss": 0.0016294070519506931,
+      "oos_is_ratio": 1.1801858296247258,
+      "total_time_sec": 0.33607053756713867
+    },
+    {
+      "augmentation": "feature_mask_prob=0.1",
+      "epochs_run": 33,
+      "best_epoch": 23,
+      "best_val_loss": 0.001626302837394178,
+      "final_train_loss": 0.0013825533678755164,
+      "final_val_loss": 0.001626302837394178,
+      "oos_is_ratio": 1.176303841271036,
+      "total_time_sec": 0.3390979766845703
+    },
+    {
+      "augmentation": "feature_mask_prob=0.2",
+      "epochs_run": 33,
+      "best_epoch": 23,
+      "best_val_loss": 0.0016225220169872046,
+      "final_train_loss": 0.0013793089892715216,
+      "final_val_loss": 0.0016225220169872046,
+      "oos_is_ratio": 1.1763296183867658,
+      "total_time_sec": 0.3489258289337158
+    },
+    {
+      "augmentation": "temporal_jitter",
+      "epochs_run": 24,
+      "best_epoch": 14,
+      "best_val_loss": 0.0017233333783224225,
+      "final_train_loss": 0.0015289990697056055,
+      "final_val_loss": 0.0017233333783224225,
+      "oos_is_ratio": 1.1270990365312872,
+      "total_time_sec": 0.2765164375305176
+    }
+  ],
+  "baseline": {
+    "final_val_loss": 0.0016465330263599753,
+    "oos_is_ratio": 1.186295345340207
+  },
+  "best": {
+    "strategy": "feature_mask_prob=0.2",
+    "final_val_loss": 0.0016225220169872046,
+    "oos_is_ratio": 1.1763296183867658
+  },
+  "assessment": "EFFECTIVE",
+  "recommendation": {
+    "use_augmentation": true,
+    "strategy": "feature_mask_prob=0.2",
+    "rationale": "1.5% improvement in validation loss"
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "config": {
+    "name": "T4.7 Integrated Training",
+    "timestamp": "2026-02-03T15:43:02.913687",
+    "baseline": {
+      "max_epochs": 100,
+      "learning_rate": 0.001,
+      "batch_size": 32,
+      "seed": 42,
+      "dropout": 0.0,
+      "l2_weight": 0.0
+    },
+    "optimized": {
+      "max_epochs": 100,
+      "learning_rate": 0.001,
+      "batch_size": 32,
+      "seed": 42,
+      "dropout": 0.4,
+      "l2_weight": 0.0001,
+      "use_onecycle": true,
+      "max_lr": 0.01,
+      "pct_start": 0.3,
+      "early_stopping_patience": 10,
+      "early_stopping_min_delta": 0.0001,
+      "use_feature_mask": true,
+      "feature_mask_prob": 0.2,
+      "augment_prob": 0.5
+    },
+    "model": {
+      "input_dim": 48,
+      "hidden_dim": 64,
+      "num_hidden_layers": 3
+    },
+    "objectives": {
+      "T4-OBJ-1": {
+        "name": "Training Speedup",
+        "target": "\u226530%"
+      },
+      "T4-OBJ-2": {
+        "name": "OOS Sharpe",
+        "target": "\u22651.5"
+      },
+      "T4-OBJ-3": {
+        "name": "OOS/IS Ratio",
+        "target": "\u22650.9"
+      }
+    }
+  },
+  "baseline": {
+    "method": "baseline",
+    "epochs_run": 100,
+    "best_epoch": 14,
+    "total_time_sec": 0.8490622043609619,
+    "final_train_loss": 2.050902945814993e-05,
+    "final_val_loss": 0.0027182474732398987,
+    "best_val_loss": 0.0019423464545980096,
+    "oos_is_ratio": 132.53905938292536,
+    "is_sharpe": -0.5241982679577117,
+    "oos_sharpe": -0.6102172230258738,
+    "sharpe_ratio": 0
+  },
+  "optimized": {
+    "method": "optimized",
+    "epochs_run": 32,
+    "best_epoch": 22,
+    "total_time_sec": 0.3515927791595459,
+    "final_train_loss": 0.0014482972910627723,
+    "final_val_loss": 0.001649069949053228,
+    "best_val_loss": 0.001649069949053228,
+    "oos_is_ratio": 1.1386266888914272,
+    "is_sharpe": 0.6178376012986746,
+    "oos_sharpe": 1.0111235962654213,
+    "sharpe_ratio": 1.636552379039528,
+    "strategies_used": [
+      "T4.2: OneCycleLR",
+      "T4.4: EarlyStopping",
+      "T4.5: L2 + Dropout",
+      "T4.6: Feature Masking"
+    ]
+  },
+  "objectives": {
+    "T4-OBJ-1": {
+      "name": "Training Speedup",
+      "target": "\u226530%",
+      "actual": "58.6%",
+      "passed": true,
+      "details": "Baseline: 0.85s, Optimized: 0.35s"
+    },
+    "T4-OBJ-2": {
+      "name": "OOS Sharpe",
+      "target": "\u22651.5",
+      "actual": "1.011",
+      "passed": "False",
+      "details": "Baseline: -0.610, Optimized: 1.011",
+      "note": "\u26a0\ufe0f Synthetic data - validate with real data"
+    },
+    "T4-OBJ-3": {
+      "name": "OOS/IS Ratio",
+      "target": "\u22650.9",
+      "actual": "1.637",
+      "passed": "True",
+      "details": "Baseline: 0.000, Optimized: 1.637"
+    }
+  },
+  "summary": {
+    "objectives_passed": 2,
+    "objectives_total": 3,
+    "speedup_pct": 58.590456935464616,
+    "epochs_saved": 68
+  }
+}
