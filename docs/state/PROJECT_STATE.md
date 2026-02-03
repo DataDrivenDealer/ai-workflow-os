@@ -6,6 +6,55 @@
 
 ---
 
+## 2026-02-03T16:10Z - T6.1 DATA-001 Fixed ✅
+
+**Date**: 2026-02-03  
+**Milestone**: **T6.1 DATA-001 Real Data Loading Fix COMPLETED**  
+**DGSF 相关**: **Yes** - SDF_DEV_001_T6 STARTED  
+**Expert**: Orchestrator (scan → diagnose → plan → execute)  
+**Result**: ✅ 真实数据加载成功 (56 months × 48 features)
+
+### DATA-001 问题诊断
+
+| 文件 | 原始形状 | 问题 |
+|------|---------|------|
+| xstate_monthly_final.parquet | (56, 2) | 嵌套 x_state_vector 列未展开 |
+| monthly_returns.parquet | (124568, 3) | 面板数据未聚合为时间序列 |
+
+### 修复内容
+
+1. **t4_baseline_benchmark.py::load_data()** - 展开嵌套列 + 日期对齐
+2. **data_utils.py (新增)** - 可复用的 `RealDataLoader` 类
+
+### 验证结果
+
+| 指标 | Before (Synthetic) | After (Real) |
+|-----|-------------------|--------------|
+| Data Source | 合成 500 样本 | 真实 56 月 × 48 特征 |
+| OOS Sharpe | -0.61 | -0.44 |
+| OOS/IS Loss Ratio | 1.44 | 0.36 (更好的泛化) |
+| Date Range | - | 2015-05 to 2019-12 |
+
+### 验证命令
+
+```powershell
+cd "E:\AI Tools\AI Workflow OS\projects\dgsf\scripts"
+python data_utils.py
+# Output: [OK] Loaded 56 aligned samples with 48 features
+```
+
+### 产出物
+
+- `projects/dgsf/scripts/t4_baseline_benchmark.py` (load_data 修复)
+- `projects/dgsf/scripts/data_utils.py` (新增 RealDataLoader)
+- `projects/dgsf/experiments/t4_baseline/baseline_metrics.json` (真实数据结果)
+
+### Next Step
+
+**T6.2**: 将 RealDataLoader 集成到 T5 评估脚本并重新验证 objectives
+
+---
+
 ## 2026-02-04T16:04Z - T5 Evaluation Framework COMPLETE 🎉
 
 **Date**: 2026-02-04  

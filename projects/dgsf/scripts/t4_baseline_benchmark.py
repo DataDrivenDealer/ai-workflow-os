@@ -162,9 +162,17 @@ def load_data() -> Tuple[np.ndarray, np.ndarray, bool]:
     """
     Attempt to load real data, fall back to synthetic if unavailable.
     
+    DATA-001 Fix: Handle xstate nested x_state_vector column and panel returns.
+    
+    Data formats:
+    - xstate_monthly_final.parquet: (n_months, 2) with columns ['date', 'x_state_vector']
+      where x_state_vector is a list/array of ~48 features per month
+    - monthly_returns.parquet: (n_obs, 3) panel data ['month_end', 'ts_code', 'ret']
+      needs to be aggregated to monthly cross-sectional mean returns
+    
     Returns:
-        X: Features (n_samples, n_features)
-        returns: Returns (n_samples,)
+        X: Features (n_samples, n_features) - monthly state features
+        returns: Returns (n_samples,) - monthly cross-sectional mean returns
         is_real_data: True if real data loaded successfully
     """
     try:
@@ -178,29 +186,83 @@ def load_data() -> Tuple[np.ndarray, np.ndarray, bool]:
             print(f"  X_state: {xstate_path}")
             print(f"  Returns: {returns_path}")
             
+            # Load xstate - contains nested x_state_vector column
             X_df = pd.read_parquet(xstate_path)
-            R_df = pd.read_parquet(returns_path)
+            print(f"  xstate raw shape: {X_df.shape}, columns: {X_df.columns.tolist()}")
             
-            # Align on common index
-            common_idx = X_df.index.intersection(R_df.index)
-            X = X_df.loc[common_idx].values.astype(np.float32)
-            
-            # Get returns column
-            if "ret" in R_df.columns:
-                R = R_df.loc[common_idx, "ret"].values.astype(np.float32)
-            elif "monthly_return" in R_df.columns:
-                R = R_df.loc[common_idx, "monthly_return"].values.astype(np.float32)
+            # DATA-001 FIX: Expand the nested x_state_vector column
+            if 'x_state_vector' in X_df.columns:
+                # Extract the list/array column and stack into matrix
+                x_vectors = X_df['x_state_vector'].tolist()
+                X = np.array(x_vectors, dtype=np.float32)
+                
+                # Use date as index for alignment
+                if 'date' in X_df.columns:
+                    dates = X_df['date'].astype(str).values
+                else:
+                    dates = X_df.index.astype(str).values
+                    
+                print(f"  xstate expanded shape: {X.shape} ({X.shape[0]} months, {X.shape[1]} features)")
             else:
-                R = R_df.loc[common_idx].values[:, 0].astype(np.float32)
+                # Fallback: assume standard columnar format
+                X = X_df.values.astype(np.float32)
+                dates = X_df.index.astype(str).values
             
-            print(f"Loaded {len(common_idx)} samples with {X.shape[1]} features")
+            # Load returns - panel data (month × firm)
+            R_df = pd.read_parquet(returns_path)
+            print(f"  returns raw shape: {R_df.shape}, columns: {R_df.columns.tolist()}")
+            
+            # DATA-001 FIX: Aggregate panel returns to monthly cross-sectional mean
+            if 'month_end' in R_df.columns and 'ret' in R_df.columns:
+                # Group by month and compute cross-sectional mean return
+                R_monthly = R_df.groupby('month_end')['ret'].mean()
+                R_dates = R_monthly.index.astype(str).values
+                R_values = R_monthly.values.astype(np.float32)
+                print(f"  returns aggregated: {len(R_values)} months")
+            elif 'ret' in R_df.columns:
+                R_values = R_df['ret'].values.astype(np.float32)
+                R_dates = R_df.index.astype(str).values
+            else:
+                R_values = R_df.iloc[:, -1].values.astype(np.float32)
+                R_dates = R_df.index.astype(str).values
+            
+            # Align X_state dates with returns dates
+            # Convert date formats (xstate: YYYYMM, returns: YYYYMMDD)
+            xstate_dates_norm = [d[:6] if len(d) >= 6 else d for d in dates]
+            returns_dates_norm = [d[:6] if len(d) >= 6 else d for d in R_dates]
+            
+            # Find common months
+            xstate_date_set = set(xstate_dates_norm)
+            common_dates = [d for d in returns_dates_norm if d in xstate_date_set]
+            
+            if len(common_dates) == 0:
+                raise ValueError(f"No overlapping dates. xstate: {dates[:5]}, returns: {R_dates[:5]}")
+            
+            # Build aligned arrays
+            xstate_date_to_idx = {d: i for i, d in enumerate(xstate_dates_norm)}
+            returns_date_to_idx = {d: i for i, d in enumerate(returns_dates_norm)}
+            
+            aligned_X = []
+            aligned_R = []
+            for d in common_dates:
+                if d in xstate_date_to_idx and d in returns_date_to_idx:
+                    aligned_X.append(X[xstate_date_to_idx[d]])
+                    aligned_R.append(R_values[returns_date_to_idx[d]])
+            
+            X = np.array(aligned_X, dtype=np.float32)
+            R = np.array(aligned_R, dtype=np.float32)
+            
+            print(f"[OK] Loaded {len(X)} aligned samples with {X.shape[1]} features")
+            print(f"   Date range: {common_dates[0]} to {common_dates[-1]}")
             return X, R, True
         
     except Exception as e:
         print(f"Failed to load real data: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Fall back to synthetic
-    print("Using synthetic data for baseline benchmark")
+    print("[WARN] Using synthetic data for baseline benchmark")
     X, R = generate_synthetic_data(n_samples=500, n_features=48)
     return X, R, False
 
