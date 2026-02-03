@@ -6,6 +6,91 @@
 
 ---
 
+## 2026-02-04T05:30Z - T4 Training Optimization 目标定义完成 ✅
+
+**Date**: 2026-02-04  
+**Milestone**: **T4 Training Optimization Objectives Defined**  
+**DGSF 相关**: **Yes** - SDF_DEV_001_T4  
+**Expert**: Kaiming He (Training Optimization)  
+**Result**: ✅ 3 目标 + 5 策略完成定义
+
+### T4 Objectives Defined
+更新 PROJECT_DGSF.yaml，在 SDF_DEV_001_T4 中添加详细目标和策略：
+
+#### 3 Core Objectives
+1. **T4-OBJ-1: Training Time Reduction** (≥30% speedup)
+   - Baseline: Current SDF training time
+   - Target: Reduce wall-clock time by ≥30%
+   - Metrics: wall-clock time, GPU utilization, throughput
+
+2. **T4-OBJ-2: Sample Efficiency** (20% reduction)
+   - Baseline: Current sample requirements
+   - Target: 20% fewer samples to reach convergence
+   - Metrics: epochs to target loss, samples per epoch
+
+3. **T4-OBJ-3: Overfitting Control** (OOS/IS ≥ 0.9)
+   - Baseline: Current in-sample Sharpe ratio
+   - Target: OOS Sharpe within 10% of IS
+   - Metrics: train-val loss gap, Sharpe OOS/IS ratio
+
+#### 5 Optimization Strategies
+1. **T4-STR-1: Adaptive Learning Rate Scheduling** (15-20% speedup)
+   - Techniques: CosineAnnealing, ReduceLROnPlateau, OneCycleLR
+   - Implementation: Test 3 schedulers, select best via grid search
+
+2. **T4-STR-2: Mixed Precision Training FP16** (40-50% speedup)
+   - Techniques: torch.cuda.amp, gradient scaling
+   - Implementation: Enable FP16, profile memory/speed
+
+3. **T4-STR-3: Early Stopping with Patience** (20-30% sample efficiency)
+   - Techniques: Patience=10 epochs, min_delta=0.001
+   - Implementation: Monitor validation loss, restore best checkpoint
+
+4. **T4-STR-4: Regularization Tuning** (5-10% gap reduction)
+   - Techniques: L2 weight decay, Dropout rate grid search
+   - Implementation: Test 5×5 grid (L2: [1e-5, 1e-3], Dropout: [0.1, 0.5])
+
+5. **T4-STR-5: Data Augmentation** (10-15% sample efficiency)
+   - Techniques: Temporal jittering (±1 month), Gaussian noise
+   - Implementation: Apply to 50% training samples, ablation study
+
+#### Deliverables (5 items)
+- Optimized training script with all strategies
+- Hyperparameter search results (grid/Bayesian)
+- Convergence report (loss curves, Sharpe evolution)
+- Checkpoint system (save/load best model)
+- Benchmark comparison (baseline vs optimized)
+
+#### Verification Criteria (5 checks)
+1. Training speedup ≥30% vs baseline
+2. OOS Sharpe ≥1.5 (absolute) AND OOS/IS ≥0.9 (relative)
+3. Checkpoint tests pass (save/load consistency)
+4. All strategies documented with ablation results
+5. Convergence stable (≤3 retries to reach target)
+
+### Task Status Update
+- **SDF_DEV_001_T4 status**: `not_started` → `ready`
+- **SDF_DEV_001_T4 dependencies**: Fixed from T2 to T3
+- **Next Step**: Begin T4 execution (baseline benchmark → strategy implementation)
+
+### Verification Evidence
+```yaml
+# PROJECT_DGSF.yaml excerpt (SDF_DEV_001_T4)
+objectives: 3  # T4-OBJ-1/2/3
+strategies: 5  # T4-STR-1/2/3/4/5
+deliverables: 5
+verification: 5
+total_expansion: ~100 lines added
+```
+
+### Context Links
+- **Updated Spec**: [PROJECT_DGSF.yaml](../../projects/dgsf/specs/PROJECT_DGSF.yaml)
+- **T3 Completion**: 2026-02-04T03:00Z log entry (66/66 tests, 2108 LOC)
+- **T3→T4 Gate**: 2026-02-04T04:00Z log entry (OPEN)
+- **Commit**: 3494889 "docs(dgsf): complete T4 objectives definition and update pipeline status"
+
+---
+
 ## 2026-02-04T04:00Z - Stage 4 Gates 形式化记录 ✅
 
 **Date**: 2026-02-04  
