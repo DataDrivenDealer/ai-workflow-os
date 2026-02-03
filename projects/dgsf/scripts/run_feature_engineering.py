@@ -281,13 +281,91 @@ def run_pipeline(
         data = load_all_data(start_date, end_date, config)
         print(f"✓ All 5 data sources loaded successfully\n")
         
-        # Steps 2-7: TODO in T3.3.3-T3.3.4
+        # Step 2-3: Compute Firm Characteristics (implemented in T3.3.3)
+        from firm_characteristics import compute_all_characteristics
+        
         print("="*80)
-        print("PIPELINE EXECUTION PAUSED")
+        print("Step 2-3: Computing Firm Characteristics")
         print("="*80)
-        print("\nData loading (Step 1) complete. Next steps:")
-        print("  - T3.3.3: Firm characteristics computation (Step 2-3)")
-        print("  - T3.3.4: Spreads + Factors computation (Step 4-6)")
+        size, momentum, profitability, volatility, book_to_market = compute_all_characteristics(
+            price_data=data['price'],
+            shares_outstanding=data['shares'],
+            financial_statements=data['financials'],
+            returns=data['returns']
+        )
+        print(f"✓ All 5 characteristics computed\n")
+        
+        # Step 4: Compute Cross-Sectional Spreads (implemented in T3.3.4 Step 6)
+        from spreads_factors import compute_style_spreads
+        
+        print("="*80)
+        print("Step 4: Computing Cross-Sectional Spreads")
+        print("="*80)
+        spreads = compute_style_spreads(
+            size=size,
+            book_to_market=book_to_market,
+            momentum=momentum,
+            profitability=profitability,
+            volatility=volatility
+        )
+        print(f"✓ Cross-sectional spreads computed (5D vector)\n")
+        
+        # Step 5: Compute Factors (implemented in T3.3.4 Step 2-5)
+        from spreads_factors import (
+            compute_market_factor,
+            compute_smb_hml,
+            compute_momentum_factor,
+            compute_reversal
+        )
+        
+        print("="*80)
+        print("Step 5: Computing Factors")
+        print("="*80)
+        market_factor = compute_market_factor(data['returns'], data['risk_free'])
+        smb, hml = compute_smb_hml(size, book_to_market, data['returns'])
+        momentum_factor = compute_momentum_factor(momentum, data['returns'])
+        reversal = compute_reversal(data['returns'])
+        print(f"✓ All 5 factors computed (market, SMB, HML, momentum, reversal)\n")
+        
+        # Step 6: Assemble X_state (implemented in T3.3.4 Step 7)
+        from spreads_factors import assemble_X_state
+        
+        print("="*80)
+        print("Step 6: Assembling X_state")
+        print("="*80)
+        characteristics_dict = {
+            'size': size,
+            'book_to_market': book_to_market,
+            'momentum': momentum,
+            'profitability': profitability,
+            'volatility': volatility
+        }
+        factors_dict = {
+            'market_factor': market_factor,
+            'smb_factor': smb,
+            'hml_factor': hml,
+            'momentum_factor': momentum_factor,
+            'reversal_factor': reversal
+        }
+        X_state = assemble_X_state(characteristics_dict, spreads, factors_dict)
+        print(f"✓ X_state assembled: shape = {X_state.shape}\n")
+        
+        # Step 7: Save Output
+        print("="*80)
+        print("Step 7: Saving Output")
+        print("="*80)
+        output_path = output_dir / f"X_state_{start_date.strftime('%Y%m')}_{end_date.strftime('%Y%m')}.csv"
+        X_state.to_csv(output_path, index=False)
+        print(f"✓ X_state saved to: {output_path}")
+        
+        # Summary
+        print("\n" + "="*80)
+        print("PIPELINE EXECUTION COMPLETE")
+        print("="*80)
+        print(f"Date range: {start_date.date()} to {end_date.date()}")
+        print(f"X_state shape: {X_state.shape}")
+        print(f"Output: {output_path}")
+        print("="*80 + "\n")
         print("\nData loaded:")
         for source_name, df in data.items():
             print(f"  • {source_name}: {len(df)} rows")
