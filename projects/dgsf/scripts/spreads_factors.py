@@ -313,7 +313,71 @@ def compute_style_spreads(
         - If market_cap not provided, use equal weighting
         - Winsorization already applied in firm_characteristics.py
     """
-    raise NotImplementedError("TODO: T3.3.4 Step 6")
+    # Merge all characteristics
+    characteristics = {
+        'size': size,
+        'book_to_market': book_to_market,
+        'momentum': momentum,
+        'profitability': profitability,
+        'volatility': volatility,
+    }
+    
+    # Start with size as base
+    merged = size.copy()
+    for name, df in characteristics.items():
+        if name != 'size':
+            merged = merged.merge(df, on=['date', 'firm_id'], how='outer', suffixes=('', f'_{name}'))
+    
+    # Add market_cap if provided (for weighting)
+    use_market_cap = market_cap is not None
+    if use_market_cap:
+        merged = merged.merge(market_cap, on=['date', 'firm_id'], how='left')
+    
+    # Compute spreads for each date
+    spreads_list = []
+    
+    for date, group in merged.groupby('date'):
+        spreads = {'date': date}
+        
+        for char_name in ['size', 'book_to_market', 'momentum', 'profitability', 'volatility']:
+            # Drop NaN for this characteristic
+            char_data = group[['firm_id', char_name]].dropna()
+            
+            if len(char_data) < 3:
+                # Not enough data for tertiles
+                spreads[f'{char_name}_spread'] = np.nan
+                continue
+            
+            # Tertile breakpoints (30%, 70%)
+            q30 = char_data[char_name].quantile(0.30)
+            q70 = char_data[char_name].quantile(0.70)
+            
+            # Classify into tertiles
+            bottom_tertile = char_data[char_data[char_name] <= q30]
+            top_tertile = char_data[char_data[char_name] >= q70]
+            
+            # Compute weighted or equal-weighted averages
+            if use_market_cap and 'market_cap' in group.columns:
+                # Market-cap weighted
+                bottom_firms = group[group['firm_id'].isin(bottom_tertile['firm_id'])]
+                top_firms = group[group['firm_id'].isin(top_tertile['firm_id'])]
+                
+                bottom_weights = bottom_firms['market_cap'] / bottom_firms['market_cap'].sum()
+                top_weights = top_firms['market_cap'] / top_firms['market_cap'].sum()
+                
+                bottom_avg = (bottom_firms[char_name] * bottom_weights).sum()
+                top_avg = (top_firms[char_name] * top_weights).sum()
+            else:
+                # Equal-weighted
+                bottom_avg = bottom_tertile[char_name].mean()
+                top_avg = top_tertile[char_name].mean()
+            
+            # Spread = top - bottom (long high, short low)
+            spreads[f'{char_name}_spread'] = top_avg - bottom_avg
+        
+        spreads_list.append(spreads)
+    
+    return pd.DataFrame(spreads_list)
 
 
 def assemble_X_state(
@@ -353,4 +417,39 @@ def assemble_X_state(
         - Missing values forward-filled (max 1 month)
         - Verify no data leakage: X_state[t] uses only data up to t-1
     """
-    raise NotImplementedError("TODO: T3.3.4 Step 7")
+    # Compute cross-sectional means for characteristics (aggregate firm-level to market-level)
+    char_aggregates = []
+    
+    for char_name, char_df in characteristics.items():
+        # Compute equal-weighted cross-sectional mean for each date
+        char_mean = char_df.groupby('date')[char_name].mean().reset_index()
+        char_mean.columns = ['date', f'{char_name}_mean']
+        char_aggregates.append(char_mean)
+    
+    # Merge all characteristic means
+    X_state = char_aggregates[0]
+    for char_agg in char_aggregates[1:]:
+        X_state = X_state.merge(char_agg, on='date', how='outer')
+    
+    # Merge spreads
+    X_state = X_state.merge(spreads, on='date', how='outer')
+    
+    # Merge factors if provided
+    if factors is not None:
+        for factor_name, factor_df in factors.items():
+            X_state = X_state.merge(factor_df, on='date', how='outer')
+    
+    # Sort by date
+    X_state = X_state.sort_values('date').reset_index(drop=True)
+    
+    # Forward-fill missing values (max 1 month)
+    for col in X_state.columns:
+        if col != 'date':
+            X_state[col] = X_state[col].ffill(limit=1)
+    
+    # Rename columns to X_state_dim_i format
+    feature_cols = [col for col in X_state.columns if col != 'date']
+    for i, col in enumerate(feature_cols):
+        X_state = X_state.rename(columns={col: f'X_state_dim_{i}'})
+    
+    return X_state

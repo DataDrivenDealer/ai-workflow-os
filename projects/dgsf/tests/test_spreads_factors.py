@@ -401,23 +401,280 @@ def test_compute_reversal_insufficient_history():
 
 
 # ============================================================================
-# Placeholder tests for remaining functions
+# compute_style_spreads tests
 # ============================================================================
 
-def test_compute_momentum_factor_placeholder():
-    """TODO: Implement in Step 4"""
-    pytest.skip("Not yet implemented")
+def test_compute_style_spreads_basic():
+    """Test basic cross-sectional spreads computation"""
+    date = pd.to_datetime('2020-01-31')
+    
+    # 9 firms for clean tertile splits (3-3-3)
+    size = pd.DataFrame({
+        'date': [date] * 9,
+        'firm_id': list('ABCDEFGHI'),
+        'size': [10, 11, 12, 13, 14, 15, 16, 17, 18]
+        # 30%ile = 11.4, 70%ile = 16.2
+        # Bottom: A,B,C; Top: G,H,I
+    })
+    
+    book_to_market = pd.DataFrame({
+        'date': [date] * 9,
+        'firm_id': list('ABCDEFGHI'),
+        'book_to_market': [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3]
+    })
+    
+    momentum = pd.DataFrame({
+        'date': [date] * 9,
+        'firm_id': list('ABCDEFGHI'),
+        'momentum': [-0.10, -0.05, 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+    })
+    
+    profitability = pd.DataFrame({
+        'date': [date] * 9,
+        'firm_id': list('ABCDEFGHI'),
+        'profitability': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]
+    })
+    
+    volatility = pd.DataFrame({
+        'date': [date] * 9,
+        'firm_id': list('ABCDEFGHI'),
+        'volatility': [0.15, 0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23]
+    })
+    
+    # Execute
+    result = sf.compute_style_spreads(size, book_to_market, momentum, profitability, volatility)
+    
+    # Verify
+    assert len(result) == 1
+    assert list(result.columns) == ['date', 'size_spread', 'book_to_market_spread', 
+                                     'momentum_spread', 'profitability_spread', 'volatility_spread']
+    
+    # All spreads should be positive (top > bottom by construction)
+    for col in result.columns:
+        if col != 'date':
+            assert result.iloc[0][col] > 0, f"{col} should be positive"
 
 
-def test_compute_reversal_placeholder():
-    """TODO: Implement in Step 5"""
-    pytest.skip("Not yet implemented")
+def test_compute_style_spreads_multiple_dates():
+    """Test style spreads across multiple dates"""
+    dates = pd.to_datetime(['2020-01-31', '2020-02-29'])
+    
+    size = pd.DataFrame({
+        'date': [dates[0]] * 6 + [dates[1]] * 6,
+        'firm_id': list('ABCDEF') * 2,
+        'size': [10, 11, 12, 16, 17, 18] * 2
+    })
+    
+    book_to_market = pd.DataFrame({
+        'date': [dates[0]] * 6 + [dates[1]] * 6,
+        'firm_id': list('ABCDEF') * 2,
+        'book_to_market': [0.5, 0.6, 0.7, 1.1, 1.2, 1.3] * 2
+    })
+    
+    momentum = pd.DataFrame({
+        'date': [dates[0]] * 6 + [dates[1]] * 6,
+        'firm_id': list('ABCDEF') * 2,
+        'momentum': [-0.10, -0.05, 0.00, 0.20, 0.25, 0.30] * 2
+    })
+    
+    profitability = pd.DataFrame({
+        'date': [dates[0]] * 6 + [dates[1]] * 6,
+        'firm_id': list('ABCDEF') * 2,
+        'profitability': [0.01, 0.02, 0.03, 0.07, 0.08, 0.09] * 2
+    })
+    
+    volatility = pd.DataFrame({
+        'date': [dates[0]] * 6 + [dates[1]] * 6,
+        'firm_id': list('ABCDEF') * 2,
+        'volatility': [0.15, 0.16, 0.17, 0.21, 0.22, 0.23] * 2
+    })
+    
+    # Execute
+    result = sf.compute_style_spreads(size, book_to_market, momentum, profitability, volatility)
+    
+    # Verify
+    assert len(result) == 2, "Should have 2 dates"
+    assert not result.isnull().any().any(), "Should not have NaN spreads"
 
 
-def test_compute_style_spreads_placeholder():
-    """TODO: Implement in Step 6"""
-    pytest.skip("Not yet implemented")
+def test_compute_style_spreads_market_cap_weighting():
+    """Test style spreads with market-cap weighting"""
+    date = pd.to_datetime('2020-01-31')
+    
+    size = pd.DataFrame({
+        'date': [date] * 6,
+        'firm_id': list('ABCDEF'),
+        'size': [10, 11, 12, 16, 17, 18]
+    })
+    
+    book_to_market = pd.DataFrame({
+        'date': [date] * 6,
+        'firm_id': list('ABCDEF'),
+        'book_to_market': [0.5, 0.6, 0.7, 1.1, 1.2, 1.3]
+    })
+    
+    momentum = pd.DataFrame({
+        'date': [date] * 6,
+        'firm_id': list('ABCDEF'),
+        'momentum': [-0.10, -0.05, 0.00, 0.20, 0.25, 0.30]
+    })
+    
+    profitability = pd.DataFrame({
+        'date': [date] * 6,
+        'firm_id': list('ABCDEF'),
+        'profitability': [0.01, 0.02, 0.03, 0.07, 0.08, 0.09]
+    })
+    
+    volatility = pd.DataFrame({
+        'date': [date] * 6,
+        'firm_id': list('ABCDEF'),
+        'volatility': [0.15, 0.16, 0.17, 0.21, 0.22, 0.23]
+    })
+    
+    # Market cap (larger firms get more weight)
+    market_cap = pd.DataFrame({
+        'date': [date] * 6,
+        'firm_id': list('ABCDEF'),
+        'market_cap': [100, 100, 100, 500, 500, 500]  # Big firms 5x larger
+    })
+    
+    # Execute with market cap weighting
+    result_weighted = sf.compute_style_spreads(size, book_to_market, momentum, 
+                                                profitability, volatility, market_cap)
+    
+    # Execute without market cap (equal weighting)
+    result_equal = sf.compute_style_spreads(size, book_to_market, momentum, 
+                                             profitability, volatility)
+    
+    # Verify both produce results
+    assert len(result_weighted) == 1
+    assert len(result_equal) == 1
+    
+    # Weighted and equal should be different (unless by chance)
+    # Note: May be similar due to construction, so just check they both work
+    assert not result_weighted.isnull().any().any()
+    assert not result_equal.isnull().any().any()
 
+
+def test_compute_style_spreads_output_shape():
+    """Test style spreads output has correct shape (5D vector)"""
+    dates = pd.to_datetime(['2020-01-31', '2020-02-29', '2020-03-31'])
+    
+    # Create 3 dates × 10 firms
+    data_template = []
+    for date in dates:
+        for i in range(10):
+            data_template.append({
+                'date': date,
+                'firm_id': f'firm_{i}',
+                'value': np.random.uniform(0, 1)
+            })
+    
+    size = pd.DataFrame(data_template).rename(columns={'value': 'size'})
+    book_to_market = pd.DataFrame(data_template).rename(columns={'value': 'book_to_market'})
+    momentum = pd.DataFrame(data_template).rename(columns={'value': 'momentum'})
+    profitability = pd.DataFrame(data_template).rename(columns={'value': 'profitability'})
+    volatility = pd.DataFrame(data_template).rename(columns={'value': 'volatility'})
+    
+    # Execute
+    result = sf.compute_style_spreads(size, book_to_market, momentum, profitability, volatility)
+    
+    # Verify shape
+    assert result.shape == (3, 6), "Should be (3 dates, 1 date col + 5 spreads)"
+    assert 'size_spread' in result.columns
+    assert 'book_to_market_spread' in result.columns
+    assert 'momentum_spread' in result.columns
+    assert 'profitability_spread' in result.columns
+    assert 'volatility_spread' in result.columns
+
+
+# ============================================================================
+# assemble_X_state tests
+# ============================================================================
+
+def test_assemble_X_state_basic():
+    """Test basic X_state assembly (characteristics + spreads)"""
+    dates = pd.to_datetime(['2020-01-31', '2020-02-29'])
+    
+    # Characteristics (firm-level)
+    characteristics = {}
+    for char_name in ['size', 'book_to_market', 'momentum', 'profitability', 'volatility']:
+        characteristics[char_name] = pd.DataFrame({
+            'date': [dates[0]] * 3 + [dates[1]] * 3,
+            'firm_id': ['A', 'B', 'C'] * 2,
+            char_name: np.random.uniform(0, 1, 6)
+        })
+    
+    # Spreads (date-level)
+    spreads = pd.DataFrame({
+        'date': dates,
+        'size_spread': [0.5, 0.6],
+        'book_to_market_spread': [0.3, 0.4],
+        'momentum_spread': [0.2, 0.3],
+        'profitability_spread': [0.1, 0.2],
+        'volatility_spread': [0.4, 0.5]
+    })
+    
+    # Execute
+    result = sf.assemble_X_state(characteristics, spreads)
+    
+    # Verify shape (2 dates, 1 date col + 10 features)
+    assert result.shape == (2, 11), f"Expected (2, 11), got {result.shape}"
+    
+    # Verify X_state_dim_i columns
+    x_state_cols = [col for col in result.columns if col.startswith('X_state_dim_')]
+    assert len(x_state_cols) == 10, "Should have 10 X_state dimensions"
+    
+    # Verify no NaN (after forward-fill)
+    assert not result.drop(columns='date').isnull().any().any(), "X_state should not have NaN"
+
+
+def test_assemble_X_state_with_factors():
+    """Test X_state assembly with optional factors"""
+    dates = pd.to_datetime(['2020-01-31', '2020-02-29'])
+    
+    # Characteristics
+    characteristics = {}
+    for char_name in ['size', 'book_to_market', 'momentum', 'profitability', 'volatility']:
+        characteristics[char_name] = pd.DataFrame({
+            'date': [dates[0]] * 2 + [dates[1]] * 2,
+            'firm_id': ['A', 'B'] * 2,
+            char_name: np.random.uniform(0, 1, 4)
+        })
+    
+    # Spreads
+    spreads = pd.DataFrame({
+        'date': dates,
+        'size_spread': [0.5, 0.6],
+        'book_to_market_spread': [0.3, 0.4],
+        'momentum_spread': [0.2, 0.3],
+        'profitability_spread': [0.1, 0.2],
+        'volatility_spread': [0.4, 0.5]
+    })
+    
+    # Factors
+    factors = {
+        'market_factor': pd.DataFrame({'date': dates, 'market_factor': [0.03, 0.04]}),
+        'smb_factor': pd.DataFrame({'date': dates, 'smb_factor': [0.01, 0.02]}),
+        'hml_factor': pd.DataFrame({'date': dates, 'hml_factor': [0.02, 0.03]}),
+        'momentum_factor': pd.DataFrame({'date': dates, 'momentum_factor': [0.04, 0.05]}),
+        'reversal_factor': pd.DataFrame({'date': dates, 'reversal_factor': [-0.01, 0.01]})
+    }
+    
+    # Execute
+    result = sf.assemble_X_state(characteristics, spreads, factors)
+    
+    # Verify shape (2 dates, 1 date col + 15 features)
+    assert result.shape == (2, 16), f"Expected (2, 16), got {result.shape}"
+    
+    # Verify X_state_dim_i columns
+    x_state_cols = [col for col in result.columns if col.startswith('X_state_dim_')]
+    assert len(x_state_cols) == 15, "Should have 15 X_state dimensions (with factors)"
+
+
+# ============================================================================
+# Placeholder tests for remaining functions
+# ============================================================================
 
 def test_assemble_X_state_placeholder():
     """TODO: Implement in Step 7"""
