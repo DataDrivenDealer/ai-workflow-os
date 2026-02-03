@@ -1,0 +1,108 @@
+# DGSF Feature Engineering Pipeline - Sample Configuration
+# ============================================================================
+# This is a sample configuration file for run_feature_engineering.py
+# Copy and customize this file for your specific data sources and settings
+# ============================================================================
+
+# Output directory for computed features
+output_dir: "E:/AI Tools/AI Workflow OS/projects/dgsf/outputs/features"
+
+# Debug mode (save intermediate features for inspection)
+debug: false
+
+# Data sources (5 required sources from SDF_FEATURE_DEFINITIONS.md)
+data_sources:
+  # Price data (adjusted closing prices)
+  price_data:
+    path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/prices.csv"
+    format: "csv"
+    columns:
+      date: "trade_date"
+      firm_id: "stock_code"
+      price: "close_adj"
+  
+  # Shares outstanding
+  shares_outstanding:
+    path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/shares.csv"
+    format: "csv"
+    columns:
+      date: "report_date"
+      firm_id: "stock_code"
+      shares: "shares_outstanding"
+  
+  # Financial statements (balance sheet + income statement)
+  financial_statements:
+    path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/financials.csv"
+    format: "csv"
+    columns:
+      date: "report_date"
+      firm_id: "stock_code"
+      total_assets: "total_assets"
+      total_liabilities: "total_liabilities"
+      stockholders_equity: "stockholders_equity"
+      operating_income: "operating_income"
+      net_income: "net_income"
+  
+  # Monthly returns (pre-computed or raw prices)
+  monthly_returns:
+    path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/returns.csv"
+    format: "csv"
+    columns:
+      date: "month_end_date"
+      firm_id: "stock_code"
+      return: "monthly_return"
+  
+  # Risk-free rate (monthly)
+  risk_free_rate:
+    path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/risk_free.csv"
+    format: "csv"
+    columns:
+      date: "month_end_date"
+      rate: "rf_rate_monthly"
+
+# Feature settings
+feature_settings:
+  # Compute P-tree factors (OPTIONAL per SDF_SPEC v3.1)
+  compute_factors: true
+  
+  # Winsorization thresholds
+  winsorization:
+    size: [0.01, 0.99]  # [1%, 99%]
+    book_to_market: [0.005, 0.995]  # [0.5%, 99.5%]
+    momentum: [0.01, 0.99]
+    profitability: [0.005, 0.995]
+    volatility: [0.01, 0.99]
+  
+  # Missing data handling
+  missing_data:
+    forward_fill_max_months: 3
+    exclude_insufficient_history: true
+    min_return_history_months: 6
+  
+  # Firm filters
+  filters:
+    min_market_cap: 5000000  # $5M minimum (microcap filter)
+    exclude_negative_book_equity: true
+  
+  # Cross-sectional spread construction
+  spreads:
+    tertile_breakpoints: [0.30, 0.70]  # [30%, 70%] for top/middle/bottom
+    weighting: "market_cap"  # market-cap weighted portfolios
+
+# PanelTree integration (for leaf embeddings and R_leaf)
+paneltree:
+  enabled: false  # Set to true when PanelTree v3.0.2 is available
+  leaf_embeddings_path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/leaf_embeddings.csv"
+  R_leaf_path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/R_leaf.csv"
+
+# DataEng v4.2 integration (for macro, microstructure, market_structure, time_encoding)
+dataeng:
+  enabled: false  # Set to true when DataEng v4.2 modules are available
+  macro_path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/macro.csv"
+  microstructure_path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/microstructure.csv"
+  market_structure_path: "E:/AI Tools/AI Workflow OS/projects/dgsf/data/market_structure.csv"
+
+# Logging settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_file: "E:/AI Tools/AI Workflow OS/projects/dgsf/logs/feature_engineering.log"

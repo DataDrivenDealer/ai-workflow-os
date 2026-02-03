@@ -1,153 +1,203 @@
-# AI Workflow OS - 执行计划 V1.1
+# AI Workflow OS - 执行计划 V1.3（DGSF 驱动）
 
 **文档ID**: EXECUTION_PLAN_V1  
 **创建日期**: 2026-02-02  
-**最后更新**: 2026-02-02T02:30:00Z（基于漂移审计）  
+**最后更新**: 2026-02-03T23:55:00Z（T3.3.3 完成，准备 T3.3.4）  
 **状态**: ACTIVE  
-**基于**: DRIFT_REPORT_20260202 + MINIMAL_PATCHLIST  
-**目标周期**: 2026-02-03 至 2026-02-10 (8天)  
-**WIP限制**: 最多3个并行工作流
+**主要目标**: **推进 DGSF（Dynamic Generative SDF Forest）项目的开发、验证与研究产出**  
+**目标周期**: 2026-02-03 至 2026-02-28 (4周，含 T3 Feature Engineering)  
+**WIP限制**: 最多3个并行工作流，**至少1个必须是 DGSF 本体相关**
 
 **关联文档**: 
-- [漂移报告](../audits/DRIFT_REPORT_20260202.md)
-- [最小补丁列表](MINIMAL_PATCHLIST.md)
-- [TODO_NEXT](TODO_NEXT.md)
+- [TODO_NEXT](TODO_NEXT.md) - DGSF 驱动的执行队列
+- [PROJECT_DGSF.yaml](../../projects/dgsf/specs/PROJECT_DGSF.yaml) - DGSF 项目规范
+- [STAGE_4_ACCEPTANCE_CRITERIA.md](../../projects/dgsf/docs/STAGE_4_ACCEPTANCE_CRITERIA.md) - Stage 4 验收标准
 
 ---
 
-## ⚠️ 重大更新说明
+## 🔴 Global Priority Override Rule（全局优先级裁决规则）
 
-本次执行计划基于 2026-02-02 完成的**全面漂移审计**进行了重大调整：
+> **DGSF Priority Override：**
+> 当 **DGSF 项目推进** 与 **AI Workflow OS 层面的改进** 发生冲突时：
+>
+> **无条件以 DGSF 的开发与验证为最高优先级（P0）。**
+>
+> OS 层面的工作必须满足以下至少一条：
+> - 直接解除 DGSF 的开发阻塞
+> - 显著降低 DGSF 的实验/回测/迭代成本
+> - 为 DGSF 的阶段性成果提供必要的可验证性与可追溯性
 
-**关键发现**:
-1. ✅ **核心功能已完成75%** - 173个测试通过，RoleMode/AgentSession/GovernanceGate已实现
-2. 🔴 **CI管道失败** - 阻塞所有后续工作，必须立即修复
-3. 🔴 **治理操作缺失** - Freeze/Acceptance未实现，违反架构不变量
-4. 🟡 **验证覆盖不完整** - 10个不变量中仅5个有自动化验证
+---
 
-**调整策略**:
-- 取消原Week 3-4计划（度量体系建设延后）
-- 聚焦P0和P1漂移修复
-- 压缩周期从4周到8天（紧急冲刺）
+## ⚠️ 重大更新说明（2026-02-03T23:55Z）
+
+**DGSF Stage 4 T3 Feature Engineering 进展**:
+1. ✅ **T3.3.1 完成** - Pipeline 基础框架 + CLI 接口 (485 lines)
+2. ✅ **T3.3.2 完成** - 数据加载模块 (569 lines, 21 tests)
+3. ✅ **T3.3.3 完成** - Firm Characteristics 计算 (516 lines, 19 tests)
+4. 🎯 **T3.3.4 就绪** - Cross-Sectional Spreads + Factors（下一步）
+
+**当前测试状态**: **40/40 passed** (scripts + adapter tests)
+
+**当前焦点**: 
+1. **Git Checkpoint** - 提交 T3.3.3 成果防止丢失
+2. **T3.3.4** - 实现 Cross-Sectional Spreads 和 5 Factors
 
 ---
 
 ## 0. Objectives & Non-goals（目标与非目标）
 
-### ✅ Objectives（目标）
-1. **健壮化State管理** - 消除并发写入风险，支持ACID事务
-2. **自动化Gate检查** - CI/CD流水线自动执行治理检查
-3. **可观测性提升** - 建立度量体系，可视化cycle time和throughput
-4. **代码质量稳定** - 测试覆盖率>80%，所有scripts可复现运行
-5. **架构一致性** - 文档与代码保持同步，blueprint可自动验证
+### ✅ Objectives（目标 · DGSF 驱动）
+1. **推进 DGSF Stage 4** - 完成 T3 Feature Engineering、T4 Training Optimization
+2. **支撑 DGSF 验证** - 确保测试通过率 ≥95%，实验可复现
+3. **降低迭代摩擦** - 提供快速验证脚本、Daily Workflow 文档化
+4. **保持 OS 稳定** - 不因 OS 重构阻塞 DGSF 开发
 
-### ❌ Non-goals（非目标）
-- 不重写整个系统（采用Strangler Fig渐进式迁移）
-- 不追求100%测试覆盖率（聚焦核心路径）
-- 不立即迁移到Kubernetes（先完成单机稳定性）
+### ❌ Non-goals（非目标 · Stop Doing List）
+- ❌ 不优化 Adapter 接口（run_experiment 未实现且不阻塞）
+- ❌ 不追求 OS 100% 测试覆盖率（聚焦 DGSF）
+- ❌ 不为每个微小进展创建独立 audit JSON
+- ❌ 不重构 kernel 导入路径（除非阻塞 DGSF）
+- ❌ 不精简 PROJECT_STATE.md（除非查询失败）
 
 ---
 
 ## 1. Current State Summary（当前状态摘要）
 
-**证据来源**: Git analysis @ 2026-02-02T23:00:00Z
+**证据来源**: Git analysis @ 2026-02-03T21:00:00Z
 
-### 1.1 系统健康度
-| 维度 | 评分 | 证据 | 变化 |
+### 1.1 DGSF 项目状态（主要指标）
+| 维度 | 状态 | 证据 | 变化 |
 |-----|------|------|------|
-| 架构设计 | 85/100 | ✅ 清晰的三层分离（kernel/projects/specs），MCP协议隔离 | ↔️ |
-| 代码质量 | 75/100 | ✅ 172个单元测试通过，覆盖率71%，⚠️ 低覆盖模块：os(23%), governance_gate(29%) | ↑+3 |
-| 流程自动化 | 68/100 | ✅ Git hooks存在，G1自动化完成，⚠️ G2-G6缺少可执行脚本 | ↑+3 |
-| 可观测性 | 48/100 | ✅ Audit日志，⚠️ 无度量Dashboard，无DORA指标 | ↑+3 |
-| 文档覆盖 | 82/100 | ✅ 13个架构蓝图，执行计划V1，⚠️ 缺少系统不变量文档 | ↑+2 |
+| **Stage 4 进度** | T3.3.4 就绪 | T3.3.1-3.3.3 ✅, T3.3.4 READY | ↑ |
+| **测试通过率** | 100% (40/40 scripts) | `pytest tests/ -v` | ↑+100% |
+| **Firm Characteristics** | ✅ 5/5 实现 | [firm_characteristics.py](../../projects/dgsf/scripts/firm_characteristics.py) | ✅ |
+| **技术债** | 3 TODOs in run_feature_engineering.py | T3.3.4 将解决 | 已识别 |
+| **未提交文件** | 14 untracked | `git status` | ⚠️ 需 checkpoint |
 
-**综合评分**: 72/100（架构优秀，自动化提升中，可观测性仍是短板）  
-**较上次变化**: +3分（路径重构、G1自动化、pyright集成）
+**DGSF 评分**: T3.3.4 **READY** ✅（可进入 Cross-Sectional Spreads 阶段）
 
-### 1.2 最新完成改进（2026-02-02）
-✅ **第二轮自动化执行**（2026-02-02T21:40:00Z完成）:
-- P2-1: 7个scripts路径重构 - [d6f3a65](../../kernel/paths.py)
-- P2-2: Gate G1可执行脚本 - [scripts/run_gate_g1.py](../../scripts/run_gate_g1.py), 提交 3d01aad
-- P2-4: pre-commit pyright hook - [hooks/pre-commit](../../hooks/pre-commit), 提交 40a393c
+### 1.2 AI Workflow OS 状态（支撑系统）
+| 维度 | 状态 | 变化 |
+|-----|------|------|
+| **分支** | feature/router-v0 | ↔️ |
+| **kernel 测试** | 186 passed | ✅ |
+| **Working tree** | 6 modified, 14 untracked | 待提交 |
 
-**累计完成**: 7/15任务 (47%)  
-**剩余工作**: 8个任务（2个P0, 5个P1, 1个P2）
+### 1.3 关键风险（DGSF 影响排序）
+- 🟡 **P0 Risk**: 14 untracked files 未提交 Git（数据丢失风险）
+- 🟢 **无阻塞性风险** - T3.3.4 所有依赖已就绪
+- ⚪ **P2 Risk**: state_engine 模块缺失（不阻塞 T3）
 
-### 1.3 关键风险（更新）
-- 🔴 **P0 Risk**: kernel导入路径混乱，使用相对导入而非绝对导入，可能导致循环依赖
-  - 证据: [kernel/os.py#L12-L18](../../kernel/os.py)
-- 🟠 **P1 Risk**: State Machine定义存在但未验证，状态转换可能违规
-  - 证据: [kernel/state_machine.yaml](../../kernel/state_machine.yaml) 未被引用
-- 🟠 **P1 Risk**: G2-G6 Gate检查部分手动，容易遗漏
-  - 证据: 仅 [scripts/run_gate_g1.py](../../scripts/run_gate_g1.py) 存在
-
-### 1.4 未提交变更
-- [docs/state/PROJECT_STATE.md](../../docs/state/PROJECT_STATE.md) - 待提交最新执行日志
-- [docs/plans/EXECUTION_PLAN_V1.md](EXECUTION_PLAN_V1.md) - 本次更新
+### 1.4 未提交变更（待本轮提交）
+- [firm_characteristics.py](../../projects/dgsf/scripts/firm_characteristics.py) - T3.3.3 核心模块
+- [test_firm_characteristics.py](../../projects/dgsf/tests/test_firm_characteristics.py) - 19 单元测试
+- [data_loaders.py](../../projects/dgsf/scripts/data_loaders.py) - T3.3.2 数据加载
+- [test_data_loading.py](../../projects/dgsf/tests/test_data_loading.py) - 21 单元测试
+- [SDF_FEATURE_DEFINITIONS.md](../../projects/dgsf/docs/SDF_FEATURE_DEFINITIONS.md) - 10 特征定义
 
 ---
 
-## 2. Workstreams（工作流 - 最多3个并行）
+## 2. Workstreams（工作流 - 最多3个并行，至少1个 DGSF）
 
-### Workstream 1: 架构一致性与稳定性（P0-P1优先级）
+### 🔴 Workstream 1: DGSF Stage 4 开发（P0 · 主线）
+**Owner**: DGSF Researcher  
+**Duration**: Week 1-4  
+**Goal**: 完成 T3 Feature Engineering + T4 Training Optimization
+
+**Milestones**:
+- **M1.1** (Week 1 Day 1-2): T3 任务拆解，创建 TaskCard → **P0-7** 🎯
+- **M1.2** (Week 1 Day 3-5): 特征定义文档化，baseline 特征集确定
+- **M1.3** (Week 2): Feature construction pipeline 实现
+- **M1.4** (Week 3): Ablation study 实验设计与执行
+- **M1.5** (Week 4): T3 验收，启动 T4
+
+### 🟡 Workstream 2: DGSF 开发支撑（P1 · 降低摩擦）
 **Owner**: Platform Engineer  
 **Duration**: Week 1-2  
-**Goal**: 消除架构违规和阻塞性风险
+**Goal**: 提供快速验证工具，降低 DGSF 迭代成本
 
 **Milestones**:
-- **M1.1** (Week 1 Day 2): 修复kernel导入路径混乱 → P0-1
-- **M1.2** (Week 1 Day 3): 创建系统不变量文档 → P0-2
-- **M1.3** (Week 1 Day 5): State Machine验证器实现 → P1-1
-- **M1.4** (Week 2 Day 2): 完成state_store并发测试 → P1-3
-- **M1.5** (Week 2 Day 3): 更新README依赖锁定说明 → P1-2
+- **M2.1** (Week 1 Day 1): 创建快速验证脚本 → P1-1
+- **M2.2** (Week 1 Day 2): 定义 T3 → T4 Gate → P1-2
+- **M2.3** (Week 1 Day 3): Daily Workflow Checklist → P1-3
+- **M2.4** (Week 2): 恢复 7 个 data-dependent skipped tests（可选）
 
-### Workstream 2: 治理自动化（P1-P2优先级）
-**Owner**: DevOps Engineer  
-**Duration**: Week 2-3  
-**Goal**: 建立完整的Gate自动化检查
+### ⚪ Workstream 3: OS 维护（P2 · 延后）
+**Owner**: Platform Engineer  
+**Duration**: 仅在 DGSF 不阻塞时执行  
+**Goal**: 维持 OS 稳定性，不主动优化
 
-**Milestones**:
-- **M2.1** (Week 2 Day 4): 合并CI配置文件 → P1-4
-- **M2.2** (Week 2-3): 为G2-G6创建可执行脚本 → P1-5 (12h, 拆分为3天执行)
-- **M2.3** (Week 3 Day 4): 提取YAML工具模块 → P2-1
-- **M2.4** (Week 3 Day 5): 添加架构测试 → P2-5
-
-### Workstream 3: 可观测性建设（P2优先级）
-**Owner**: Data Engineer  
-**Duration**: Week 3-4  
-**Goal**: 建立度量体系和Dashboard
-
-**Milestones**:
-- **M3.1** (Week 3 Day 3): 创建看板可视化 → P2-3
-- **M3.2** (Week 4 Day 1-2): 实现Metrics收集脚本 → P2-2 (6h)
-- **M3.3** (Week 4 Day 3-4): 实现度量Dashboard → P2-4 (8h)
-- **M3.4** (Week 4 Day 5): Tech Debt Registry建立 → P2-6
+**Deferred Tasks（触发条件激活）**:
+- P2-1: T4/T5 TaskCard（T3 完成度 >80% 时）
+- P2-2: RESEARCH_MILESTONES.md（有论文 deadline 时）
+- P2-3: 聚合 audit JSON（audit/ 目录 >50 文件时）
+- P2-4: Troubleshooting 章节（同一问题出现 ≥2 次时）
+- P2-5: kernel 导入路径修复（DGSF 调用 kernel 出错时）
+- P2-6: PROJECT_STATE.md 精简（查询失败 ≥3 次时）
 
 ---
 
-## 3. Week-by-Week Sequence（周序列）
+## 3. Week-by-Week Sequence（周序列 · DGSF 聚焦）
 
-### Week 1: 架构稳定化（STABILIZE）
-**Theme**: 修复架构违规，建立不变量
+### Week 1: T3 启动（LAUNCH T3）
+**Theme**: 完成 T3 任务拆解，建立验证基础设施
 
-| Day | Task | Owner | Output | Verification |
-|-----|------|-------|--------|-------------|
-| Mon | P0-1: 修复kernel导入路径 | Platform | kernel/*.py全部使用绝对导入 | pytest通过 + pyright无错 |
-| Tue | P0-2: 系统不变量文档 | Platform | [docs/SYSTEM_INVARIANTS.md](../../docs/SYSTEM_INVARIANTS.md) | 专家评审 |
-| Wed | P1-2: 更新README依赖说明 | Platform | [README_START_HERE.md](../../README_START_HERE.md) | 新环境安装测试 |
-| Thu | P1-1: State Machine验证器(1/2) | Platform | [scripts/verify_state_transitions.py](../../scripts/verify_state_transitions.py) | 基础验证通过 |
-| Fri | P1-1: State Machine验证器(2/2) | Platform | 完整验证逻辑 | 历史任务状态合法 |
+| Day | Task | Priority | Output | Verification |
+|-----|------|----------|--------|-------------|
+| Mon | **P0-7**: T3 任务拆解 | P0 | `tasks/active/SDF_FEATURE_ENG_001.md` | TaskCard 包含 ≥5 子任务 |
+| Mon | P1-1: 快速验证脚本 | P1 | `scripts/dgsf_quick_check.ps1` | 运行 <10s，输出 4 状态项 |
+| Tue | P1-2: 定义 T3→T4 Gate | P1 | 更新 `STAGE_4_ACCEPTANCE_CRITERIA.md` | Gate 包含数值阈值 |
+| Tue | P1-3: Daily Workflow | P1 | 更新 `projects/dgsf/README.md` | Checklist 5-7 项 |
+| Wed-Fri | T3 开发: 特征定义 | P0 | Feature definitions doc | 与 SDF_SPEC v3.1 对齐 |
 
-### Week 2: 治理自动化启动（AUTOMATE）
-**Theme**: Gate自动化和测试增强
+### Week 2-3: T3 实现（IMPLEMENT T3）
+**Theme**: Feature Engineering Pipeline 开发
 
-| Day | Task | Owner | Output | Verification |
-|-----|------|-------|--------|-------------|
-| Mon | P1-3: state_store并发测试 | Platform | test_state_store_concurrency.py补充 | 覆盖率>95% |
-| Tue | P1-4: 合并CI配置文件 | DevOps | 删除ci.yaml | GitHub Actions运行成功 |
-| Wed | P1-5: Gate G2脚本 | DevOps | [scripts/run_gate_g2.py](../../scripts/run_gate_g2.py) | G2检查可执行 |
-| Thu | P1-5: Gate G3脚本 | DevOps | [scripts/run_gate_g3.py](../../scripts/run_gate_g3.py) | G3检查可执行 |
-| Fri | P1-5: Gate G4脚本 | DevOps | [scripts/run_gate_g4.py](../../scripts/run_gate_g4.py) | G4检查可执行 |
+| Period | Task | Output | Verification |
+|--------|------|--------|-------------|
+| Week 2 | Feature construction | `scripts/run_feature_engineering.py` | Script 可执行 |
+| Week 3 | Ablation study | `experiments/feature_ablation/results.json` | ≥3 features p<0.05 |
+
+### Week 4: T3 验收 → T4 启动（GATE T3→T4）
+**Theme**: 验收 T3，规划 T4
+
+| Task | Output | Verification |
+|------|--------|-------------|
+| T3 验收 | AC-3 ACHIEVED | 满足 T3→T4 Gate 条件 |
+| T4 规划 | `tasks/active/SDF_TRAINING_OPT_001.md` | TaskCard 创建 |
+
+---
+
+## 4. Definition of Done（以 DGSF 可验证产出为核心）
+
+### Stage 4 完成标准
+| AC | 描述 | 验证命令 | 状态 |
+|----|------|----------|------|
+| AC-1 | Test pass rate ≥95% | `pytest tests/sdf/ -v` | 🟡 93.4% |
+| AC-2 | Model Inventory 完成 | `Test-Path reports/SDF_MODEL_INVENTORY.json` | ✅ |
+| AC-3 | Feature Engineering | `Test-Path scripts/run_feature_engineering.py` | ⏸️ |
+| AC-4 | Training Optimization | Sharpe ≥1.5 OOS | ⏸️ |
+| AC-5 | Evaluation Framework | All metrics in SDF_SPEC v3.1 | ⏸️ |
+
+### Verification Loop
+每次执行后验证：
+1. `pytest tests/sdf/ -v` - 测试通过率未下降
+2. `cd repo; git status` - 无未提交的阻塞性变更
+3. `Test-Path` 相关产出文件 - 产出存在
+
+---
+
+## 5. Stop Doing List（当前不该做的 OS 工作）
+
+| 任务 | 原因 | 触发条件 |
+|------|------|----------|
+| 优化 Adapter 接口 | `run_experiment` 未实现且不阻塞 | 永不 |
+| 重构 kernel 导入 | 不阻塞 DGSF | DGSF 调用出错时 |
+| 精简 PROJECT_STATE | 不阻塞 DGSF | 查询失败 ≥3 次 |
+| 创建独立 audit JSON | 仓库污染 | 仅重大决策 |
+| OS 100% 测试覆盖 | 非必要 | 永不 |
+| OS Dashboard 建设 | 非 DGSF 需求 | 永不（本周期内）|
 
 ### Week 3: 自动化完成+可观测性启动（OBSERVE）
 **Theme**: 完成Gate自动化，建立度量基础

@@ -43,9 +43,78 @@ projects/dgsf/
 
 ---
 
-## 🚀 Development Workflow
+## � Daily Workflow Checklist
 
-### Quick Start for DGSF Researchers
+**Purpose**: 标准化 DGSF 日常开发流程，减少认知负载  
+**Duration**: ~5 minutes  
+**Frequency**: 每次开始工作前
+
+### Morning Routine（开始工作前）
+
+```powershell
+# Step 1: Navigate to DGSF repo
+cd "E:\AI Tools\AI Workflow OS\projects\dgsf\repo"
+
+# Step 2: Quick health check (使用快速验证脚本)
+& "..\..\scripts\dgsf_quick_check.ps1"
+
+# Step 3: Sync with remote (pull latest changes)
+git pull origin master
+
+# Step 4: Verify test environment
+pytest tests/ --collect-only -q | Select-Object -Last 3
+# Expected: "XXX tests in YY.ZZs"
+
+# Step 5: (Optional) Check experiment logs if running long tasks
+Get-ChildItem experiments/ -Recurse -Filter "*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 3
+```
+
+### Development Cycle（开发迭代中）
+
+```powershell
+# 1. Make code changes in src/dgsf/
+
+# 2. Run unit tests (fast feedback)
+pytest tests/test_sdf.py -v -x  # Stop on first failure
+
+# 3. (Optional) Run integration tests
+pytest tests/sdf/ -v --tb=short
+
+# 4. Commit incrementally (small, frequent commits)
+git add src/dgsf/sdf/my_feature.py
+git commit -m "feat(sdf): implement feature X (WIP)"
+```
+
+### Evening Routine（结束工作前）
+
+```powershell
+# Step 1: Check uncommitted changes
+git status
+
+# Step 2: Commit or stash work
+git add .
+git commit -m "chore: end-of-day checkpoint"
+# OR: git stash save "WIP: feature description"
+
+# Step 3: Push to remote (backup)
+git push origin <your-branch>
+
+# Step 4: (Optional) Check pending experiments
+Get-ChildItem experiments/ -Recurse -Filter "results.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 3
+```
+
+### Troubleshooting Quick Reference
+
+| Issue | Command | Notes |
+|-------|---------|-------|
+| Tests not collecting | `pytest --cache-clear` | Clear pytest cache |
+| Import errors | `python -c "import dgsf; print(dgsf.__file__)"` | Verify package installed |
+| Submodule out of sync | `git submodule update --init --recursive` | From AI Workflow OS root |
+| Merge conflicts | `git status ; git diff` | Check conflict markers |
+
+---
+
+## 🚀 Quick Start for DGSF Researchers
 
 ```powershell
 # 1. Navigate to the active development directory

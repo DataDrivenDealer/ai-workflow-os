@@ -1,402 +1,727 @@
-# TODO_NEXT - DGSF驱动的执行队列
+# TODO_NEXT - DGSF 驱动的执行队列
 
 **Created**: 2026-02-02  
-**Updated**: 2026-02-02T18:00Z (Project Orchestrator Refresh)  
-**Purpose**: DGSF项目的canonical execution queue  
-**Priority Order**: P0（直接推进DGSF）→ P1（解除阻塞）→ P2（延后）  
-**Primary Objective**: 推进DGSF（Dynamic Generative SDF Forest）项目的开发、验证与研究产出
+**Updated**: 2026-02-03T21:00Z (Orchestrator Cycle - T3 Launch)  
+**Purpose**: DGSF 项目的 canonical execution queue  
+**Priority Order**: P0（直接推进 DGSF）→ P1（解除阻塞）→ P2（延后）  
+**Primary Objective**: 推进 DGSF（Dynamic Generative SDF Forest）项目的开发、验证与研究产出
 
 ---
 
 ## 🎯 Global Priority Override Rule
 
-**DGSF Priority Override**: 当DGSF项目推进与AI Workflow OS层面的改进发生冲突时，**无条件以DGSF的开发与验证为最高优先级（P0）**。
-
-所有OS层面的工作必须满足以下至少一条，才允许进入执行队列：
-- 直接解除DGSF的开发阻塞
-- 显著降低DGSF的实验/回测/迭代成本
-- 为DGSF的阶段性成果提供必要的可验证性与可追溯性
-
-否则，一律降级为**Deferred / P2**。
+**DGSF Priority Override**: 当 DGSF 项目推进与 AI Workflow OS 层面的改进发生冲突时，**无条件以 DGSF 的开发与验证为最高优先级（P0）**。
 
 ---
 
-## 📊 Current Context（基于证据 · 2026-02-02T18:00Z）
+## 📊 Current Context（基于证据 · 2026-02-03T21:00Z）
 
-**DGSF项目状态**:
-- Pipeline: Stage 4 "SDF Layer Development" - in_progress ✅
-- 代码: repo/（活跃，submodule 同步）✅
-- 下一步: SDF_DEV_001_T1（SDF Model Architecture Review, P0, 1周估算）
-- 测试状态: 26 collection errors in tests/sdf/（待诊断）
-
-**AI Workflow OS状态**:
-- 分支: feature/router-v0（领先origin 22个提交）
-- 测试: kernel/ 186个通过 ✅
-- Working tree: clean ✅
-- Legacy: 已隔离，pytest不再扫描 ✅
+| 维度 | 状态 | 证据 |
+|------|------|------|
+| **DGSF Stage** | Stage 4 "SDF Layer Development" | [PROJECT_DGSF.yaml#L211](../../projects/dgsf/specs/PROJECT_DGSF.yaml) |
+| **测试通过率** | 93.4% (156/167 passed, 11 skipped) | `pytest tests/sdf/ -v` |
+| **T2 → T3 Gate** | ✅ **OPEN** | [STAGE_4_ACCEPTANCE_CRITERIA.md](../../projects/dgsf/docs/STAGE_4_ACCEPTANCE_CRITERIA.md) |
+| **repo/ 同步** | ✅ up-to-date (commit 8031647) | `cd repo; git status` |
+| **下一里程碑** | T3 Feature Engineering (3 weeks) | [PROJECT_DGSF.yaml#L295](../../projects/dgsf/specs/PROJECT_DGSF.yaml) |
 
 ---
 
-## 🔴 P0任务（直接推进DGSF）
+## ✅ 已完成任务（Stage 4 T1-T2）
 
-### P0-1: 执行 SDF_DEV_001_T1 - SDF Model Architecture Review ✅ COMPLETED
-**DGSF关联**: Stage 4首个子任务，识别所有SDF模型及技术债  
-**Effort**: 20分钟  
-**Dependencies**: 无  
-**Status**: ✅ COMPLETED (2026-02-02T18:25)
+| ID | Task | Completed | Output |
+|----|------|-----------|--------|
+| P0-1 | SDF Model Inventory | 2026-02-02 | [SDF_MODEL_INVENTORY.json](../../projects/dgsf/reports/SDF_MODEL_INVENTORY.json) |
+| P0-2 | Test Failures Diagnosis | 2026-02-02 | [SDF_TEST_FAILURES.md](../../projects/dgsf/reports/SDF_TEST_FAILURES.md) |
+| P0-3 | Fix state_engine Import | 2026-02-02 | [sdf/__init__.py#L53](../../projects/dgsf/repo/src/dgsf/sdf/__init__.py) |
+| P0-4 | Push repo/ to origin | 2026-02-03 | commit 8031647 |
+| P0-5 | Define Stage 4 AC | 2026-02-03 | [STAGE_4_ACCEPTANCE_CRITERIA.md](../../projects/dgsf/docs/STAGE_4_ACCEPTANCE_CRITERIA.md) |
+| P0-6 | Classify 11 Skipped Tests | 2026-02-03 | [SDF_SKIPPED_TESTS_ANALYSIS.md](../../projects/dgsf/reports/SDF_SKIPPED_TESTS_ANALYSIS.md) |
 
-**执行结果**:
-- ✅ 生成 `projects/dgsf/reports/SDF_MODEL_INVENTORY.json`
-- ✅ 识别 4 个模型: GenerativeSDF, DevSDFModel, LinearSDFModel, MLPSDFModel
-- ✅ 识别 5 项技术债 (4 Medium + 1 Low)
-- ✅ 分析依赖关系和架构模式
-- ✅ 提供 immediate/short-term/long-term 推荐行动
+---
+
+## 🔴 P0 任务（直接推进 DGSF · 本周焦点）
+
+### ✅ P0-7.T3.1: 现有特征盘点 - COMPLETED
+**Status**: ✅ 完成（2026-02-03T22:00Z）  
+**Output**: [SDF_FEATURE_INVENTORY.json](../../projects/dgsf/reports/SDF_FEATURE_INVENTORY.json)  
+**Result**: 12 features identified, 3 technical debt items
+
+---
+
+### P0-7.T3.2.1: 提取 SDF_SPEC v3.1 必需特征 ✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 2.1  
+**Effort**: 30 分钟  
+**Dependencies**: ✅ T3.1 完成  
+**Status**: ✅ COMPLETED (2026-02-03T22:25Z)
+
+**执行步骤**:
+1. ✅ 读取 `projects/dgsf/legacy/DGSF/docs/specs_v3/DGSF SDF Layer Specification v3.1.md`
+2. ✅ 提取所有 "required" 和 "optional" 特征列表
+3. ✅ 创建初步特征列表文件 `projects/dgsf/docs/SDF_REQUIRED_FEATURES.txt`
+4. ✅ 标注每个特征的优先级（required/optional）
 
 **验收标准（DoD）**:
-- ✅ JSON 包含所有 `.py` 文件中的模型类
-- ✅ 每个模型记录：name, file_path, dependencies, status, notes
-- ✅ 识别至少 3 个 technical debt 或 improvement areas（实际识别5个）
-- ✅ 验证命令通过: `python -c "import json; data=json.load(open('projects/dgsf/reports/SDF_MODEL_INVENTORY.json')); assert len(data['models']) > 0"`
+- [x] `SDF_REQUIRED_FEATURES.txt` 存在
+- [x] 列表包含 ≥8 个 required 特征（实际: 17 required, 1 optional）
+- [x] 每个特征有明确的 required/optional 标记
+- 验证命令: `Test-Path projects/dgsf/docs/SDF_REQUIRED_FEATURES.txt` ✅
+
+**Output**: [SDF_REQUIRED_FEATURES.txt](../../projects/dgsf/docs/SDF_REQUIRED_FEATURES.txt)
 
 ---
 
-### P0-2: 明确 SDF_DEV_001_T2 的失败详情 ✅ COMPLETED
-**DGSF关联**: 为修复测试准备（T2任务前置条件）  
-**Effort**: 10分钟  
-**Dependencies**: 无  
-**Status**: ✅ COMPLETED (2026-02-02T18:45)
+### P0-7.T3.2.2: 定义 Firm Characteristics（前 5 特征）✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 2.2  
+**Effort**: 2 小时  
+**Dependencies**: ✅ T3.2.1 完成  
+**Status**: ✅ COMPLETED (2026-02-03T22:45Z)
 
-**执行结果**:
-- ✅ 生成 `projects/dgsf/reports/SDF_TEST_FAILURES.txt`（156行原始输出）
-- ✅ 生成 `projects/dgsf/reports/SDF_TEST_FAILURES.md`（分类汇总报告）
-- ✅ 识别根本原因: **单一导入错误** `ModuleNotFoundError: No module named 'dgsf.sdf.state_engine'`
-- ✅ 11/11 测试文件阻塞（100%）
-- ✅ 提供 3 个修复方案（注释/占位符/移除）
+**执行步骤**:
+1. ✅ 在 `SDF_FEATURE_DEFINITIONS.md` 中定义 firm characteristics
+2. ✅ 包含 5 要素：定义、计算公式、数据来源、更新频率、类别
+3. ✅ 覆盖：size, book_to_market, momentum, profitability, volatility
 
 **验收标准（DoD）**:
-- ✅ 记录所有失败测试用例（11 collection errors）
-- ✅ 分类失败原因（1 类: Missing Module）
-- ✅ 提供修复建议（3 个 options）
-- ✅ 验证命令通过: `Select-String -Path projects/dgsf/reports/SDF_TEST_FAILURES.md -Pattern "Category"`
+- [x] 5 个 firm characteristics 完整定义
+- [x] 每个特征有 5 要素
+- [x] 公式可计算（无模糊描述）
+- 验证命令: `Select-String -Pattern "^### Feature \d+:" SDF_FEATURE_DEFINITIONS.md | Measure-Object` ✅ (Count = 5)
+
+**Output**: [SDF_FEATURE_DEFINITIONS.md](../../projects/dgsf/docs/SDF_FEATURE_DEFINITIONS.md) (Firm Characteristics section)
 
 ---
 
-### P0-3: 修复 SDF 导入错误（state_engine 缺失）✅ COMPLETED
-**DGSF关联**: 解除 100% 测试阻塞，使测试可执行  
-**Effort**: 5分钟  
-**Dependencies**: P0-2 ✅ COMPLETED  
-**Status**: ✅ COMPLETED (2026-02-02T18:50)
+### P0-7.T3.2.3: 定义 Factors（后 5 特征）✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 2.3  
+**Effort**: 2 小时  
+**Dependencies**: ✅ T3.2.2 完成  
+**Status**: ✅ COMPLETED (2026-02-03T23:05Z)
 
-**执行结果**:
-- ✅ 注释掉 `src/dgsf/sdf/__init__.py` 中的 `state_engine` 导入
-- ✅ 更新 `__all__` 列表（移除 4 个 state_engine 导出）
-- ✅ 添加 FIXME 注释（说明原因和后续 TODO）
-- ✅ **167 tests collected in 1.55s**（修复前: 0 tests, 11 errors）
+**执行步骤**:
+1. ✅ 在 `SDF_FEATURE_DEFINITIONS.md` 中定义 factors
+2. ✅ 覆盖：market_factor, SMB, HML, momentum_factor, reversal
 
 **验收标准（DoD）**:
-- ✅ pytest 成功收集至少 1 个测试（实际: 167 tests）
-- ✅ 无 ModuleNotFoundError 错误
-- ✅ 验证命令通过: `python -m pytest tests/sdf/ --collect-only 2>&1 | Select-String "collected"`
+- [x] 5 个 factors 完整定义
+- [x] 与 SDF_SPEC v3.1 对齐
+- 验证命令: `Select-String -Pattern "^### Factor \d+:" SDF_FEATURE_DEFINITIONS.md | Measure-Object` ✅ (Count = 5)
+
+**Output**: [SDF_FEATURE_DEFINITIONS.md](../../projects/dgsf/docs/SDF_FEATURE_DEFINITIONS.md) (Factors section added, 19710 chars total)
 
 ---
 
-## 🟡 P1任务（解除对DGSF的阻塞）
+### P0-7.T3.2.4: 创建特征依赖图 ✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 2.4  
+**Effort**: 1 小时  
+**Dependencies**: ✅ T3.2.3 完成  
+**Status**: ✅ COMPLETED (2026-02-03T23:20Z)
 
-### P1-1: 创建 Adapter 层集成测试
-**DGSF关联**: 验证 OS ↔ DGSF 接口可用性，防止首次实验时暴雷  
-**Effort**: 30分钟  
-**Dependencies**: 无  
+**执行步骤**:
+1. ✅ 识别特征间的依赖关系
+2. ✅ 创建 Mermaid 格式的依赖图
+3. ✅ 添加到 `SDF_FEATURE_DEFINITIONS.md`
+
+**验收标准（DoD）**:
+- [x] 依赖图包含所有 10+ 特征
+- [x] 明确计算顺序 (6 levels: Level 0-6)
+- 验证命令: `Select-String -Pattern '```mermaid' SDF_FEATURE_DEFINITIONS.md` ✅ (Count = 1)
+
+**Output**: [SDF_FEATURE_DEFINITIONS.md](../../projects/dgsf/docs/SDF_FEATURE_DEFINITIONS.md) (Dependency Graph section, 28436 chars total)
+
+---
+
+### P0-7.T3.2.5: 验证 SDF_SPEC 对齐 ✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 2.5  
+**Effort**: 30 分钟  
+**Dependencies**: ✅ T3.2.4 完成  
+**Status**: ✅ COMPLETED (2026-02-03T23:35Z)
+
+**执行步骤**:
+1. ✅ 读取 `SDF_REQUIRED_FEATURES.txt`（17 REQUIRED, 1 OPTIONAL）
+2. ✅ 交叉对比 `SDF_FEATURE_DEFINITIONS.md` 已定义特征
+3. ✅ 生成对齐检查表（checklist），标注覆盖状态
+4. ✅ 识别任何缺失特征或不一致
+
+**验收标准（DoD）**:
+- [x] 对齐检查表生成 (5 detailed tables + 1 summary table)
+- [x] 100% required 特征已覆盖（17/17 ✅）
+- [x] 明确标注 optional 特征状态（1/1 ✅）
+- 验证命令: 5 PowerShell commands provided ✅
+
+**Output**: [SDF_FEATURE_DEFINITIONS.md](../../projects/dgsf/docs/SDF_FEATURE_DEFINITIONS.md) (Alignment Verification section, 39103 chars total)
+
+**Key Result**: **100% Coverage** of T3 scope (10 fully defined, 8 referenced) ✅
+
+---
+
+### P0-7.T3.3.1: Pipeline 基础框架 + CLI 接口 ✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 3.1  
+**Effort**: 2-3 小时  
+**Dependencies**: ✅ T3.2.5 完成  
+**Status**: ✅ COMPLETED (2026-02-04T00:05Z)
+
+**执行步骤**:
+1. ✅ 创建 `projects/dgsf/scripts/run_feature_engineering.py` 基础结构
+2. ✅ 实现命令行参数解析 (argparse):
+   - `--config`: YAML 配置文件路径
+   - `--output-dir`: 输出目录
+   - `--start-date` / `--end-date`: 日期范围
+   - `--dry-run`: 干跑模式（仅输出执行计划，不计算）
+3. ✅ 实现配置加载和验证（YAML schema）
+4. ✅ 实现 dry-run 模式输出（打印 7 步执行计划）
+
+**验收标准（DoD）**:
+- [x] 脚本可执行: `python run_feature_engineering.py --help` ✅
+- [x] Dry-run 输出 7 步执行计划（对应 Execution Order Step 1-7）✅
+- [x] 配置验证拒绝非法参数（日期格式、路径存在性）✅
+- 验证命令: `python run_feature_engineering.py --config sample.yaml --dry-run` ✅
+
+**Output**: 
+- [run_feature_engineering.py](../../projects/dgsf/scripts/run_feature_engineering.py) (485 lines)
+- [sample_config.yaml](../../projects/dgsf/scripts/sample_config.yaml) (sample configuration)
+
+---
+
+### P0-7.T3.3.2: 数据加载模块 ✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 3.2  
+**Effort**: 2-3 小时  
+**Dependencies**: ✅ T3.3.1 完成  
+**Status**: ✅ COMPLETED (2026-02-03T12:30Z)
+
+**执行步骤**:
+1. ✅ 实现 Step 1 (Load Raw Data): 5 data loaders
+   - ✅ `load_price_data(start, end)` → price[firm, t]
+   - ✅ `load_shares_outstanding(start, end)` → shares[firm, t]
+   - ✅ `load_financial_statements(start, end)` → financials[firm, t]
+   - ✅ `load_monthly_returns(start, end)` → returns[firm, t]
+   - ✅ `load_risk_free_rate(start, end)` → risk_free[t]
+2. ✅ 实现数据验证和缺失值处理
+3. ✅ 实现日期范围过滤和对齐（月末对齐）
+4. ✅ 添加 `pytest` 单元测试（mock 数据）
+
+**验收标准（DoD）**:
+- [x] 5 个数据加载函数实现完成 ✅
+- [x] 单元测试创建（≥80% coverage 目标）✅ 21/21 tests passed
+- [x] 日期范围过滤正确工作 ✅
+- [x] 缺失值处理文档化（warnings + filtering）✅
+- [x] 与 run_feature_engineering.py 集成完成 ✅
+- 验证命令: `pytest tests/test_data_loading.py -v` → 21 passed ✅
+
+**Output**: 
+- [data_loaders.py](../../projects/dgsf/scripts/data_loaders.py) (569 lines, 5 loaders + validation)
+- [test_data_loading.py](../../projects/dgsf/tests/test_data_loading.py) (496 lines, 21 tests)
+- run_feature_engineering.py updated (imports load_all_data)
+
+**Key Implementation**:
+- Month-end alignment via `pd.offsets.MonthEnd(0)`
+- Extended date ranges for lags (financials: +90d, returns: +12mo, rf: +12mo)
+- Data quality validation (negative/zero removal, missing warnings)
+- Column mapping from config (flexible schema)
+
+---
+
+### P0-7.T3.3.3: Firm Characteristics 计算 ✅ COMPLETED
+**DGSF 关联**: T3 Feature Engineering - Step 3.3  
+**Effort**: 3-4 小时  
+**Dependencies**: ✅ T3.3.2 完成  
+**Status**: ✅ COMPLETED (2026-02-03T23:45Z)
+
+**执行步骤**:
+1. ✅ 实现 Step 2: Compute Independent Characteristics (4-way parallel)
+   - ✅ `compute_size(price, shares)` → size[firm, t]
+   - ✅ `compute_momentum(returns)` → momentum[firm, t]
+   - ✅ `compute_profitability(financials)` → profitability[firm, t]
+   - ✅ `compute_volatility(returns)` → volatility[firm, t]
+2. ✅ 实现 Step 3: Compute Dependent Characteristics
+   - ✅ `compute_book_to_market(financials, size)` → book_to_market[firm, t]
+3. ✅ 实现 winsorization（[1%, 99%] or [0.5%, 99.5%]）
+4. ✅ 实现数据清洗（缺失值 forward-fill, 排除规则）
+5. ✅ 添加单元测试（已知输入→预期输出）
+
+**验收标准（DoD）**:
+- [x] 5 个特征计算函数实现（对应 Feature 1-5） ✅
+- [x] Winsorization 逻辑正确（极值处理） ✅
+- [x] 单元测试验证公式正确性（至少 3 个测试用例/特征） ✅
+- 验证命令: `pytest tests/test_firm_characteristics.py -v` → **19 passed** ✅
+
+**Output**:
+- [firm_characteristics.py](../../projects/dgsf/scripts/firm_characteristics.py) (516 lines, 5 characteristics + winsorization + integration)
+- [test_firm_characteristics.py](../../projects/dgsf/tests/test_firm_characteristics.py) (508 lines, 19 tests, 100% pass rate)
+
+---
+
+### P0-7.T3.3.4: Cross-Sectional Spreads + Factors 🎯 NEXT
+**DGSF 关联**: T3 Feature Engineering - Step 3.4  
+**Effort**: 3-4 小时  
+**Dependencies**: ✅ T3.3.3 完成  
+**Status**: 🎯 READY
+
+**执行步骤**:
+1. 实现 Step 4: Compute Cross-Sectional Spreads
+   - `compute_style_spreads(size, book_to_market, momentum, profitability, volatility)` → style_spreads[t, 5]
+   - 实现 tertile 排序（30%, 40%, 30%）
+   - 实现 market-cap 加权平均
+2. 实现 Step 5: Compute Factors (3-way parallel, SMB+HML 共享 2×3 sorts)
+   - `compute_market_factor(returns, risk_free)` → market_factor[t]
+   - `compute_smb_hml(size, book_to_market, returns)` → SMB[t], HML[t]
+   - `compute_momentum_factor(momentum, returns)` → momentum_factor[t]
+   - `compute_reversal(returns)` → reversal[t]
+3. 实现 Step 6: Assemble SDF Inputs
+   - `assemble_X_state(...)` → X_state[t, d]
+   - `assemble_P_tree_factors(...)` → P_tree_factors[t, 5] (OPTIONAL)
+4. 添加集成测试（端到端 pipeline 测试）
+
+**验收标准（DoD）**:
+- [ ] Cross-sectional spreads 计算正确（5D 向量）
+- [ ] 5 个因子计算函数实现（对应 Factor 1-5）
+- [ ] SMB + HML 共享 2×3 sorts（优化验证）
+- [ ] 集成测试: 给定 mock 数据 → 输出 X_state 和 P-tree factors
+- 验证命令: `pytest tests/test_spreads_factors.py -v`
+
+---
+
+### P0-7.T3.3.5: 端到端 Pipeline 集成测试
+**DGSF 关联**: T3 Feature Engineering - Step 3.5  
+**Effort**: 1-2 小时  
+**Dependencies**: T3.3.4 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 创建 `tests/test_feature_pipeline_e2e.py`
+2. Mock 完整数据集（2020-01 至 2021-12, 100 firms）
+3. 运行完整 pipeline: load → characteristics → spreads → factors → X_state
+4. 验证输出维度和数值范围
+5. 检查执行时间（应 < 5 秒 for mock data）
+
+**验收标准（DoD）**:
+- [ ] E2E 测试通过（≥3 test cases）
+- [ ] X_state 输出维度正确（[T, d]）
+- [ ] 无数据泄漏（t 时刻仅使用 t-1 及之前数据）
+- 验证命令: `pytest tests/test_feature_pipeline_e2e.py -v`
+
+---
+
+### P0-7.T3.4: Feature Ablation Study（特征消融实验）
+**DGSF 关联**: T3 Feature Engineering - Step 4 (Validation)  
+**Effort**: 4-6 小时  
+**Dependencies**: T3.3.5 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 创建 `experiments/feature_ablation/run_ablation.py`
+2. 定义 baseline: 全部 10 特征
+3. 创建 10 个 ablated 版本（每次移除 1 个特征）
+4. 运行简化训练（10 epochs, single split, no early stopping）
+5. 记录 10 个指标：train loss, val loss, SR（Sharpe Ratio）等
+6. 生成 `results/feature_ablation_report.json`
+
+**验收标准（DoD）**:
+- [ ] 10 个 ablated 模型完成训练
+- [ ] 至少 3 个特征的移除导致 SR 下降 ≥0.05（显著性）
+- [ ] ablation_report.json 包含统计显著性 p-value
+- 验证命令: `python experiments/feature_ablation/run_ablation.py --dry-run`
+
+---
+
+### P0-7.T3.5: 创建 Feature Engineering 文档
+**DGSF 关联**: T3 Documentation  
+**Effort**: 1-2 小时  
+**Dependencies**: T3.4 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 创建 `projects/dgsf/docs/FEATURE_ENGINEERING_GUIDE.md`
+2. 章节：
+   - Pipeline Overview（7-step 流程图）
+   - Feature Definitions（引用 SDF_FEATURE_DEFINITIONS.md）
+   - Usage Examples（CLI 命令 + 配置示例）
+   - Ablation Study Results（Top 5 重要特征）
+3. 添加 Troubleshooting FAQ（常见错误）
+
+**验收标准（DoD）**:
+- [ ] 文档包含 ≥4 个主要章节
+- [ ] CLI 示例可直接复制运行
+- [ ] 引用 T3.4 ablation study 结果
+- 验证命令: `Test-Path projects/dgsf/docs/FEATURE_ENGINEERING_GUIDE.md`
+
+---
+
+### P0-7.T4.1: 定义 Training Optimization 目标
+**DGSF 关联**: T4 Training Optimization - Planning  
+**Effort**: 1 小时  
+**Dependencies**: T3.5 完成（T3 → T4 Gate 满足）  
+**Status**: PENDING
+
+**执行步骤**:
+1. 更新 `projects/dgsf/specs/PROJECT_DGSF.yaml` 的 T4 章节
+2. 定义 3 个优化目标：
+   - 降低训练时间（目标: < 2 小时/epoch on GPU）
+   - 提高样本效率（目标: 收敛 epoch < 50）
+   - 减少过拟合（目标: val/train loss ratio < 1.2）
+3. 定义 5 个可行策略（学习率调度、early stopping、gradient clipping 等）
+
+**验收标准（DoD）**:
+- [ ] T4 目标量化（3 个数值指标）
+- [ ] 策略列表包含 ≥5 项
+- [ ] 每个策略有预期收益估计
+- 验证命令: `Select-String -Path projects/dgsf/specs/PROJECT_DGSF.yaml -Pattern "T4.*Training Optimization"`
+
+---
+
+### P0-7.T4.2: 实现 Learning Rate Scheduler
+**DGSF 关联**: T4 Training Optimization - Step 1  
+**Effort**: 2-3 小时  
+**Dependencies**: T4.1 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 在 `repo/src/dgsf/training/` 创建 `lr_scheduler.py`
+2. 实现 3 种策略：
+   - CosineAnnealing (warmup + decay)
+   - ReduceLROnPlateau (adaptive)
+   - StepLR (milestone-based)
+3. 添加 warmup period（前 5 epochs 线性增长）
+4. 集成到 training loop（config-driven）
+
+**验收标准（DoD）**:
+- [ ] 3 种 scheduler 实现完成
+- [ ] 单元测试验证曲线正确（≥6 tests）
+- [ ] 训练日志显示实时 LR（每 epoch 打印）
+- 验证命令: `pytest repo/tests/test_lr_scheduler.py -v`
+
+---
+
+### P0-7.T4.3: 实现 Early Stopping + Checkpointing
+**DGSF 关联**: T4 Training Optimization - Step 2  
+**Effort**: 2-3 小时  
+**Dependencies**: T4.2 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 在 `repo/src/dgsf/training/` 创建 `early_stopping.py`
+2. 实现 patience-based early stopping（默认 patience=10）
+3. 实现 best model checkpointing（保存最佳 val loss 模型）
+4. 添加 restore_best_weights 选项
+
+**验收标准（DoD）**:
+- [ ] Early stopping 正确触发（patience 耗尽）
+- [ ] Checkpoint 保存/加载验证（模型一致性）
+- [ ] 集成测试：训练 → early stop → restore → 继续训练
+- 验证命令: `pytest repo/tests/test_early_stopping.py -v`
+
+---
+
+### P0-7.T4.4: Hyperparameter Tuning Framework
+**DGSF 关联**: T4 Training Optimization - Step 3  
+**Effort**: 3-4 小时  
+**Dependencies**: T4.3 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 创建 `experiments/hyperparameter_tuning/tune_dgsf.py`
+2. 集成 Optuna 或 Ray Tune（配置驱动）
+3. 定义搜索空间：
+   - LR: [1e-5, 1e-3] (log-uniform)
+   - Batch size: [32, 64, 128]
+   - Hidden dim: [64, 128, 256]
+   - Dropout: [0.1, 0.3, 0.5]
+4. 运行 50 trials（3 小时预算）
+5. 生成 `best_config.yaml`
+
+**验收标准（DoD）**:
+- [ ] Tuning framework 可执行
+- [ ] 50 trials 完成（每 trial < 5 分钟）
+- [ ] best_config.yaml 优于 baseline（SR ↑ ≥0.1）
+- 验证命令: `python experiments/hyperparameter_tuning/tune_dgsf.py --n-trials 5 --dry-run`
+
+---
+
+### P0-8: T2 → T3 Gate 形式化记录
+**DGSF 关联**: Stage 4 Governance  
+**Effort**: 15 分钟  
+**Dependencies**: T3.3.2 完成  
+**Status**: PENDING
+
+**执行步骤**:
+1. 更新 `projects/dgsf/docs/STAGE_4_ACCEPTANCE_CRITERIA.md`
+2. 添加 T2 → T3 Gate Decision Record:
+   - Decision Date: 2026-02-03
+   - Decision: OPEN ✅
+   - Evidence: 156/167 tests passed (93.4%), 11 skipped classified
+   - Next Milestone: T3 Feature Engineering (3 weeks)
+3. 提交 Git commit
+
+**验收标准（DoD）**:
+- [ ] Gate Decision Record 包含 4 要素
+- [ ] Git commit message: "docs(dgsf): Record T2→T3 Gate OPEN decision"
+- 验证命令: `git log --oneline -1`
+
+---
+
+## 📊 T3.3 Summary（拆分总结）
+
+| Subtask | Effort | Focus | Key Deliverable |
+|---------|--------|-------|-----------------|
+| T3.3.1 | 2-3h | CLI + Config | `run_feature_engineering.py` --dry-run working |
+| T3.3.2 | 2-3h | Data Loading | 5 data loaders + tests |
+| T3.3.3 | 3-4h | Characteristics | 5 firm characteristics + winsorization |
+| T3.3.4 | 3-4h | Spreads + Factors | style_spreads + 5 factors + X_state assembly |
+| **Total** | **10-14h** | **Pipeline** | **Executable feature engineering pipeline** |
+
+**执行顺序**: T3.3.1 → T3.3.2 → T3.3.3 → T3.3.4 (严格顺序依赖)
+
+---
+
+## 🟡 P1 任务（降低 DGSF 迭代摩擦 · 本周内）
+
+### P1-1: 创建 DGSF 快速验证脚本
+**DGSF 关联**: 减少日常检查时间，降低迭代成本  
+**Effort**: 20 分钟  
 **Status**: ⏸️ READY
 
 **执行步骤**:
-1. 创建 `projects/dgsf/adapter/tests/test_integration.py`
-2. 实现测试用例: `test_adapter_run_experiment_e2e()`
-3. 验证流程: `DGSFAdapter.run_experiment()` → 检查日志/状态同步
-4. 运行测试: `pytest projects/dgsf/adapter/tests/test_integration.py -v`
+1. 创建 `scripts/dgsf_quick_check.ps1`
+2. 输出 4 项状态: Git, Tests, Submodule, Branch
+3. 运行时间 < 10 秒
+
+**脚本内容**:
+```powershell
+# scripts/dgsf_quick_check.ps1
+Write-Host "=== DGSF Quick Check ===" -ForegroundColor Cyan
+Write-Host "[1] Git Status:" -ForegroundColor Yellow
+cd "E:\AI Tools\AI Workflow OS\projects\dgsf\repo"
+git status --short
+Write-Host "[2] Test Summary:" -ForegroundColor Yellow
+pytest tests/ --collect-only -q 2>$null | Select-Object -Last 3
+Write-Host "[3] Submodule Sync:" -ForegroundColor Yellow
+git log --oneline -1
+Write-Host "[4] Branch:" -ForegroundColor Yellow
+git branch --show-current
+```
 
 **验收标准（DoD）**:
-- 测试通过（exit code 0）
-- 覆盖 `DGSFAdapter.run_experiment()` 主流程
-- Mock 外部依赖（避免真实实验）
-- 验证命令: `pytest projects/dgsf/adapter/tests/test_integration.py -v`
+- [ ] 运行时间 < 10 秒
+- [ ] 输出包含 4 项状态
+- 验证命令: `.\scripts\dgsf_quick_check.ps1`
 
 ---
 
-### P1-2: 推送 feature/router-v0 到 origin
-**DGSF关联**: 确保工作可共享，降低协作风险  
-**Effort**: 2分钟  
-**Dependencies**: 无  
+### P1-2: 定义 T3 → T4 Readiness Gate
+**DGSF 关联**: 明确何时可开始 Training Optimization  
+**Effort**: 10 分钟  
 **Status**: ⏸️ READY
 
 **执行步骤**:
-1. `git push origin feature/router-v0`
-2. 验证远程分支存在: `git ls-remote --heads origin feature/router-v0`
+1. 更新 `STAGE_4_ACCEPTANCE_CRITERIA.md`
+2. 添加 T3 → T4 Gate 定义
+
+**Gate 定义（草案）**:
+```markdown
+### T3 → T4 Readiness Gate
+**Open Condition**: 以下全部满足
+1. Feature engineering pipeline 可执行 (`scripts/run_feature_engineering.py` 存在)
+2. Ablation study 完成 (`experiments/feature_ablation/results.json` 存在)
+3. Ablation 结果: ≥3 features 的 p-value < 0.05
+4. Feature definitions 文档化完成
+```
 
 **验收标准（DoD）**:
-- 远程分支与本地同步（22 commits 可见）
-- 验证命令: `git rev-parse origin/feature/router-v0` 返回与 `HEAD` 相同的 commit hash
+- [ ] Gate 包含 ≥3 条可验证条件
+- [ ] 至少 1 条有数值阈值
+- 验证命令: `Select-String -Path projects/dgsf/docs/STAGE_4_ACCEPTANCE_CRITERIA.md -Pattern "T3.*T4"`
 
 ---
 
-### P1-3: 提交 P0-1 执行结果
-**DGSF关联**: 保存 SDF Model Inventory，防止工作丢失  
-**Effort**: 3分钟  
-**Dependencies**: P0-1 ✅ COMPLETED  
+### P1-3: 创建 DGSF Daily Workflow Checklist
+**DGSF 关联**: 标准化日常开发流程，减少认知负载  
+**Effort**: 15 分钟  
 **Status**: ⏸️ READY
 
 **执行步骤**:
-1. `git add projects/dgsf/reports/SDF_MODEL_INVENTORY.json`
-2. `git add docs/plans/TODO_NEXT.md docs/state/PROJECT_STATE.md`
-3. `git commit -m "feat(dgsf): complete SDF Model Architecture Review (SDF_DEV_001_T1)"`
+1. 在 `projects/dgsf/README.md` 添加 "Daily Workflow" 章节
+2. 包含 5-7 项日常步骤
+3. 引用 `scripts/dgsf_quick_check.ps1`
 
 **验收标准（DoD）**:
-- 工作区干净（no uncommitted changes）
-- 提交包含 SDF_MODEL_INVENTORY.json 和状态更新
-- 验证命令: `git log -1 --stat | Select-String "SDF_MODEL_INVENTORY"`
+- [ ] Checklist 包含 5-7 项步骤
+- [ ] 每项有对应命令
+- 验证命令: `Select-String -Path projects/dgsf/README.md -Pattern "Daily Workflow"`
 
 ---
 
-### P1-4: 验证 DGSF repo 测试环境
-**DGSF关联**: 确保 pytest 可在 repo/ 中运行（P0-2 前置条件）  
-**Effort**: 5分钟  
-**Dependencies**: 无  
-**Status**: ⏸️ READY
+### P1-4: 创建 Feature Computation Profiler
+**DGSF 关联**: 识别特征计算瓶颈，优化 pipeline 性能  
+**Effort**: 30 分钟  
+**Status**: PENDING
 
 **执行步骤**:
-1. `cd projects/dgsf/repo/`
-2. `python -m pytest --version` （验证 pytest 可用）
-3. `python -m pytest tests/ --collect-only` （验证测试收集）
-4. 记录环境信息到 `../../reports/DGSF_TEST_ENV.txt`
+1. 在 `scripts/profile_features.py` 添加 cProfile 集成
+2. 测量每个特征函数的执行时间
+3. 输出 Top 5 耗时操作（带百分比）
+4. 生成火焰图（Flamegraph）
 
 **验收标准（DoD）**:
-- pytest 版本 >= 7.0
-- 可成功收集测试（即使有 errors）
-- 验证命令: `Select-String -Path projects/dgsf/reports/DGSF_TEST_ENV.txt -Pattern "pytest"`
+- [ ] Profiler 输出 Top 5 bottlenecks
+- [ ] 火焰图可视化生成（HTML）
+- [ ] 识别至少 1 个可优化点（例如：避免重复计算）
+- 验证命令: `python scripts/profile_features.py --config sample_config.yaml`
 
 ---
 
-### P1-5: 创建 SDF 测试失败修复 TaskCard
-**DGSF关联**: 为 SDF_DEV_001_T2 准备可执行任务  
-**Effort**: 10分钟  
-**Dependencies**: P0-2 ✅ COMPLETED  
-**Status**: ⏸️ BLOCKED (需 P0-2)
+### P1-5: 实现 Feature Caching 机制
+**DGSF 关联**: 避免重复计算，降低实验迭代成本  
+**Effort**: 1-2 小时  
+**Dependencies**: P1-4 识别出缓存收益  
+**Status**: PENDING
 
 **执行步骤**:
-1. 基于 P0-2 的失败分类，创建 `tasks/active/SDF_TEST_FIX_001.md`
-2. 使用 TaskCard 模板，定义修复目标、验收标准
-3. 更新 `state/tasks.yaml` 注册任务
-4. 链接到 PROJECT_DGSF.yaml 的 SDF_DEV_001_T2
+1. 在 `scripts/data_loaders.py` 添加 `@lru_cache` 装饰器
+2. 为高频特征（size, momentum）启用缓存
+3. 实现文件缓存（Parquet 格式）用于跨 session
+4. 添加 `--force-reload` 参数绕过缓存
 
 **验收标准（DoD）**:
-- TaskCard 包含失败分类和修复策略
-- tasks.yaml 中 status="active"
-- 验证命令: `Select-String -Path tasks/active/SDF_TEST_FIX_001.md -Pattern "task_id: SDF_TEST_FIX_001"`
+- [ ] 内存缓存减少重复计算 ≥50%（profiler 验证）
+- [ ] 文件缓存加速第二次运行 ≥3x
+- [ ] 缓存失效逻辑正确（数据更新时自动清除）
+- 验证命令: `python scripts/run_feature_engineering.py --config sample.yaml` (2次运行时间对比)
 
 ---
 
-## ⚪ P2任务（延后 · 非DGSF直接需求）
-
-### P2-1: 修复 kernel 导入路径（相对 → 绝对）
-**原因**: 虽然 EXECUTION_PLAN_V1.md 标记为 P0，但不直接阻塞 DGSF  
-**触发条件**: DGSF 实验调用 kernel 模块时出现导入错误  
-**Effort**: 1.5小时  
-**建议方案**: 批量替换 `from audit import` → `from kernel.audit import`
+### P1-6: 添加 Data Quality Report
+**DGSF 关联**: 诊断数据问题，减少调试时间  
+**Effort**: 30 分钟  
+**Status**: PENDING
 
 **执行步骤**:
-1. 使用 multi_replace_string_in_file 批量修改 kernel/ 导入
-2. 运行 `pyright kernel/` 验证类型检查
-3. 运行 `pytest kernel/tests/ -v` 验证测试通过
-4. 提交: `git commit -m "fix(kernel): use absolute imports for CI compatibility"`
+1. 在 `scripts/run_feature_engineering.py` 添加 `--data-quality-check` 模式
+2. 输出 5 类统计：
+   - Missing value percentage (by column)
+   - Outliers beyond [0.1%, 99.9%]
+   - Temporal coverage gaps (>3 month breaks)
+   - Firm coverage (firms with <6 month data)
+   - Cross-sectional sparsity (firms/date)
+3. 生成 JSON report: `reports/data_quality_YYYYMMDD.json`
 
 **验收标准（DoD）**:
-- pyright 通过（0 errors）
-- pytest 通过（186 tests）
-- 验证命令: `pyright kernel/ --outputjson | python -c "import sys,json; data=json.load(sys.stdin); sys.exit(0 if data['summary']['errorCount']==0 else 1)"`
+- [ ] Report 包含 5 类统计
+- [ ] 自动标注异常（红色警告）
+- [ ] CLI 输出表格化（易读）
+- 验证命令: `python scripts/run_feature_engineering.py --data-quality-check`
 
 ---
 
-### P2-2: 精简 PROJECT_STATE.md ⚠️ DEFERRED
-**原因**: 4000+ 行难以检索，但不阻塞 DGSF  
-**触发条件**: 用户明确要求或日志查询失败超过 3 次  
-**建议方案**: 归档历史记录到 `docs/state/archive/PROJECT_STATE_2026Q1.md`
+## ⚪ P2 任务（延后 · 仅触发条件满足时执行）
+
+| ID | Task | 触发条件 | Effort |
+|----|------|----------|--------|
+| P2-1 | 创建 T4/T5 TaskCard | T3 完成度 > 80% | 30 min |
+| P2-2 | RESEARCH_MILESTONES.md | 有论文 deadline | 20 min |
+| P2-3 | 聚合 audit JSON | audit/ 目录 > 50 文件 | 30 min |
+| P2-4 | README Troubleshooting | 同一问题 ≥2 次 | 15 min |
+| P2-5 | kernel 导入路径修复 | DGSF 调用 kernel 出错 | 1.5 hr |
+| P2-6 | PROJECT_STATE.md 精简 | 查询失败 ≥3 次 | 30 min |
 
 ---
 
-### P2-3: 形式化验证 Adapter 层因果性 ⚠️ DEFERRED
-**原因**: 无证据表明当前有数据泄漏问题  
-**触发条件**: 出现回测异常（未来收益率泄漏到训练集）  
-**建议方案**: 使用形式化方法（如 TLA+）验证时间依赖
+## 📋 执行队列汇总
+
+**更新时间**: 2026-02-03T23:00Z  
+**当前进度**: Stage 4 T2 → T3 Gate OPEN ✅ | T3.3.3 IN PROGRESS 🎯
+
+| # | ID | Priority | Status | Effort | DGSF 关联 | 阻塞情况 |
+|---|-----|----------|--------|--------|-----------|----------|
+| 1 | **P0-7.T3.3.3** | **P0** | **🎯 NEXT** | **3-4h** | **Firm Characteristics** | - |
+| 2 | P0-7.T3.3.4 | P0 | ⏸️ READY | 3-4h | Spreads + Factors | T3.3.3 |
+| 3 | P0-7.T3.3.5 | P0 | ⏸️ READY | 1-2h | E2E Pipeline Test | T3.3.4 |
+| 4 | P0-7.T3.4 | P0 | ⏸️ READY | 4-6h | Feature Ablation | T3.3.5 |
+| 5 | P0-7.T3.5 | P0 | ⏸️ READY | 1-2h | Documentation | T3.4 |
+| 6 | P0-7.T4.1 | P0 | ⏸️ BLOCKED | 1h | T4 Planning | T3→T4 Gate |
+| 7 | P0-7.T4.2 | P0 | ⏸️ BLOCKED | 2-3h | LR Scheduler | T4.1 |
+| 8 | P0-7.T4.3 | P0 | ⏸️ BLOCKED | 2-3h | Early Stopping | T4.2 |
+| 9 | P0-7.T4.4 | P0 | ⏸️ BLOCKED | 3-4h | Hyperparameter Tuning | T4.3 |
+| 10 | P0-8 | P0 | ⏸️ READY | 15min | T2→T3 Gate Record | - |
+| 11 | P1-1 | P1 | ⏸️ READY | 20min | Quick Check Script | - |
+| 12 | P1-2 | P1 | ⏸️ READY | 10min | T3→T4 Gate Definition | - |
+| 13 | P1-3 | P1 | ⏸️ READY | 15min | Daily Workflow | - |
+| 14 | P1-4 | P1 | ⏸️ READY | 30min | Feature Profiler | - |
+| 15 | P1-5 | P1 | ⏸️ READY | 1-2h | Feature Caching | P1-4 |
+| 16 | P1-6 | P1 | ⏸️ READY | 30min | Data Quality Report | - |
+| 17-22 | P2-* | P2 | ⚪ DEFERRED | - | 触发条件未满足 | - |
+
+**Total P0 Tasks**: 10 (1 in-progress, 5 ready, 4 blocked)  
+**Total P1 Tasks**: 6 (6 ready)  
+**Total P2 Tasks**: 6 (all deferred)  
+**Estimated T3 Remaining**: 13-19 hours (1.5-2.5 weeks @ 8h/day)
 
 ---
 
-### P2-4: 重构 Adapter 层为通用接口 ⚠️ DEFERRED
-**原因**: 仅 1 个项目使用，过早抽象（违反 YAGNI 原则）  
-**触发条件**: 第 2 个 L2 项目出现且需要类似接口  
-**建议方案**: 提取通用基类 `BaseProjectAdapter`
+## 🚀 Next Single Step
 
----
-
-### P2-5: 实现 State Machine 验证器 ⚠️ DEFERRED
-**原因**: EXECUTION_PLAN_V1.md P1-1，但不直接阻塞 DGSF  
-**触发条件**: 任务状态转换违规（如 draft → completed 跳过 in_progress）  
-**Effort**: 2小时  
-**建议方案**: 创建 `scripts/verify_state_machine.py`，加载 `kernel/state_machine.yaml`，验证 tasks.yaml 的转换历史
-
----
-
-## 📋 执行队列汇总（接下来 10 个步骤）
-
-**更新时间**: 2026-02-02T18:45Z  
-**当前进度**: 2/12 完成（P0-1 ✅, P0-2 ✅）
-
-| # | Task ID | Priority | Status | Effort | Dependencies |
-|---|---------|----------|--------|--------|--------------|
-| 1 | P0-1 | P0 | ✅ COMPLETED | 20 min | 无 |
-| 2 | P0-2 | P0 | ✅ COMPLETED | 10 min | 无 |
-| 3 | P0-3 | P0 | ⏸️ READY | 5 min | P0-2 ✅ |
-| 4 | P1-3 | P1 | ⏸️ READY | 3 min | P0-1 ✅ |
-| 5 | P1-4 | P1 | ⏸️ READY | 5 min | 无 |
-| 6 | P1-1 | P1 | ⏸️ READY | 30 min | 无 |
-| 7 | P1-2 | P1 | ⏸️ READY | 2 min | 无 |
-| 8 | P1-5 | P1 | ⏸️ BLOCKED | 10 min | P0-2 ✅→P0-3 |
-| 9 | P2-1 | P2 | ⚠️ DEFERRED | 1.5 hr | 无（需触发） |
-| 10 | P2-2 | P2 | ⚠️ DEFERRED | - | 无（需触发） |
-| 11 | P2-3 | P2 | ⚠️ DEFERRED | - | 无（需触发） |
-| 12 | P2-4 | P2 | ⚠️ DEFERRED | - | 无（需触发） |
-
-**Next Step**: **P0-3** - 修复 SDF 导入错误（state_engine 缺失）
-
----
-
-## 📝 Expert Panel Insights（专家观点 · 仅供参考）
-
-### Grady Booch（Architecture）
-- **核心风险**: SDF 架构审查缺乏具体执行路径
-- **建议**: 先执行 P0-1 生成模型清单，再决定重构策略
-- **Stop Doing**: 停止为了"优雅"而优化 Adapter 层
-
-### Gene Kim（Execution Flow）
-- **核心风险**: 22 个未推送的 commits 增加协作风险
-- **建议**: 立即执行 P1-2 推送到 origin
-- **Stop Doing**: 停止为每个执行步骤生成长篇文档（PROJECT_STATE 已 4000+ 行）
-
-### Leslie Lamport（Definition of Done）
-- **核心风险**: SDF 子任务缺乏量化验收标准
-- **建议**: 为 P0-1 定义 JSON 格式的 artifact（已在 DoD 中明确）
-- **Stop Doing**: 停止创建"评估报告"作为交付物（研究人员需要代码和数据）
-
----
-
-## 🚀 Next Single Step（只能一个）
-
-**选择**: **P0-2 - 明确 SDF_DEV_001_T2 的失败详情**
+**选择**: **P0-7.T3.3.4 - Cross-Sectional Spreads + Factors**
 
 **理由**:
-1. ✅ 零依赖（无需等待其他任务）
-2. ✅ 直接推进 DGSF Stage 4（T2 任务的前置条件）
-3. ✅ 产出明确（分类的测试失败报告）
-4. ✅ 验证简单（检查报告包含失败分类）
+1. ✅ T3.3.3（Firm Characteristics）已完成，19/19 tests passed
+2. ✅ 直接推进 T3 Feature Engineering 主线
+3. ✅ 产出明确：cross-sectional spreads + 5 factors + X_state assembly
+4. ✅ 可在 3-4 小时内完成，最小可验证步
 
 **执行计划**:
 ```powershell
-# 1. 切换到 DGSF repo
-cd projects/dgsf/repo/
+# 1. 创建 spreads and factors 模块
+New-Item -Path "projects/dgsf/scripts/spreads_factors.py" -ItemType File -Force
 
-# 2. 运行 SDF 测试
-pytest tests/sdf/ -v --tb=short > ../../reports/SDF_TEST_FAILURES.txt 2>&1
+# 2. 创建测试文件
+New-Item -Path "projects/dgsf/tests/test_spreads_factors.py" -ItemType File -Force
 
-# 3. 分析失败原因（import, schema, dtype, assertion）
-# 4. 生成分类汇总报告
-# 5. 为每类失败提供修复建议
+# 3. 实现 Step 4-6:
+#    - compute_style_spreads() (5D cross-sectional spreads)
+#    - compute_market_factor(), compute_smb_hml(), compute_momentum_factor(), compute_reversal()
+#    - assemble_X_state(), assemble_P_tree_factors()
+# 4. 编写单元测试（≥12 tests）
+# 5. 运行验证
+cd projects/dgsf
+python -m pytest tests/test_spreads_factors.py -v
 ```
 
-**验收标准**:
-- 记录所有失败测试用例（test name, error message, file location）
-- 分类失败原因（至少3类）
-- 提供修复建议（每类至少1条）
+**Expert Simulation**: Gene Kim (DevOps + Flow)
+- **修改点**: 新增 2 个文件（spreads_factors.py, test_spreads_factors.py）
+- **验收标准**: 12+ tests passed, X_state assembly 正确（维度验证）
+- **验证命令**: `pytest tests/test_spreads_factors.py -v`
 
 ---
 
-**End of TODO_NEXT.md**
-
-**原因**: EXECUTION_PLAN_V1.md P1-1，但不直接阻塞 DGSF  
-**触发条件**: 任务状态转换违规（如 draft → completed 跳过 in_progress）  
-**Effort**: 2小时  
-**建议方案**: 创建 `scripts/verify_state_machine.py`，加载 `kernel/state_machine.yaml`，验证 tasks.yaml 的转换历史
-
----
-
-## ✅ 已完成任务（归档）
-
-### P0-1-OLD: 配置pytest排除Legacy DGSF ✅ COMPLETED
-**完成时间**: 2026-02-02T15:00  
-**Result**: pytest.ini created with testpaths=["kernel/tests"], 0 legacy errors verified
-
----
-
-### P0-2-OLD: Define DGSF Stage 4 SDF tasks ✅ COMPLETED
-**完成时间**: 2026-02-02T17:10  
-**Result**: Added 5 SDF development tasks to PROJECT_DGSF.yaml (SDF_DEV_001_T1 到 T5)
-
----
-
-### P0-3-OLD: 验证DGSF repo submodule状态 ✅ COMPLETED
-**完成时间**: 2026-02-02T15:15  
-**Result**: submodule synced with origin/master (commit fb208e4), clean working tree
-
----
-
-### P1-4-OLD: 更新 Stage 4 状态为 in_progress ✅ COMPLETED
-**完成时间**: 2026-02-02T17:10  
-**Result**: PROJECT_DGSF.yaml - Stage 4 status="in_progress", started_date="2026-02-02"
-
----
-
-## 📝 Expert Panel Insights（专家观点 · 仅供参考）
+## 📝 Expert Panel Insights（2026-02-03T21:00Z）
 
 ### Grady Booch（Architecture）
-- **核心风险**: SDF 架构审查缺乏具体执行路径
-- **建议**: 先执行 P0-1 生成模型清单，再决定重构策略
-- **Stop Doing**: 停止为了"优雅"而优化 Adapter 层
+- **Findings**: T1-T2 完成，架构清晰，无结构性阻塞
+- **Recommendation**: 为 T3 创建详细 TaskCard（P0-7）🎯
+- **Risk if ignored**: 3 周任务可能失控
 
 ### Gene Kim（Execution Flow）
-- **核心风险**: 22 个未推送的 commits 增加协作风险
-- **建议**: 立即执行 P1-2 推送到 origin
-- **Stop Doing**: 停止为每个执行步骤生成长篇文档（PROJECT_STATE 已 4000+ 行）
+- **Findings**: 工作流顺畅，repo/ 已同步
+- **Recommendation**: 创建快速验证脚本（P1-1）降低日常摩擦
+- **Risk if ignored**: 每次迭代多花 2-3 分钟检查
 
-### Leslie Lamport（Definition of Done）
-- **核心风险**: SDF 子任务缺乏量化验收标准
-- **建议**: 为 P0-1 定义 JSON 格式的 artifact（已在 DoD 中明确）
-- **Stop Doing**: 停止创建"评估报告"作为交付物（研究人员需要代码和数据）
+### Mary Shaw（Dependency）
+- **Findings**: OS → DGSF 单向依赖保持良好
+- **Recommendation**: 维持当前边界，不扩展 Adapter
+- **Risk if ignored**: 依赖反转风险
 
----
+### Martin Fowler（Refactoring）
+- **Findings**: 5 个 TODO 在 dev_sdf_models.py（技术债）
+- **Recommendation**: 延后重构，聚焦 T3 功能
+- **Risk if ignored**: 提前重构浪费资源
 
-## 🚀 Next Single Step（只能一个）
+### Leslie Lamport（DoD）
+- **Findings**: Stage 4 AC 已定义，T2→T3 Gate 明确
+- **Recommendation**: 定义 T3→T4 Gate（P1-2）
+- **Risk if ignored**: T3 完成标准模糊
 
-**选择**: **P0-1 - 执行 SDF_DEV_001_T1 (SDF Model Architecture Review)**
-
-**理由**:
-1. ✅ 零依赖（无需等待其他任务）
-2. ✅ 直接推进 DGSF Stage 4
-3. ✅ 产出明确（JSON 格式的模型清单）
-4. ✅ 验证简单（断言 JSON 包含模型）
-
-**执行计划**:
-```powershell
-# 1. 扫描 SDF 目录
-cd projects/dgsf/repo/src/dgsf/sdf/
-Get-ChildItem -Recurse -Filter "*.py" | Select-Object Name, FullName
-
-# 2. 识别模型类（手动或脚本辅助）
-# 3. 生成 JSON 清单
-# 4. 验证 JSON 格式
-python -c "import json; data=json.load(open('projects/dgsf/reports/SDF_MODEL_INVENTORY.json')); print(f'Found {len(data[\"models\"])} models')"
-```
-
-**验收标准**:
-- JSON 包含至少 1 个模型
-- 每个模型有 name, file_path, dependencies, status 字段
-- 识别至少 3 个 technical debt
+### Nicole Forsgren（Metrics）
+- **Findings**: 测试通过率 93.4%，11 skipped 已分类
+- **Recommendation**: 跟踪 T3 子任务 cycle time
+- **Risk if ignored**: 无法识别瓶颈
 
 ---
 

@@ -1,0 +1,195 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "created": "2026-02-03T21:45:00Z",
+    "author": "Leslie Lamport (DoD Principle)",
+    "purpose": "SDF Feature Engineering - Existing Feature Inventory",
+    "scan_scope": "projects/dgsf/repo/src/dgsf/"
+  },
+  "summary": {
+    "total_features_identified": 12,
+    "feature_categories": 4,
+    "implementation_status": "placeholder_modules",
+    "sdf_spec_coverage": "partial"
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "leaf_features",
+      "type": "tree_derived",
+      "source": "dgsf.paneltree",
+      "description": "Panel tree leaf-level features (K leaves, F_leaf dimensions)",
+      "shape": "[T, K, F_leaf]",
+      "status": "referenced_in_training",
+      "module": "sdf/training.py",
+      "sdf_spec_v3_1": "required",
+      "implementation": "placeholder (factors/leaf_features.py)"
+    },
+    {
+      "id": "F002",
+      "name": "state_features",
+      "type": "state_level",
+      "source": "dgsf.dataeng",
+      "description": "Time-varying state-level features (market conditions, macro variables)",
+      "shape": "[T, F_state]",
+      "status": "referenced_in_training",
+      "module": "sdf/training.py",
+      "sdf_spec_v3_1": "optional",
+      "implementation": "partial"
+    },
+    {
+      "id": "F003",
+      "name": "monthly_returns",
+      "type": "returns",
+      "source": "dgsf.dataeng.de10_monthly_returns",
+      "description": "Monthly stock returns (excess or raw)",
+      "shape": "[N, T]",
+      "status": "implemented",
+      "module": "dataeng/de10_monthly_returns.py",
+      "sdf_spec_v3_1": "required",
+      "implementation": "complete"
+    },
+    {
+      "id": "F004",
+      "name": "factor_columns",
+      "type": "factors",
+      "source": "dgsf.dataeng.a0_pipeline_reset (DE7)",
+      "description": "Factor data from dataeng pipeline (excluding ts_code, month_end)",
+      "shape": "[N, F]",
+      "status": "referenced",
+      "module": "dataeng/a0_pipeline_reset.py:590",
+      "sdf_spec_v3_1": "required",
+      "implementation": "partial",
+      "note": "Specific factor names TBD"
+    },
+    {
+      "id": "F005",
+      "name": "firm_characteristics",
+      "type": "firm_level",
+      "source": "dgsf.factors.definitions (placeholder)",
+      "description": "Firm-level characteristics (size, BM, momentum, profitability)",
+      "shape": "[N, T, C]",
+      "status": "placeholder",
+      "module": "factors/definitions.py",
+      "sdf_spec_v3_1": "required",
+      "implementation": "not_implemented",
+      "placeholder_class": "FactorDefinition"
+    },
+    {
+      "id": "F006",
+      "name": "size",
+      "type": "firm_characteristic",
+      "source": "factors.definitions (implied)",
+      "description": "Market capitalization or log(market_cap)",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "required",
+      "implementation": "not_implemented"
+    },
+    {
+      "id": "F007",
+      "name": "book_to_market",
+      "type": "firm_characteristic",
+      "source": "factors.definitions (implied)",
+      "description": "Book-to-market ratio (value factor)",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "required",
+      "implementation": "not_implemented"
+    },
+    {
+      "id": "F008",
+      "name": "momentum",
+      "type": "firm_characteristic",
+      "source": "factors.definitions (implied)",
+      "description": "Past 12-month return (excluding last month)",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "required",
+      "implementation": "not_implemented"
+    },
+    {
+      "id": "F009",
+      "name": "profitability",
+      "type": "firm_characteristic",
+      "source": "factors.definitions (implied)",
+      "description": "Operating profitability or ROE",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "optional",
+      "implementation": "not_implemented"
+    },
+    {
+      "id": "F010",
+      "name": "market_factor",
+      "type": "factor",
+      "source": "factors (implied)",
+      "description": "Market excess return (Rm - Rf)",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "required",
+      "implementation": "not_implemented"
+    },
+    {
+      "id": "F011",
+      "name": "smb_factor",
+      "type": "factor",
+      "source": "factors (implied)",
+      "description": "Small minus Big (size factor)",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "optional",
+      "implementation": "not_implemented"
+    },
+    {
+      "id": "F012",
+      "name": "hml_factor",
+      "type": "factor",
+      "source": "factors (implied)",
+      "description": "High minus Low (value factor)",
+      "status": "implied_not_implemented",
+      "sdf_spec_v3_1": "optional",
+      "implementation": "not_implemented"
+    }
+  ],
+  "modules_scanned": [
+    "src/dgsf/factors/ (5 files: definitions.py, compute.py, cleaning.py, leaf_features.py, __init__.py)",
+    "src/dgsf/sdf/training.py (feature references)",
+    "src/dgsf/dataeng/a0_pipeline_reset.py (factor columns)",
+    "src/dgsf/dataeng/de10_monthly_returns.py (returns)"
+  ],
+  "gaps_vs_sdf_spec_v3_1": [
+    "Firm characteristics (size, BM, momentum) - REQUIRED but NOT IMPLEMENTED",
+    "Factor definitions (market, SMB, HML) - Required/Optional but NOT IMPLEMENTED",
+    "Feature computation pipeline - Referenced but NOT IMPLEMENTED",
+    "Feature cleaning/validation - Placeholder only"
+  ],
+  "technical_debt": [
+    {
+      "id": "TD-F001",
+      "severity": "high",
+      "description": "factors/ module all placeholders, no actual implementation",
+      "impact": "Blocks T3.2 feature definition documentation",
+      "recommendation": "Need to implement FactorDefinition, FactorComputer core classes"
+    },
+    {
+      "id": "TD-F002",
+      "severity": "medium",
+      "description": "leaf_features and state_features referenced in training.py but no explicit definition",
+      "impact": "Feature dimensions and sources unclear",
+      "recommendation": "Clarify specific feature lists for F_leaf and F_state"
+    },
+    {
+      "id": "TD-F003",
+      "severity": "medium",
+      "description": "factor_columns dynamically obtained from dataeng, but specific factor names not documented",
+      "impact": "Cannot verify alignment with SDF_SPEC v3.1",
+      "recommendation": "Run dataeng pipeline and record output factor_columns"
+    }
+  ],
+  "next_steps": [
+    "T3.2: Align with SDF_SPEC v3.1 based on this inventory, define missing features",
+    "T3.3: Implement factors/ module core functionality (FactorDefinition, FactorComputer)",
+    "Verification: Run dataeng pipeline to obtain actual factor_columns",
+    "Extension: Add more SDF_SPEC v3.1 required features (e.g. investment, illiquidity)"
+  ],
+  "verification": {
+    "command": "Get-Content projects/dgsf/reports/SDF_FEATURE_INVENTORY.json | ConvertFrom-Json | Select-Object -ExpandProperty features | Measure-Object",
+    "expected_count": 12,
+    "validation_passed": true
+  }
+}

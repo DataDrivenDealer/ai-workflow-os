@@ -1,0 +1,213 @@
+# SDF Required Features (from SDF_SPEC v3.1)
+
+**Source**: DGSF SDF Layer Specification v3.1 (FINAL)  
+**Extracted**: 2026-02-03T22:20Z  
+**Purpose**: T3.2.1 - Feature inventory aligned with spec
+
+---
+
+## Input Features (Section 2 - Inputs)
+
+### 2.1 X_state[t, d] - **REQUIRED**
+
+**Category**: State-level features  
+**Priority**: **REQUIRED** (mandatory for SDF construction)
+
+**Components** (all sub-features marked as part of X_state):
+
+1. **macro** (10 published variables, date-aligned)
+   - Priority: REQUIRED
+   - Source: DataEng v4.2
+   - Causality: Must be strictly causal (no future information)
+
+2. **microstructure** (monthly aggregated)
+   - Priority: REQUIRED
+   - Examples: trading volume, liquidity metrics, bid-ask spreads
+   - Source: DataEng aggregation
+
+3. **style_spreads** (5 dimensions)
+   - Priority: REQUIRED
+   - Dimensions:
+     * size spread
+     * value spread (book-to-market)
+     * momentum spread
+     * profitability spread
+     * volatility spread
+   - Purpose: Cross-sectional risk factors
+
+4. **leaf_structural_embeddings** (from L2 PanelTree)
+   - Priority: REQUIRED
+   - Source: PanelTree v3.0.2 Layer 2
+   - Purpose: Structural information from panel tree leaves
+
+5. **market_structure**
+   - Priority: REQUIRED
+   - Components:
+     * index_churn (index membership changes)
+     * suspension_share (trading suspension rate)
+   - Purpose: Market dynamics
+
+6. **time_encoding** (periodic)
+   - Priority: REQUIRED
+   - Purpose: Seasonal/cyclical patterns
+   - Implementation: Fourier features or similar
+
+---
+
+### 2.2 R_leaf[t+1, k] - **REQUIRED**
+
+**Category**: Returns  
+**Priority**: **REQUIRED**  
+**Source**: PanelTree v3.0.2 leaf portfolios  
+**Constraints**:
+- Tradability mask aligned
+- Market-cap weighted
+- Transform-only (no re-fitting in Val/OOS)
+
+---
+
+### 2.3 P-tree factors - **OPTIONAL**
+
+**Category**: Factors  
+**Priority**: **OPTIONAL** (recommended)  
+**Source**: Boosted PanelTree tangency factors  
+**Purpose**: 
+- SDF auxiliary features
+- CAPM/FF5/P-tree baseline comparison
+
+---
+
+## Derived/Output Features (Section 3 - Outputs)
+
+### 3.1 m_t (SDF) - **REQUIRED OUTPUT**
+
+**Category**: Stochastic Discount Factor  
+**Priority**: **REQUIRED**  
+**Constraints**:
+- m_t > 0 (strictly positive)
+- Normalized across windows (comparable)
+- Time-smooth (L_time penalty enforced)
+
+**Purpose**:
+- Leaf portfolio Euler condition
+- g_k, g^(w) computation
+- Rolling drift analysis
+- EA penalty
+
+---
+
+### 3.2 z_t (Risk Embedding) - **REQUIRED OUTPUT**
+
+**Category**: Risk state embedding  
+**Priority**: **REQUIRED**  
+**Constraints**:
+- Low-dimensional (d_z = 5-20 optimal)
+- Time-smooth
+- Cross-window smooth (warm-start + normalization)
+- Interpretable
+
+**Purpose**:
+- Risk state representation
+- EA warm-start
+- Reporting/visualization
+
+---
+
+### 3.3 g_k (Leaf pricing error) - **REQUIRED OUTPUT**
+
+**Category**: Pricing error metrics  
+**Priority**: **REQUIRED**  
+**Formula**: g_k = (1/T) Σ_t m_t * R_leaf[t+1,k]
+
+**Purpose**:
+- Identify hard-to-price leaves
+- PanelTree drift detection
+- State-space adequacy check
+
+---
+
+### 3.4 g^(w) (Strategy pricing error) - **REQUIRED OUTPUT**
+
+**Category**: Portfolio pricing error  
+**Priority**: **REQUIRED**  
+**Formula**: g^(w) = (1/T) Σ_t m_t * (w^T R_leaf[t+1])
+
+**Purpose**:
+- EA fourth objective
+- Strategy evaluation
+- Must be deterministic, stable, comparable
+
+---
+
+## Firm-level Characteristics (Implicit in style_spreads)
+
+**Priority**: **REQUIRED** (as components of style_spreads)
+
+1. **size** (market capitalization or log mktcap)
+   - Part of: size spread in style_spreads
+   - Status: REQUIRED
+
+2. **book_to_market** (value factor)
+   - Part of: value spread in style_spreads
+   - Status: REQUIRED
+
+3. **momentum** (past 12-month return, excluding last month)
+   - Part of: momentum spread in style_spreads
+   - Status: REQUIRED
+
+4. **profitability** (operating profitability or ROE)
+   - Part of: profitability spread in style_spreads
+   - Status: REQUIRED
+
+5. **volatility**
+   - Part of: volatility spread in style_spreads
+   - Status: REQUIRED
+
+---
+
+## Model Structure Requirements (Section 4)
+
+**Not features, but constraints on feature usage:**
+
+1. **MUST**: Single kernel (unified m_t, no per-leaf m_t(k))
+2. **MUST**: m_t > 0 (use softplus, exp, or similar)
+3. **MUST**: Normalization (m_t normalized across time)
+4. **MUST**: Time-smoothness (L_time penalty)
+5. **SHOULD**: Embedding smoothness (L_z-smooth penalty)
+
+---
+
+## Loss Components (Section 5)
+
+**Required penalties (not features but important for training):**
+
+1. **L_price** (MUST): Σ_k g_k^2 (core Euler moment condition)
+2. **L_reg** (MUST): L2 regularization (L1 optional)
+3. **L_time** (MUST): Σ_t (m_t - m_{t-1})^2 (SDF time smoothness)
+4. **L_embed** (SHOULD): Σ_t |z_t - z_{t-1}|^2 (embedding smoothness)
+
+---
+
+## Summary Count
+
+| Category | Required | Optional | Total |
+|----------|----------|----------|-------|
+| **Input Features** | 2 (X_state, R_leaf) | 1 (P-tree factors) | 3 |
+| **X_state Components** | 6 sub-categories | 0 | 6 |
+| **Firm Characteristics** | 5 (size, BM, mom, prof, vol) | 0 | 5 |
+| **Output Features** | 4 (m_t, z_t, g_k, g^(w)) | 0 | 4 |
+| **Total Trackable** | **17** | **1** | **18** |
+
+---
+
+## Validation Checklist
+
+- [x] All REQUIRED features identified (17 required, 1 optional)
+- [x] Each feature has priority marked (REQUIRED/OPTIONAL)
+- [x] Source modules identified (DataEng, PanelTree, SDF itself)
+- [x] Constraints documented (causality, normalization, smoothness)
+- [x] Purpose/usage clarified for each feature
+
+---
+
+**Next Step**: T3.2.2 - Define firm characteristics (5 features) in detail with 5 elements each
