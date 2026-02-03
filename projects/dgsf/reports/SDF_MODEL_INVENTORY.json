@@ -1,0 +1,284 @@
+{
+  "scan_metadata": {
+    "scan_date": "2026-02-02T18:15:00Z",
+    "scanner": "Project Orchestrator (Copilot Agent)",
+    "task_id": "SDF_DEV_001_T1",
+    "directory_scanned": "projects/dgsf/repo/src/dgsf/sdf/",
+    "total_py_files": 14,
+    "total_models_found": 4
+  },
+  "models": [
+    {
+      "name": "GenerativeSDF",
+      "file_path": "projects/dgsf/repo/src/dgsf/sdf/model.py",
+      "line_range": "14-164",
+      "type": "nn.Module",
+      "description": "Feedforward neural network that produces strictly positive SDF values with hidden layer activations",
+      "key_parameters": [
+        "input_dim: int (expected features dimension)",
+        "hidden_dim: int (units per hidden layer)",
+        "num_hidden_layers: int",
+        "activation: str (tanh or relu)",
+        "output_activation: str (softplus or exp)"
+      ],
+      "outputs": [
+        "m: torch.Tensor [batch, 1] (SDF values, strictly positive)",
+        "z: torch.Tensor [batch, hidden_dim] (final hidden layer activations)"
+      ],
+      "dependencies": {
+        "imports": [
+          "torch",
+          "torch.nn",
+          "torch.nn.functional"
+        ],
+        "external_modules": []
+      },
+      "status": "working",
+      "notes": "Primary production SDF model, well-documented with numpy-style docstrings, includes input validation",
+      "test_coverage": "unknown (requires pytest analysis)",
+      "usage_context": "Used in training.py via train_sdf_window()"
+    },
+    {
+      "name": "DevSDFModel",
+      "file_path": "projects/dgsf/repo/src/dgsf/sdf/dev_sdf_models.py",
+      "line_range": "32-235",
+      "type": "nn.Module",
+      "description": "Minimal neural-network-based SDF model for dev_small_universe, compatible with SDF v3.1 semantics",
+      "key_parameters": [
+        "input_dim: int = 48 (X_state dimension)",
+        "hidden_dim: int = 32",
+        "num_hidden_layers: int = 2",
+        "activation: str = tanh",
+        "output_activation: str = softplus",
+        "seed: int = 42 (deterministic initialization)"
+      ],
+      "outputs": [
+        "m_t: torch.Tensor [batch, 1] (SDF scalar, strictly positive)",
+        "z_t: torch.Tensor [batch, hidden_dim] (hidden representation)"
+      ],
+      "dependencies": {
+        "imports": [
+          "numpy",
+          "torch",
+          "torch.nn",
+          "torch.nn.functional"
+        ],
+        "external_modules": []
+      },
+      "status": "dev",
+      "notes": "Development version for small universe testing, has TODO comments for full SDF v3.1 features (time-smoothing, sparsity, bounds)",
+      "test_coverage": "unknown (requires pytest analysis)",
+      "usage_context": "Used in dev_sdf_trainer.py for development experiments",
+      "technical_debt": [
+        "TODO: Add time-smoothness penalty on m_t changes (line 181)",
+        "TODO: Add sparsity penalty on z_t activations (line 182)",
+        "TODO: Add bounds on m_t to prevent extreme values (line 183)",
+        "Full SDF v3.1 regularization not implemented (line 212)"
+      ]
+    },
+    {
+      "name": "LinearSDFModel",
+      "file_path": "projects/dgsf/repo/src/dgsf/sdf/a0_sdf_trainer.py",
+      "line_range": "83-131",
+      "type": "nn.Module",
+      "description": "Linear SDF model: m_t = a + b' * x_state_t, simple and interpretable baseline",
+      "key_parameters": [
+        "input_dim: int = 48 (X_state dimension)",
+        "seed: int = 42"
+      ],
+      "outputs": [
+        "m: torch.Tensor [batch, 1] (SDF values, positive via softplus)"
+      ],
+      "dependencies": {
+        "imports": [
+          "torch",
+          "torch.nn"
+        ],
+        "external_modules": []
+      },
+      "status": "working",
+      "notes": "Simplest SDF model, single linear layer with softplus activation, initialized near m=1, used as baseline for A0 experiments",
+      "test_coverage": "unknown (requires pytest analysis)",
+      "usage_context": "Used in a0_sdf_trainer.py for baseline comparisons",
+      "technical_debt": []
+    },
+    {
+      "name": "MLPSDFModel",
+      "file_path": "projects/dgsf/repo/src/dgsf/sdf/a0_sdf_trainer.py",
+      "line_range": "131-180",
+      "type": "nn.Module",
+      "description": "MLP SDF model with one hidden layer, more flexible than linear but still simple",
+      "key_parameters": [
+        "input_dim: int = 48 (X_state dimension)",
+        "hidden_dim: int = 32",
+        "seed: int = 42"
+      ],
+      "outputs": [
+        "m: torch.Tensor [batch, 1] (SDF values, positive)"
+      ],
+      "dependencies": {
+        "imports": [
+          "torch",
+          "torch.nn"
+        ],
+        "external_modules": []
+      },
+      "status": "working",
+      "notes": "Single-hidden-layer MLP for SDF, intermediate complexity between linear and full GenerativeSDF",
+      "test_coverage": "unknown (requires pytest analysis)",
+      "usage_context": "Used in a0_sdf_trainer.py for experiments",
+      "technical_debt": []
+    }
+  ],
+  "non_model_modules": [
+    {
+      "name": "training.py",
+      "description": "Training loop for SDF models (train_sdf_window function)",
+      "key_functions": [
+        "train_sdf_window(model, leaf_returns, leaf_features, state_features, ...)"
+      ],
+      "status": "working"
+    },
+    {
+      "name": "losses.py",
+      "description": "Loss functions for SDF training (pricing error computation)",
+      "key_functions": [
+        "compute_pricing_errors(m, leaf_returns_window)",
+        "pricing_error_loss(m, leaf_returns_window, ...)"
+      ],
+      "status": "working"
+    },
+    {
+      "name": "input_constructor.py",
+      "description": "Constructs SDF input tensors from leaf returns, leaf features, and state features",
+      "status": "working"
+    },
+    {
+      "name": "features.py",
+      "description": "Feature engineering utilities for SDF inputs",
+      "status": "unknown"
+    },
+    {
+      "name": "rolling.py",
+      "description": "Rolling window utilities for time-series SDF training",
+      "status": "unknown"
+    },
+    {
+      "name": "a0_sdf_dataloader.py",
+      "description": "Data loader for A0 experiments (2015-05 to 2019-12)",
+      "status": "working"
+    },
+    {
+      "name": "dev_sdf_dataloader.py",
+      "description": "Data loader for dev_small_universe experiments",
+      "status": "working"
+    },
+    {
+      "name": "dev_sdf_trainer.py",
+      "description": "Trainer for dev_small_universe experiments with DevSDFModel",
+      "status": "working",
+      "notes": "Has TODO comments for full SDF v3.1 implementation"
+    },
+    {
+      "name": "a0_linear_baseline.py",
+      "description": "Constant-weight linear SDF baseline (non-neural, closed-form solution)",
+      "status": "working",
+      "notes": "Not a neural model, uses analytical solution for b* = (F'F + λI)^{-1} F'f_bar"
+    },
+    {
+      "name": "a0_linear_rolling.py",
+      "description": "Rolling window variant of linear baseline",
+      "status": "unknown"
+    }
+  ],
+  "technical_debt_summary": {
+    "total_items": 5,
+    "critical": 0,
+    "high": 0,
+    "medium": 4,
+    "low": 1,
+    "details": [
+      {
+        "priority": "medium",
+        "category": "missing_features",
+        "description": "DevSDFModel missing full SDF v3.1 regularization (time-smoothing, sparsity, bounds)",
+        "affected_files": [
+          "dev_sdf_models.py",
+          "dev_sdf_trainer.py"
+        ],
+        "recommendation": "Implement SDF v3.1 full spec features as per DGSF Architecture v3.0"
+      },
+      {
+        "priority": "medium",
+        "category": "test_coverage",
+        "description": "Test coverage unknown for all models (requires SDF_DEV_001_T2 analysis)",
+        "affected_files": [
+          "all model files"
+        ],
+        "recommendation": "Run pytest tests/sdf/ -v --cov to assess coverage, target >80%"
+      },
+      {
+        "priority": "medium",
+        "category": "documentation",
+        "description": "Usage context for features.py, rolling.py, a0_linear_rolling.py unclear",
+        "affected_files": [
+          "features.py",
+          "rolling.py",
+          "a0_linear_rolling.py"
+        ],
+        "recommendation": "Add module-level docstrings with examples"
+      },
+      {
+        "priority": "medium",
+        "category": "architecture",
+        "description": "Model interface consistency: GenerativeSDF returns (m, z), others return only m",
+        "affected_files": [
+          "model.py",
+          "a0_sdf_trainer.py"
+        ],
+        "recommendation": "Standardize return signatures (either all return z or make it optional)"
+      },
+      {
+        "priority": "low",
+        "category": "initialization",
+        "description": "Different seed handling across models (parameter vs manual torch.manual_seed)",
+        "affected_files": [
+          "all model files"
+        ],
+        "recommendation": "Centralize seed handling in a base class or utility function"
+      }
+    ]
+  },
+  "architecture_patterns": {
+    "base_class": "torch.nn.Module",
+    "common_features": [
+      "Softplus or exp activation for positive SDF output",
+      "Seeded initialization for reproducibility",
+      "Xavier/uniform weight initialization",
+      "Input dimension validation"
+    ],
+    "design_principles": [
+      "Strict positivity constraint on SDF (m > 0)",
+      "Deterministic forward pass",
+      "No explicit time-series modeling (windowed training)",
+      "Pricing error loss as primary objective"
+    ]
+  },
+  "recommendations": {
+    "immediate_actions": [
+      "Execute SDF_DEV_001_T2: Run pytest tests/sdf/ to identify test failures",
+      "Document usage patterns for features.py, rolling.py modules",
+      "Standardize model return signatures across all SDF models"
+    ],
+    "short_term": [
+      "Implement full SDF v3.1 features in DevSDFModel (time-smoothing, sparsity, bounds)",
+      "Create integration tests for training pipeline (train_sdf_window with each model)",
+      "Add test coverage for input_constructor.py, losses.py"
+    ],
+    "long_term": [
+      "Extract common model interface into BaseSDFModel abstract class",
+      "Implement model versioning and checkpointing utilities",
+      "Add performance benchmarks (training time, inference speed) for each model"
+    ]
+  }
+}
