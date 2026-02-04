@@ -1,7 +1,7 @@
 # TODO_NEXT - DGSF 驱动的执行队列
 
 **Created**: 2026-02-02  
-**Updated**: 2026-02-04T18:00Z (Orchestrator Cycle - T6 Real Data Validation)  
+**Updated**: 2026-02-04T22:00Z (Plan Mode - Data Engineering Upgrade)  
 **Purpose**: DGSF 项目的 canonical execution queue  
 **Priority Order**: P0（直接推进 DGSF）→ P1（解除阻塞）→ P2（延后）  
 **Primary Objective**: 推进 DGSF（Dynamic Generative SDF Forest）项目的开发、验证与研究产出
@@ -14,140 +14,465 @@
 
 ---
 
-## 📊 Current Context（基于证据 · 2026-02-04T18:00Z）
+## 📊 Current Context（基于证据 · 2026-02-04T20:30Z）
 
 | 维度 | 状态 | 证据 |
 |------|------|------|
-| **DGSF Stage** | Stage 4 "SDF Layer Development" (**90%**) | [PROJECT_DGSF.yaml](../../projects/dgsf/specs/PROJECT_DGSF.yaml) |
-| **测试通过率** | ✅ **67/67** (66 passed + 1 skipped) | `pytest projects/dgsf/tests/ -v` |
-| **T1-T5** | ✅ **ALL COMPLETED** | See below |
-| **T6.1 DATA-001** | ✅ **FIXED** (56 mo × 48 features) | [data_utils.py](../../projects/dgsf/scripts/data_utils.py) |
-| **下一里程碑** | 🎯 **T6.2 Real Data Validation** | Re-run T5 with real data |
+| **DGSF Stage** | **Stage 5 COMPLETE → Stage 6 Prep** | PROJECT_STATE.md P0-24 System Test |
+| **Current Focus** | **Data Engineering Upgrade** | Owner Steering 2026-02-04 |
+| **EA 测试** | ✅ **49/49 passed** | pytest tests/ea/ |
+| **SDF-EA 集成** | ✅ **验证通过** | test_ea_sdf_real_data.py |
 
-### 完成里程碑汇总
-| Task | Status | Key Metrics |
-|------|--------|-------------|
-| T1 Model Review | ✅ | SDF_MODEL_INVENTORY.json |
-| T2 Test Fixing | ✅ | 93.4% pass rate |
-| T3 Feature Engineering | ✅ | 2108 LOC, 66/66 tests |
-| T4 Training Optimization | ✅ | 58.6% speedup, OOS/IS 1.637 |
-| T5 Evaluation Framework | ✅ | 4 scripts, 5 metrics, 2/5 pass (synthetic) |
-| T6.1 DATA-001 Fix | ✅ | RealDataLoader, 56 months data |
+### Owner Steering (2026-02-04)
+| Directive | Target |
+|-----------|--------|
+| Stock Universe | 全量A股 (主板+创业板+科创板) |
+| Time Range | 2015-01-01 to 2026-02-01 |
+
+### Spec Updates Completed (2026-02-04T22:00Z)
+| Spec | Section | Change |
+|------|---------|--------|
+| Data Eng Master v4.2 | §3.2 | Time range: 2015-01-01 to 2026-02-01 |
+| Data Eng Master v4.2 | §5 | Universe scope: Main+ChiNext+STAR |
+| Data Eng Exec v4.2 | Appendix B | Scalability constraints added |
+
+### 今日完成记录 (2026-02-04)
+| Task | Status | Key Achievement | Time |
+|------|--------|-----------------|------|
+| P0-12 Gate Closure | ✅ | `current_stage: 5` | 19:15Z |
+| P0-13 EA Spec Review | ✅ | EA v3.1: 4-obj, MUST HV/drift/SDF | 19:30Z |
+| P0-14 Module Inventory | ✅ | 12 modules, 1418 LOC | 19:45Z |
+| P0-15 Test Audit | ✅ | 49/49 pass (100%) | 19:50Z |
+| P0-16 SDF-EA Adapter | ✅ | SDFEAAdapter 315 LOC | 20:00Z |
+| P0-17 NSGA-II Smoke | ✅ | 20 Pareto, Sharpe=1.94 | 20:15Z |
+| P0-18 Real Data Test | ✅ | 29 Pareto, 6/6 criteria | 20:30Z |
+
+### 新增产出文件
+- `projects/dgsf/scripts/sdf_ea_adapter.py` (315 LOC)
+- `projects/dgsf/scripts/test_nsga2_integration.py` (175 LOC)
+- `projects/dgsf/scripts/test_ea_sdf_real_data.py` (295 LOC)
+- `projects/dgsf/experiments/ea_integration/ea_sdf_real_data_results.json`
 
 ---
 
-## 🔴 P0 任务（当前焦点 · T6.2 Real Data Validation）
+## 🔴 P0 任务队列（直接推进 DGSF · Stage 5 EA Optimizer）
 
-### 🎯 P0-11.T6.2: Re-run T5 Evaluation with Real Data - IN PROGRESS
-**DGSF 关联**: T6 Real Data Integration - Step 2  
-**Effort**: 2 小时  
-**Dependencies**: ✅ T6.1 DATA-001 修复完成  
-**Status**: 🎯 **IN PROGRESS**
+### ~~P0-12: Stage 4 → Stage 5 Gate Formal Closure~~ ✅ DONE
+**Completed**: 2026-02-04T19:15Z
+
+### ~~P0-13: EA Layer Specification Review~~ ✅ DONE
+**Completed**: 2026-02-04T19:30Z | EA v3.1: 4 objectives, MUST requirements identified
+
+### ~~P0-14: EA Module Inventory~~ ✅ DONE
+**Completed**: 2026-02-04T19:45Z | 12 modules, 1418 LOC
+
+### ~~P0-15: EA Test Suite Audit~~ ✅ DONE
+**Completed**: 2026-02-04T19:50Z | 49/49 passed, 4 skipped
+
+### ~~P0-16: SDF-EA Interface Adapter~~ ✅ DONE
+**Completed**: 2026-02-04T20:00Z | SDFEAAdapter smoke test passed
+
+### ~~P0-17: NSGA-II/III Smoke Test~~ ✅ DONE
+**Completed**: 2026-02-04T20:15Z | 20 Pareto solutions
+
+### ~~P0-18: EA-SDF Integration Test~~ ✅ DONE
+**Completed**: 2026-02-04T20:30Z | 29 Pareto solutions, 6/6 criteria pass
+
+---
+
+## 🔴 P0 任务队列（Data Engineering Upgrade - Stage 6 Preparation）
+
+### ~~P0-25: Tushare API Coverage Audit (Research Task)~~ ✅ DONE
+**Completed**: 2026-02-04T23:15Z | All APIs verified for 2015-2026 coverage
+**Output**: `experiments/data_audit/p025_tushare_audit_results.json`
+
+**Results Summary**:
+- Stock Universe: 5,186 stocks (Main+ChiNext+STAR)
+- Daily API: ✅ OK from 2015-01-01
+- Fina Indicator: ✅ OK (4 quarters/year)
+- Macro APIs: ✅ OK (CPI/PPI/M2/GDP)
+- Index Weight: ✅ OK (HS300)
+- Gaps: None identified
+
+---
+
+### P0-26: DE1 Raw Market Loader (Full A-Share)
+**DGSF 关联**: Stage 6 Data Pipeline - Module 1  
+**Effort**: 4 小时  
+**Dependencies**: P0-25 ✅  
+**Status**: 🎯 **NEXT**
 
 **执行步骤**:
-1. [ ] 修改 `evaluate_sdf.py` 集成 `RealDataLoader`
-2. [ ] 修改 `validate_sdf_oos.py` 集成 `RealDataLoader`
-3. [ ] 运行 `python evaluate_sdf.py --real-data`
-4. [ ] 运行 `python validate_sdf_oos.py --real-data`
-5. [ ] 记录 5 个 T5 objectives 在真实数据上的结果
+1. 实现分批拉取逻辑（按年、按股票代码前缀）
+2. 实现断点续传（checkpointing）
+3. 生成 `data/raw/daily_prices.parquet`
+4. 生成 `data/raw/monthly_prices.parquet`
+5. 生成 `data/raw/adj_factor.parquet`
+6. 生成 `data/raw/daily_basic.parquet`
 
-**验收标准（DoD）**:
-### ✅ P0-11.T6.2: Real Data Evaluation - COMPLETED
-**DGSF 关联**: T6 Real Data Integration - Step 2  
-**Effort**: 2 小时  
-**Dependencies**: ✅ T6.1 DATA-001 修复完成  
-**Status**: ✅ **COMPLETED** (2026-02-04T18:30Z)
-
-**执行结果**:
-
-| Objective | Target | Actual | Status |
-|-----------|--------|--------|--------|
-| T5-OBJ-1 Pricing Error | <0.01 | **0.0040** | ✅ PASS |
-| T5-OBJ-2 OOS Sharpe | ≥1.5 | 0.2514 | ❌ FAIL |
-| T5-OBJ-3 OOS/IS Ratio | ≥0.9 | 0.1885 | ❌ FAIL |
-| T5-OBJ-4 HJ Distance | <0.5 | **0.1259** | ✅ PASS |
-| T5-OBJ-5 CS R² | ≥0.5 | 0.0000 | ❌ FAIL |
-
-**Pass Rate**: 2/5 objectives (与 synthetic 相同)
-
-**关键发现**:
-- ⚠️ **数据量不足**: 56 samples < 100 threshold
-- ⚠️ **OOS 样本过少**: 仅 9 个样本用于 OOS 评估
-- ✅ **定价能力良好**: Pricing Error 和 HJ Distance 均通过
-
-**结论**: DATA QUANTITY INSUFFICIENT - 需扩展数据或接受当前结果
-
-**验收标准（DoD）**:
-- [x] evaluate_sdf.py 使用 RealDataLoader ✅
-- [x] 5/5 T5 objectives 在真实数据上评估 ✅
-- [x] 结论: "数据量不足" (n=56 < 100) ✅
-- 验证命令: `python scripts/evaluate_sdf.py --real-data` ✅
-
-**Output**:
-- [evaluate_sdf.py](../../projects/dgsf/scripts/evaluate_sdf.py) (添加 --real-data 模式)
-- [metrics_real_data.json](../../projects/dgsf/experiments/t5_evaluation/metrics_real_data.json)
-- [sdf_evaluation_report_real_data.md](../../projects/dgsf/reports/sdf_evaluation_report_real_data.md)
+**验收标准**:
+- [ ] 文件存在且 daily_prices 行数 > 10M
+- [ ] 时间范围覆盖 2015-01 to 2026-01
+- [ ] Schema 符合 Registry v4.2 §A
+- [ ] 无重复主键 (trade_date, ts_code)
+- **Spec Pointer**: Data Eng Exec Framework v4.2 §P2-DE1
 
 ---
 
-## ✅ 已完成任务（Stage 4 T1-T6.2）
+### P0-27: DE2 Macro Loader (Release-Date Aligned)
+**DGSF 关联**: Stage 6 Data Pipeline - Module 2  
+**Effort**: 3 小时  
+**Dependencies**: P0-25  
+**Status**: PENDING
 
-| ID | Task | Completed | Output |
-|----|------|-----------|--------|
-| P0-1 | SDF Model Inventory (T1) | 2026-02-02 | [SDF_MODEL_INVENTORY.json](../../projects/dgsf/reports/SDF_MODEL_INVENTORY.json) |
-| P0-2 | Test Failures Diagnosis (T2) | 2026-02-02 | [SDF_TEST_FAILURES.md](../../projects/dgsf/reports/SDF_TEST_FAILURES.md) |
-| P0-3 | Fix state_engine Import (T2) | 2026-02-02 | [sdf/__init__.py#L53](../../projects/dgsf/repo/src/dgsf/sdf/__init__.py) |
-| P0-4 | Push repo/ to origin | 2026-02-03 | commit 8031647 |
-| P0-5 | Define Stage 4 AC | 2026-02-03 | [STAGE_4_ACCEPTANCE_CRITERIA.md](../../projects/dgsf/docs/STAGE_4_ACCEPTANCE_CRITERIA.md) |
-| P0-6 | Classify 11 Skipped Tests (T2) | 2026-02-03 | [SDF_SKIPPED_TESTS_ANALYSIS.md](../../projects/dgsf/reports/SDF_SKIPPED_TESTS_ANALYSIS.md) |
-| P0-7 | T3 Feature Engineering | 2026-02-04 | 2108 LOC, 66/66 tests, 602-line docs |
-| P0-8 | T4 Training Optimization | 2026-02-04 | 58.6% speedup, 7 scripts |
-| P0-9 | T5 Evaluation Framework | 2026-02-04 | 4 scripts, 5 metrics |
-| P0-10.T6.1 | DATA-001 Fix | 2026-02-03 | data_utils.py, RealDataLoader |
-| **P0-11.T6.2** | **Real Data Evaluation** | **2026-02-04** | **2/5 pass, DATA QTY INSUFFICIENT** |
+**执行步骤**:
+1. 获取 CPI/PPI/M2/TSF/PMI 等 10 大宏观变量
+2. 按发布日对齐（非报告期）
+3. 生成 `data/raw/macro_release_aligned.parquet`
+
+**验收标准**:
+- [ ] 10 个宏观变量全部覆盖
+- [ ] 时间范围 2015-01 to 2026-01
+- [ ] 无未来信息泄露（发布日 ≤ 月末）
+- **Spec Pointer**: Data Eng Exec Framework v4.2 §P2-DE2, Registry v4.2 §D
+
+---
+
+### P0-28: DE3/DE4 Financial Data Loader
+**DGSF 关联**: Stage 6 Data Pipeline - Module 3/4  
+**Effort**: 4 小时  
+**Dependencies**: P0-26  
+**Status**: PENDING
+
+**执行步骤**:
+1. 按股票分批拉取 fina_indicator（最耗时模块）
+2. 实现 effective_date = ann_date + 90 days 对齐
+3. 生成 `data/raw/fina_indicator_eff.parquet`
+4. 生成 `data/raw/fina_income_eff.parquet`
+5. 生成 `data/raw/fina_balance_eff.parquet`
+
+**验收标准**:
+- [ ] 文件存在且行数 > 500K
+- [ ] effective_date 正确计算
+- [ ] Monthly forward-fill 后无 effective_date 前泄露
+- **Spec Pointer**: Data Eng Exec Framework v4.2 §P2-DE3/DE4, Registry v4.2 §B/C
+
+---
+
+### P0-29: DE5/DE6 Microstructure & Mask Engine
+**DGSF 关联**: Stage 6 Data Pipeline - Module 5/6  
+**Effort**: 3 小时  
+**Dependencies**: P0-26  
+**Status**: PENDING
+
+**执行步骤**:
+1. 从 daily_prices 聚合月度 micro features
+2. 构建 universe_mask（停牌、市值、ST 规则）
+3. 构建 index_churn（HS300 成分变动）
+4. 生成 `data/processed/market_micro_monthly.parquet`
+5. 生成 `data/processed/universe_mask.parquet`
+
+**验收标准**:
+- [ ] mask 覆盖全部 (month, ts_code) 组合
+- [ ] 停牌 > 7 天的 mask = False
+- [ ] 科创板 IPO 首 5 日 mask = False
+- **Spec Pointer**: Data Eng Master v4.2 §5, Exec Framework v4.2 §P2-DE5/DE6
+
+---
+
+### P0-30: DE7/DE8 Factor Panel Builder
+**DGSF 关联**: Stage 6 Data Pipeline - Module 7/8  
+**Effort**: 6 小时  
+**Dependencies**: P0-26, P0-28, P0-29  
+**Status**: PENDING
+
+**执行步骤**:
+1. 构建 61 因子原始版（X_factor_raw）
+2. Rank-normalize to [0,1]
+3. Missing → 0.5 填充
+4. 行业中性化（申万一级）
+5. 生成 `data/final/monthly_features.parquet`
+
+**验收标准**:
+- [ ] 61 因子全部存在
+- [ ] 值域 [0, 1]
+- [ ] 缺失值填充为 0.5
+- [ ] Shape: (~665K, 61+)
+- **Spec Pointer**: Data Eng Master v4.2 §6, Exec Framework v4.2 §P2-DE7/DE8
+
+---
+
+### P0-31: DE9/DE10 State Features & Final Outputs
+**DGSF 关联**: Stage 6 Data Pipeline - Module 9/10  
+**Effort**: 4 小时  
+**Dependencies**: P0-27, P0-30  
+**Status**: PENDING
+
+**执行步骤**:
+1. 构建 X_state（macro + micro + style spreads）
+2. Rolling-percentile 标准化（10Y 窗口）
+3. 构建 monthly_returns（因果对齐）
+4. 生成全部最终输出文件
+
+**验收标准**:
+- [ ] `monthly_features.parquet` 存在
+- [ ] `monthly_state_features.parquet` 存在
+- [ ] `monthly_returns.parquet` 存在
+- [ ] `universe_mask.parquet` 存在
+- [ ] 数据审计通过（无未来泄露）
+- **Spec Pointer**: Data Eng Master v4.2 §7-9, Exec Framework v4.2 §P2-DE9/DE10
+
+---
+
+## 🟡 P1 任务队列（Stage 5 EA - Deferred/Optional）
+
+### P0-19: EA Evaluation Metrics Implementation
+**DGSF 关联**: Stage 5 Task 5 - 实现 EA 评估指标  
+**Effort**: 3 小时  
+**Dependencies**: P0-18  
+**Status**: ✅ **COMPLETED** (per PROJECT_STATE 2026-02-05T01:00Z)
+
+**执行步骤**:
+1. 实现 HV (Hypervolume) 计算 - v3.1 MUST 要求
+2. 实现 HV trajectory 记录
+3. 实现 EA drift 监控指标
+4. 添加到 EA Telemetry 输出
+
+**验收标准**:
+- [ ] `ea_metrics.py` 包含 `compute_hypervolume()`, `track_hv_trajectory()`
+- [ ] 单元测试通过
+- 验证命令: `pytest -k "hypervolume" -v`
+
+---
+
+### P0-20: EA Real Data Pilot with PanelTree
+**DGSF 关联**: Stage 5 Task 6 - 真实 leaf returns 集成  
+**Effort**: 4 小时  
+**Dependencies**: P0-19  
+**Status**: PENDING
+
+**执行步骤**:
+1. 定位 PanelTree 输出的真实 leaf_returns
+2. 替换当前 proxy returns (features * 0.01)
+3. 重新运行 EA 优化
+4. 记录真实数据上的 Sharpe/MDD/PE 分布
+
+**验收标准**:
+- [ ] EA 使用真实 PanelTree leaf returns
+- [ ] Pareto front 结果有金融合理性 (Sharpe < 5)
+- 验证命令: `python test_ea_sdf_real_data.py --leaf-source paneltree`
+
+---
+
+### P0-21: v3.1 HV-aware Behaviour Implementation
+**DGSF 关联**: Stage 5 Task 7 - v3.1 MUST 要求  
+**Effort**: 6 小时  
+**Dependencies**: P0-19, P0-20  
+**Status**: PENDING
+
+**执行步骤**:
+1. 在 NSGAIIOptimizer 中添加 HV plateau 检测
+2. 实现 HV-driven exploration trigger
+3. 添加 G_plateau 参数
+4. 单元测试验证 HV 改进
+
+**验收标准**:
+- [ ] HV plateau 检测在 5 代内触发
+- [ ] exploration 机制提升 HV 至少 5%
+- 验证命令: `pytest -k "hv_aware" -v`
+
+---
+
+### P0-22: v3.1 SDF Consistency Filtering
+**DGSF 关联**: Stage 5 Task 8 - v3.1 MUST 要求  
+**Effort**: 4 小时  
+**Dependencies**: P0-21  
+**Status**: PENDING
+
+**执行步骤**:
+1. 定义 SDF consistency threshold γ
+2. 实现 lexicographic selection rule
+3. 添加 consistency-first filtering
+4. 验证 high-PE 解被降级
+
+**验收标准**:
+- [ ] γ 阈值可配置
+- [ ] PE > γ 的解不出现在 elite population
+- 验证命令: `pytest -k "sdf_consistency" -v`
+
+---
+
+**执行步骤**:
+1. 运行 `pytest projects/dgsf/repo/tests/ea/ -v --tb=short`
+2. 记录通过率、失败原因、跳过原因
+3. 分类: P0 (blocking) vs P1 (deferred)
+
+**验收标准**:
+- [ ] EA tests pass rate ≥ 80%
+- [ ] 任何失败都有明确的修复计划
+- 验证命令: `pytest projects/dgsf/repo/tests/ea/ -v`
+
+---
+
+### P0-16: SDF-EA Interface Adapter
+**DGSF 关联**: Stage 5 Task 4 - 实现 SDF→EA 数据接口  
+**Effort**: 3 小时  
+**Dependencies**: P0-15 pass rate ≥ 80%  
+**Status**: PENDING
+
+**执行步骤**:
+1. 创建 `sdf_ea_adapter.py` 实现 SDF 输出 → EA 输入转换
+2. 定义接口: `get_sdf_weights()`, `evaluate_portfolio()`, `fitness_function()`
+3. 编写单元测试
+
+**验收标准**:
+- [ ] sdf_ea_adapter.py 存在且可导入
+- [ ] 接口测试通过
+- 验证命令: `python -c "from projects.dgsf.scripts.sdf_ea_adapter import SDFEAAdapter"`
+
+---
+
+### P0-17: NSGA-II/III Smoke Test
+**DGSF 关联**: Stage 5 Task 5 - 验证 EA 核心可运行  
+**Effort**: 2 小时  
+**Dependencies**: P0-16  
+**Status**: PENDING
+
+**执行步骤**:
+1. 使用合成数据运行 NSGA-II optimizer
+2. 验证 Pareto front 生成
+3. 记录运行时间、收敛性
+
+**验收标准**:
+- [ ] NSGA-II 在合成数据上可运行
+- [ ] 产生 ≥ 10 个 Pareto 解
+- 验证命令: `python scripts/ea_smoke_test.py`
+
+---
+
+### P0-18: EA-SDF Integration Test (合成数据)
+**DGSF 关联**: Stage 5 Task 6 - E2E 集成测试  
+**Effort**: 3 小时  
+**Dependencies**: P0-17  
+**Status**: PENDING
+
+**执行步骤**:
+1. 创建 `test_ea_sdf_integration.py`
+2. 测试: SDF model → fitness function → NSGA-II → portfolio weights
+3. 验证 end-to-end 数据流
+
+**验收标准**:
+- [ ] 集成测试通过
+- [ ] 数据流无断裂
+- 验证命令: `pytest projects/dgsf/tests/test_ea_sdf_integration.py -v`
+
+---
+
+### P0-19: EA Evaluation Metrics
+**DGSF 关联**: Stage 5 Task 7 - 定义 EA 评估指标  
+**Effort**: 2 小时  
+**Dependencies**: P0-18  
+**Status**: PENDING
+
+**执行步骤**:
+1. 实现 HyperVolume (HV) 计算
+2. 实现 Sharpe Ratio 适配
+3. 实现 Diversity 指标
+
+**验收标准**:
+- [ ] 3 个评估指标实现
+- [ ] 与 SDF_SPEC v3.1 对齐
+- 验证命令: `pytest tests/ea/test_metrics.py -v`
+
+---
+
+### P0-20: EA Real Data Pilot
+**DGSF 关联**: Stage 5 Task 8 - 真实数据试运行  
+**Effort**: 4 小时  
+**Dependencies**: P0-19, 真实数据 (56 months)  
+**Status**: PENDING
+
+**执行步骤**:
+1. 使用 RealDataLoader 加载数据
+2. 运行 EA optimizer (小规模: 10 generations)
+3. 记录 HV、Sharpe、运行时间
+
+**验收标准**:
+- [ ] EA 在真实数据上可运行
+- [ ] HV 指标 > 0
+- 验证命令: `python scripts/ea_real_data_pilot.py`
 
 ---
 
 ## 🟡 P1 任务（解除或预防阻塞）
 
-### 🎯 P1-1: Commit Pending DGSF Changes - NEXT
-**Status**: 🎯 **NEXT**  
-**Effort**: 5 分钟
+### P1-2: Sync Commits to Remote
+**Status**: PENDING  
+**Effort**: 2 分钟
+**Dependencies**: None
 
 **执行步骤**:
 ```powershell
 cd "E:\AI Tools\AI Workflow OS"
-git add projects/dgsf/scripts/evaluate_sdf.py
-git add projects/dgsf/experiments/t5_evaluation/metrics_real_data.json
-git add projects/dgsf/reports/sdf_evaluation_report_real_data.md
-git add docs/plans/EXECUTION_PLAN_DGSF_V1.md
-git add docs/plans/TODO_NEXT.md
-git add docs/state/PROJECT_STATE.md
-git commit -m "feat(dgsf): T6.2 real data evaluation - 2/5 objectives pass"
+git push origin feature/router-v0
 ```
+
+**验收标准**:
+- [ ] `git status` 显示 "Your branch is up to date"
+- 验证命令: `git status`
+
+---
+
+### P1-3: Verify EA Tests Before Development
+**Status**: PENDING (可与 P0-15 合并)  
+**Effort**: 10 分钟
+
+**执行步骤**:
+```powershell
+cd "E:\AI Tools\AI Workflow OS\projects\dgsf\repo"
+python -m pytest tests/ea/ -v --tb=short
+```
+
+---
+
+### P1-4: Document Stage 4 Completion
+**Status**: PENDING  
+**Effort**: 30 分钟
+
+**执行步骤**:
+1. 更新 STAGE_4_ACCEPTANCE_CRITERIA.md 标记 COMPLETED
+2. 生成 STAGE_4_COMPLETION_REPORT.md
 
 ---
 
 ## 🔵 P2 任务（延后 · Stop Doing List）
 
-以下任务**暂停**，直到获得更多数据或明确下一阶段方向：
-
-| ID | Task | Reason |
-|----|------|--------|
-| P2-1 | kernel/ 导入路径重构 | 测试已通过，无阻塞 |
-| P2-2 | docs/ 合并与重构 | 不影响 DGSF |
-| P2-3 | CI/CD 管道修复 | 可稍后推送 |
-| P2-4 | validate_sdf_oos.py --real-data | T6.2 已足够验证 |
-| P2-5 | 扩展数据到 ≥100 个月 | 需要 2020-2024 数据获取 |
+| ID | Task | Reason | Revisit Condition |
+|----|------|--------|-------------------|
+| P2-1 | kernel/ 导入路径重构 | 测试已通过 | Stage 5 完成后 |
+| P2-2 | docs/ 合并与重构 | 不影响 DGSF | Q2 2026 |
+| P2-3 | CI/CD 管道修复 | 可手动推送 | Stage 5 完成后 |
+| P2-4 | validate_sdf_oos.py --real-data | T6.2 已验证 | 数据扩展后 |
+| P2-5 | 扩展数据到 ≥100 月 | 需 Tushare 拉取 | 明确研究需求时 |
+| P2-6 | SDF v3.1 增强 (penalties) | 非核心 | Stage 5 后 |
 
 ---
 
-## 📋 Stage 4 "SDF Layer Development" 总结
+## ✅ 已完成任务（Stage 4 T1-T6）
 
-### 完成度: 95%
-
-| Phase | Status | Key Achievement |
-|-------|--------|-----------------|
+| ID | Task | Completed | Output |
+|----|------|-----------|--------|
+| P0-1 | SDF Model Inventory (T1) | 2026-02-02 | SDF_MODEL_INVENTORY.json |
+| P0-2 | Test Failures Diagnosis (T2) | 2026-02-02 | SDF_TEST_FAILURES.md |
+| P0-3 | Fix state_engine Import (T2) | 2026-02-02 | sdf/__init__.py |
+| P0-4 | Push repo/ to origin | 2026-02-03 | commit 8031647 |
+| P0-5 | Define Stage 4 AC | 2026-02-03 | STAGE_4_ACCEPTANCE_CRITERIA.md |
+| P0-6 | Classify 11 Skipped Tests (T2) | 2026-02-03 | SDF_SKIPPED_TESTS_ANALYSIS.md |
+| P0-7 | T3 Feature Engineering | 2026-02-04 | 2108 LOC, 66/66 tests |
+| P0-8 | T4 Training Optimization | 2026-02-04 | 58.6% speedup, 7 scripts |
+| P0-9 | T5 Evaluation Framework | 2026-02-04 | 4 scripts, 5 metrics |
+| P0-10 | T6.1 DATA-001 Fix | 2026-02-03 | data_utils.py |
+| P0-11 | T6.2 Real Data Evaluation | 2026-02-04 | 2/5 pass, commit 4ab9334 |
 | T1 Model Review | ✅ | SDF_MODEL_INVENTORY.json |
 | T2 Test Fixing | ✅ | 93.4% pass rate |
 | T3 Feature Engineering | ✅ | 2108 LOC, 66/66 tests |

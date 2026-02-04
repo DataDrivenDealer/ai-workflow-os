@@ -1,0 +1,319 @@
+# AI Workflow OS Capability Maturity Model (CMM)
+# Version: 1.0.0
+# Part of AEP-9: Organizational Evolution Architecture
+
+version: "1.0.0"
+created: "2026-02-04"
+author: "AI Workflow OS"
+
+# =============================================================================
+# PURPOSE
+# =============================================================================
+purpose: |
+  The Capability Maturity Model provides a structured framework for:
+  - Assessing current system capabilities
+  - Planning evolution roadmaps
+  - Benchmarking against institutional requirements
+  - Tracking progression over time
+  
+  This model is inspired by CMMI but tailored for AI Workflow OS governance.
+
+# =============================================================================
+# MATURITY LEVELS
+# =============================================================================
+levels:
+  CMM-1:
+    name: "Initial"
+    description: "Ad-hoc governance with natural language rules"
+    characteristics:
+      - "Rules expressed in prose documentation"
+      - "Manual verification of rule compliance"
+      - "No structured evolution tracking"
+      - "Single-project operation only"
+      - "Human approval required for all actions"
+    indicators:
+      - rule_format: "natural_language"
+      - evolution_tracking: "none"
+      - multi_project: false
+      - trust_model: "none"
+      - automation_level: "minimal"
+    typical_artifacts:
+      - "README.md with rules section"
+      - "Manual checklists"
+    
+  CMM-2:
+    name: "Managed"
+    description: "Structured rules with basic evolution tracking"
+    characteristics:
+      - "Rules in structured YAML configuration"
+      - "Evolution signals collected and logged"
+      - "State machine defined and enforced"
+      - "Audit trails for state changes"
+      - "Project-level skill definitions"
+    indicators:
+      - rule_format: "yaml_structured"
+      - evolution_tracking: "signal_collection"
+      - multi_project: false
+      - trust_model: "static_levels"
+      - automation_level: "assisted"
+    typical_artifacts:
+      - "copilot-instructions.md with rule table"
+      - "state_machine.yaml"
+      - "evolution_signals.yaml"
+      - "skill prompt files"
+    requirements:
+      - "INV-1 through INV-10 defined and documented"
+      - "At least 5 evolution signals logged"
+      - "State transitions audited"
+    
+  CMM-3:
+    name: "Defined"
+    description: "Compositional rules with organization layer support"
+    characteristics:
+      - "Rules in REL (Rule Expression Language)"
+      - "Organization layer for multi-project coordination"
+      - "Trust transfer across project boundaries"
+      - "Parameterized rules with conditional exceptions"
+      - "Cross-layer contract validation"
+    indicators:
+      - rule_format: "REL"
+      - evolution_tracking: "aggregation_with_review"
+      - multi_project: true
+      - trust_model: "portable_with_decay"
+      - automation_level: "delegated"
+    typical_artifacts:
+      - "configs/rules/*.rel.yaml"
+      - "configs/organization.yaml"
+      - "state/trust_registry.yaml"
+      - "ORGANIZATION_CANON.md"
+    requirements:
+      - "All kernel rules converted to REL"
+      - "Organization layer specification complete"
+      - "Trust transfer protocol implemented"
+      - "At least 2 projects in portfolio"
+    
+  CMM-4:
+    name: "Quantified"
+    description: "Meta-evolution monitoring with confidence scoring"
+    characteristics:
+      - "Blind spot detection for evolution coverage"
+      - "Confidence scoring for evolution proposals"
+      - "Regression tracking for applied evolutions"
+      - "Evolution effectiveness measurement"
+      - "Cross-project pattern detection"
+    indicators:
+      - rule_format: "REL_with_metrics"
+      - evolution_tracking: "meta_monitoring"
+      - multi_project: true
+      - trust_model: "dynamic_reputation"
+      - automation_level: "high_autonomy"
+    typical_artifacts:
+      - "reports/meta_evolution_health.md"
+      - "reports/signal_coverage.md"
+      - "reports/blind_spots.md"
+      - "evolution proposals with confidence scores"
+    requirements:
+      - "Blind spot detection implemented"
+      - "Confidence scoring algorithm deployed"
+      - "Regression rate < 10%"
+      - "Signal coverage > 80%"
+    
+  CMM-5:
+    name: "Optimizing"
+    description: "Self-improving evolution with predictive governance"
+    characteristics:
+      - "A/B testing for rule changes"
+      - "Predictive friction detection"
+      - "Auto-generated evolution proposals"
+      - "Real-time governance adaptation"
+      - "Institutional-scale deployment"
+    indicators:
+      - rule_format: "REL_with_ML"
+      - evolution_tracking: "predictive"
+      - multi_project: true
+      - trust_model: "reputation_federation"
+      - automation_level: "autonomous"
+    typical_artifacts:
+      - "Fast-track evolution experiments"
+      - "Predictive friction models"
+      - "Real-time governance dashboards"
+      - "Federated trust networks"
+    requirements:
+      - "A/B testing framework operational"
+      - "Predictive models trained on historical signals"
+      - "Fast-track evolution cycle < 7 days"
+      - "Cross-organization trust federation"
+
+# =============================================================================
+# ASSESSMENT DIMENSIONS
+# =============================================================================
+dimensions:
+  rule_expressiveness:
+    description: "How rules are expressed and evaluated"
+    levels:
+      CMM-1: "Natural language in documentation"
+      CMM-2: "Structured YAML with manual evaluation"
+      CMM-3: "REL with automatic evaluation"
+      CMM-4: "REL with metrics and analytics"
+      CMM-5: "REL with ML-based optimization"
+    
+  evolution_capability:
+    description: "How system evolution is tracked and managed"
+    levels:
+      CMM-1: "No systematic tracking"
+      CMM-2: "Signal collection and logging"
+      CMM-3: "Aggregation with human review triggers"
+      CMM-4: "Meta-monitoring with blind spot detection"
+      CMM-5: "Predictive evolution with auto-proposals"
+    
+  multi_project_coordination:
+    description: "Ability to manage multiple projects"
+    levels:
+      CMM-1: "Single project only"
+      CMM-2: "Multiple projects, no coordination"
+      CMM-3: "Portfolio management with trust transfer"
+      CMM-4: "Cross-project pattern detection"
+      CMM-5: "Federated multi-organization"
+    
+  trust_management:
+    description: "How agent trust is established and maintained"
+    levels:
+      CMM-1: "All actions require human approval"
+      CMM-2: "Static authority levels (0-3)"
+      CMM-3: "Portable trust with decay"
+      CMM-4: "Dynamic reputation scoring"
+      CMM-5: "Federated reputation networks"
+    
+  governance_automation:
+    description: "Level of autonomous governance capability"
+    levels:
+      CMM-1: "Minimal automation"
+      CMM-2: "Assisted (agent proposes, human approves)"
+      CMM-3: "Delegated (agent acts within bounds)"
+      CMM-4: "High autonomy (agent self-monitors)"
+      CMM-5: "Autonomous (predictive, self-improving)"
+
+# =============================================================================
+# CURRENT ASSESSMENT
+# =============================================================================
+current_assessment:
+  date: "2026-02-04"
+  
+  overall_level: "CMM-3"  # Post-AEP-9 implementation
+  
+  dimension_levels:
+    rule_expressiveness: 
+      current: "CMM-3"
+      evidence: "REL specification created, kernel rules converted"
+    evolution_capability:
+      current: "CMM-4"
+      evidence: "Meta-monitoring in evolution_policy.yaml"
+    multi_project_coordination:
+      current: "CMM-3"
+      evidence: "ORGANIZATION_CANON created, trust registry defined"
+    trust_management:
+      current: "CMM-3"
+      evidence: "Trust transfer protocol specified"
+    governance_automation:
+      current: "CMM-3"
+      evidence: "Parameterized rules with conditional exceptions"
+  
+  blockers_to_next_level:
+    - "Blind spot detection not yet implemented in code"
+    - "Confidence scoring algorithm not yet deployed"
+    - "Only 1 project (DGSF) active"
+
+# =============================================================================
+# PROGRESSION ROADMAP
+# =============================================================================
+roadmap:
+  CMM-2_to_CMM-3:
+    status: "completed"
+    completed_date: "2026-02-04"
+    key_changes:
+      - "Created REL specification"
+      - "Converted R1-R6 to REL format"
+      - "Added ORGANIZATION_CANON"
+      - "Defined trust transfer protocol"
+    
+  CMM-3_to_CMM-4:
+    status: "in_progress"
+    target_date: "2026-03-15"
+    key_changes:
+      - task: "Implement blind spot detection in Python"
+        status: "not_started"
+        effort: "3 days"
+      - task: "Deploy confidence scoring algorithm"
+        status: "not_started"
+        effort: "2 days"
+      - task: "Create regression tracking dashboard"
+        status: "not_started"
+        effort: "2 days"
+      - task: "Add second project to portfolio"
+        status: "not_started"
+        effort: "5 days"
+    
+  CMM-4_to_CMM-5:
+    status: "planned"
+    target_date: "2026-06-01"
+    key_changes:
+      - task: "Implement A/B testing framework"
+        effort: "10 days"
+      - task: "Train predictive friction model"
+        effort: "15 days"
+      - task: "Build fast-track evolution pipeline"
+        effort: "5 days"
+      - task: "Design trust federation protocol"
+        effort: "10 days"
+
+# =============================================================================
+# ASSESSMENT PROCEDURES
+# =============================================================================
+procedures:
+  self_assessment:
+    frequency: "monthly"
+    command: "python scripts/assess_cmm_level.py"
+    output: "reports/cmm_assessment_{date}.md"
+    
+  external_validation:
+    frequency: "quarterly"
+    process: "Peer review by architecture team"
+    criteria: "All dimension requirements met for claimed level"
+    
+  progression_approval:
+    required_for: "CMM level increase"
+    approver: "Platform Owner"
+    artifacts_required:
+      - "CMM assessment report"
+      - "Evidence for all dimension requirements"
+      - "Regression test results"
+
+# =============================================================================
+# METRICS
+# =============================================================================
+metrics:
+  level_indicators:
+    - name: "rules_in_rel"
+      description: "Percentage of rules in REL format"
+      cmm3_threshold: 1.0
+      current: 1.0
+      
+    - name: "evolution_signal_coverage"
+      description: "Code paths with signal collection"
+      cmm4_threshold: 0.8
+      current: 0.6  # Estimated
+      
+    - name: "trust_transfers"
+      description: "Number of successful trust transfers"
+      cmm3_threshold: 1
+      current: 0
+      
+    - name: "projects_in_portfolio"
+      description: "Active projects under organization"
+      cmm3_threshold: 2
+      current: 1
+      
+    - name: "evolution_effectiveness_rate"
+      description: "Evolutions that achieved target outcomes"
+      cmm4_threshold: 0.7
+      current: "N/A"  # Not yet measured

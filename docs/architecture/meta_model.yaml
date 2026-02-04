@@ -1,17 +1,54 @@
 # Meta Model Configuration
-# Defines the structural contract between Kernel, Adapter, Project, and Experiment layers
-# Version: 2.0.0
+# Defines the structural contract between Organization, Kernel, Adapter, Project, and Experiment layers
+# Version: 3.0.0
 #
 # AEP-1: Introduced Adapter Layer for Kernel-Project decoupling
+# AEP-9: Introduced Organization Layer for multi-project coordination
 
-version: "2.0.0"
+version: "3.0.0"
 
 # =============================================================================
-# LAYER DEFINITIONS (4-Layer Architecture)
+# LAYER DEFINITIONS (5-Layer Architecture)
 # =============================================================================
 layers:
+  organization:
+    description: "Organization-level coordination for multi-project portfolios (optional)"
+    layer_id: "L-1"
+    optional: true
+    artifacts:
+      - path: "configs/organization.yaml"
+        type: "organization_config"
+        scope: "organization"
+        required: false
+      - path: "state/trust_registry.yaml"
+        type: "trust_registry"
+        scope: "organization"
+        required: false
+      - path: "state/portfolio.yaml"
+        type: "portfolio_state"
+        scope: "organization"
+        required: false
+      - path: "configs/rules/org_*.rel.yaml"
+        type: "organization_rules"
+        scope: "organization"
+        required: false
+    rules:
+      namespace: "O"  # O1, O2, ...
+      inherits_from: null  # Top level
+      override_policy: "extend_only"
+    responsibilities:
+      - "Define portfolio membership and constraints"
+      - "Enable cross-project trust transfer"
+      - "Provide organization-level governance rules"
+      - "Aggregate evolution signals across projects"
+    activation:
+      trigger: "configs/organization.yaml exists AND organization.enabled == true"
+      fallback: "Single-project mode (Kernel binds directly to Adapter)"
+
   kernel:
     description: "Platform-level invariants, agnostic to any specific project"
+    layer_id: "L0"
+    optional: false
     artifacts:
       - path: ".github/copilot-instructions.md"
         type: "behavioral_contract"
@@ -22,15 +59,23 @@ layers:
       - path: "configs/gates.yaml"
         type: "governance_gates"
         scope: "global"
-      - path: "configs/project_interface.yaml"
+      - path: "docs/architecture/project_interface.yaml"
         type: "interface_contract"
         scope: "global"
-      - path: "configs/evolution_policy.yaml"
+      - path: "docs/architecture/evolution_policy.yaml"
         type: "evolution_config"
+        scope: "global"
+      - path: "configs/rules/kernel_rules.rel.yaml"
+        type: "kernel_rules_rel"
+        scope: "global"
+      - path: "configs/rules/REL_SPECIFICATION.yaml"
+        type: "rule_language_spec"
         scope: "global"
     rules:
       namespace: "R"  # R1, R2, ...
-      definition_file: ".github/copilot-instructions.md"
+      inherits_from: "organization"  # When org layer active
+      definition_file: "configs/rules/kernel_rules.rel.yaml"
+      legacy_file: ".github/copilot-instructions.md"
 
   adapter:
     description: "Project-to-Kernel binding layer that implements the interface contract"
@@ -87,9 +132,21 @@ layers:
 # CROSS-LAYER CONTRACTS
 # =============================================================================
 contracts:
+  organization_to_kernel:
+    - constraint: "Organization config must be valid YAML"
+      validation: "yaml_valid(configs/organization.yaml)"
+    - constraint: "All portfolio projects must exist"
+      validation: "all(project_exists(p.id) for p in organization.portfolio.projects)"
+    - constraint: "Trust decay rate must be in valid range"
+      validation: "organization.trust.decay_rate >= 0.5 AND organization.trust.decay_rate <= 1.0"
+    - constraint: "Resource quotas must sum to <= 100%"
+      validation: "sum(p.quota_weight for p in organization.portfolio.projects) <= 1.0"
+    - constraint: "Organization rules cannot weaken kernel rules"
+      validation: "validate_rule_inheritance(org_rules, kernel_rules)"
+
   kernel_to_adapter:
     - constraint: "adapter.yaml must implement project_interface.yaml"
-      validation: "adapter.implements == 'configs/project_interface.yaml'"
+      validation: "adapter.implements == 'docs/architecture/project_interface.yaml'"
     - constraint: "adapter must provide all required interface fields"
       validation: "validate_adapter_completeness(adapter, project_interface)"
     - constraint: "kernel_version in adapter must be compatible"
