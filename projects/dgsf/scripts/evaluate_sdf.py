@@ -637,14 +637,214 @@ def run_benchmark(verbose: bool = True) -> Dict:
 def main():
     parser = argparse.ArgumentParser(description="T5.1 SDF Evaluation Framework")
     parser.add_argument("--benchmark", action="store_true", help="Run benchmark evaluation")
+    parser.add_argument("--real-data", action="store_true", help="Use real data from RealDataLoader")
     parser.add_argument("--model", type=str, help="Path to model checkpoint")
     parser.add_argument("--quiet", action="store_true", help="Suppress verbose output")
     
     args = parser.parse_args()
     
-    if args.benchmark or args.model is None:
+    if args.real_data:
+        results = run_real_data_evaluation(verbose=not args.quiet)
+        print("\n✅ T5.1 SDF Evaluation Framework (REAL DATA) completed!")
+    elif args.benchmark or args.model is None:
         results = run_benchmark(verbose=not args.quiet)
         print("\n✅ T5.1 SDF Evaluation Framework benchmark completed!")
+
+
+def run_real_data_evaluation(verbose: bool = True) -> Dict:
+    """Run evaluation with real data from RealDataLoader."""
+    from data_utils import RealDataLoader
+    
+    print("=" * 70)
+    print("T5.1 SDF Evaluation Framework - REAL DATA")
+    print("=" * 70)
+    print(f"Timestamp: {CONFIG['timestamp']}")
+    print()
+    
+    # Load real data
+    loader = RealDataLoader(verbose=verbose)
+    X_train, R_train, X_val, R_val, X_test, R_test = loader.load_split()
+    
+    # Combine train+val for IS, test for OOS
+    X_is = np.vstack([X_train, X_val])
+    R_is = np.concatenate([R_train, R_val])
+    X_oos = X_test
+    R_oos = R_test
+    
+    # Check if we have real data
+    _, _, is_real = loader.load()
+    data_source = "REAL" if is_real else "SYNTHETIC (fallback)"
+    
+    print(f"Data Source: {data_source}")
+    print(f"Data: IS={len(X_is)}, OOS={len(X_oos)}, Features={X_is.shape[1]}")
+    print()
+    
+    # Train model
+    print("Training model on real data...")
+    model = SDFModel(input_dim=X_is.shape[1], dropout=0.4, seed=42)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    
+    X_is_t = torch.from_numpy(X_is).float()
+    R_is_t = torch.from_numpy(R_is).float()
+    
+    model.train()
+    for epoch in range(50):
+        m = model(X_is_t).squeeze()
+        residual = (1 + R_is_t) * m - 1
+        loss = torch.mean(residual ** 2)
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        if verbose and (epoch + 1) % 10 == 0:
+            print(f"  Epoch {epoch+1:3d} | Loss: {loss.item():.6f}")
+    
+    print()
+    
+    # For evaluation, reshape returns to 2D (n_samples, 1)
+    R_is_2d = R_is.reshape(-1, 1)
+    R_oos_2d = R_oos.reshape(-1, 1)
+    
+    # Evaluate
+    print("Running evaluation on real data...")
+    evaluator = SDFEvaluator(model)
+    metrics = evaluator.evaluate(X_is, R_is_2d, X_oos, R_oos_2d)
+    
+    print()
+    print(metrics.summary())
+    
+    # Objective evaluation
+    print()
+    print("=" * 60)
+    print("T5 OBJECTIVES EVALUATION (REAL DATA)")
+    print("=" * 60)
+    
+    objectives = {
+        "T5-OBJ-1 Pricing Error": (metrics.pricing_error_mean, "<", 0.01),
+        "T5-OBJ-2 OOS Sharpe": (metrics.oos_sharpe, ">=", 1.5),
+        "T5-OBJ-3 OOS/IS Ratio": (metrics.sharpe_ratio, ">=", 0.9),
+        "T5-OBJ-4 HJ Distance": (metrics.hj_distance, "<", 0.5),
+        "T5-OBJ-5 CS R²": (metrics.cs_r2, ">=", 0.5),
+    }
+    
+    passed = 0
+    for name, (value, op, target) in objectives.items():
+        if op == "<":
+            status = "✅ PASS" if value < target else "❌ FAIL"
+            passed += 1 if value < target else 0
+        else:
+            status = "✅ PASS" if value >= target else "❌ FAIL"
+            passed += 1 if value >= target else 0
+        print(f"{name}: {value:.4f} {op} {target} => {status}")
+    
+    print()
+    print(f"OBJECTIVES PASSED: {passed}/5")
+    print(f"DATA SOURCE: {data_source}")
+    print(f"SAMPLE SIZE: {len(X_is) + len(X_oos)} (IS={len(X_is)}, OOS={len(X_oos)})")
+    
+    if len(X_is) + len(X_oos) < 100:
+        print()
+        print("⚠️  WARNING: Sample size < 100. Results may be unreliable.")
+        print("   Consider this a 'data quantity insufficient' result.")
+    
+    # Save results
+    output_dir = PROJECT_ROOT / "experiments" / "t5_evaluation"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # JSON metrics with real data flag
+    result_dict = metrics.to_dict()
+    result_dict['data_source'] = data_source
+    result_dict['is_real_data'] = is_real
+    result_dict['sample_size'] = {
+        'total': len(X_is) + len(X_oos),
+        'in_sample': len(X_is),
+        'out_of_sample': len(X_oos),
+    }
+    result_dict['objectives_passed'] = passed
+    result_dict['objectives_total'] = 5
+    
+    json_path = output_dir / "metrics_real_data.json"
+    with open(json_path, "w") as f:
+        json.dump(result_dict, f, indent=2)
+    print(f"\nMetrics saved to: {json_path}")
+    
+    # Markdown report
+    report_dir = PROJECT_ROOT / "reports"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir / "sdf_evaluation_report_real_data.md"
+    generate_real_data_report(metrics, objectives, passed, is_real, len(X_is), len(X_oos), report_path)
+    print(f"Report saved to: {report_path}")
+    
+    return {
+        "config": CONFIG,
+        "metrics": result_dict,
+        "objectives_passed": passed,
+    }
+
+
+def generate_real_data_report(
+    metrics: SDFMetrics,
+    objectives: Dict,
+    passed: int,
+    is_real: bool,
+    n_is: int,
+    n_oos: int,
+    output_path: Path
+) -> str:
+    """Generate markdown report for real data evaluation."""
+    data_source = "Real Data (56 months × 48 features)" if is_real else "Synthetic Fallback"
+    
+    obj_table = "\n".join([
+        f"| {name} | {value:.4f} | {op}{target} | {'✅' if (value < target if op == '<' else value >= target) else '❌'} |"
+        for name, (value, op, target) in objectives.items()
+    ])
+    
+    report = f"""# SDF Evaluation Report - Real Data
+
+**Generated**: {metrics.timestamp}
+**Data Source**: {data_source}
+**Framework**: T5.1 SDF Evaluation Framework (Real Data Mode)
+
+## Executive Summary
+
+**Objectives Passed**: {passed}/5
+**Sample Size**: Total={n_is + n_oos} (IS={n_is}, OOS={n_oos})
+**Data Reliability**: {'✅ Sufficient (n ≥ 100)' if n_is + n_oos >= 100 else '⚠️ Insufficient (n < 100)'}
+
+## T5 Objectives Evaluation
+
+| Objective | Value | Target | Status |
+|-----------|-------|--------|--------|
+{obj_table}
+
+## Detailed Metrics
+
+{metrics.summary()}
+
+## Conclusions
+
+{'✅ Model meets production criteria with real data.' if passed >= 4 else '⚠️ Model requires further optimization before production.'}
+
+**Key Observations**:
+1. Pricing Error: {metrics.pricing_error_mean:.6f} {'(acceptable)' if metrics.pricing_error_mean < 0.01 else '(needs improvement)'}
+2. OOS Sharpe: {metrics.oos_sharpe:.4f} {'(strong)' if metrics.oos_sharpe >= 1.5 else '(below target)'}
+3. Generalization (OOS/IS): {metrics.sharpe_ratio:.4f} {'(robust)' if metrics.sharpe_ratio >= 0.9 else '(potential overfitting)'}
+
+## Next Steps
+
+{'1. Model is ready for Stage 5 deployment.' if passed >= 4 else '1. Review model architecture and hyperparameters.'}
+2. Consider expanding dataset if sample size < 100.
+3. Document results in PROJECT_STATE.md.
+
+---
+*Report generated by T5.1 SDF Evaluation Framework (Real Data Mode)*
+"""
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(report)
+    
+    return report
 
 
 if __name__ == "__main__":

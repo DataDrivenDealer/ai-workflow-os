@@ -1,0 +1,26 @@
+{
+  "pricing_error_mean": 0.004042188171297312,
+  "pricing_error_std": 0.0,
+  "pricing_error_max": 0.004042188171297312,
+  "is_sharpe": 1.333582973959515,
+  "oos_sharpe": 0.2513782780782049,
+  "sharpe_ratio": 0.18849841591171682,
+  "alpha": -0.004828792065382004,
+  "alpha_t_stat": -0.05823696404695511,
+  "alpha_p_value": 0.9535598757661143,
+  "hj_distance": 0.12593647353191303,
+  "hj_se": 0.041978824510637676,
+  "cs_r2": 0.0,
+  "cs_rmse": 0.0003613191656768322,
+  "n_samples": 9,
+  "timestamp": "2026-02-04T05:20:01.966746",
+  "data_source": "REAL",
+  "is_real_data": true,
+  "sample_size": {
+    "total": 56,
+    "in_sample": 47,
+    "out_of_sample": 9
+  },
+  "objectives_passed": 2,
+  "objectives_total": 5
+}
