@@ -1,1 +1,2 @@
+*.parquet filter=lfs diff=lfs merge=lfs -text
 projects/dgsf/data/raw/daily_prices.parquet filter=lfs diff=lfs merge=lfs -text
