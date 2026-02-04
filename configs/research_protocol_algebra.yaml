@@ -1,0 +1,520 @@
+# Research Protocol Algebra (RPA)
+# Version: 1.0.0
+# Part of AEP-10: Institutional Quantitative Research Evolution
+#
+# Purpose: Composable, verifiable research workflow patterns that can be combined
+# to create validated experiment workflows. Ensures methodological consistency
+# and prevents common research design errors.
+
+version: "1.0.0"
+created: "2026-02-04"
+status: "active"
+
+# =============================================================================
+# OVERVIEW
+# =============================================================================
+overview:
+  purpose: |
+    Research Protocol Algebra defines composable research patterns (primitives)
+    that can be combined to create validated experiment workflows (compositions).
+    Each primitive has defined inputs, outputs, and validation requirements.
+    
+  benefits:
+    - "Enforce methodological consistency across experiments"
+    - "Prevent common research design errors"
+    - "Enable automated workflow validation"
+    - "Provide reusable experiment templates"
+    - "Document research process systematically"
+    
+  algebra_semantics: |
+    Primitives can be composed using:
+    - Sequential: A -> B (output of A feeds into B)
+    - Parallel: A | B (run independently, merge outputs)
+    - Conditional: A ? B : C (if A.success then B else C)
+    - Loop: FOR each X: A (apply A for each element)
+
+# =============================================================================
+# PRIMITIVES
+# =============================================================================
+primitives:
+  # ---------------------------------------------------------------------------
+  # DATA PRIMITIVES
+  # ---------------------------------------------------------------------------
+  LOAD_DATA:
+    description: "Load data from configured sources with validation"
+    inputs:
+      data_source:
+        type: "string"
+        description: "Path or identifier for data source"
+      date_range:
+        type: "tuple[date, date]"
+        description: "Start and end dates"
+      universe:
+        type: "string"
+        description: "Security universe specification"
+    outputs:
+      dataset:
+        type: "DataFrame"
+        description: "Loaded and validated dataset"
+    validates:
+      - check: "point_in_time"
+        description: "All data available at each timestamp"
+        reference: "DH-01"
+      - check: "survivorship_free"
+        description: "Universe includes delisted securities"
+        reference: "DH-02"
+      - check: "no_future_dates"
+        description: "No data beyond specified end date"
+    artifacts:
+      produces: ["lineage.yaml#data_sources"]
+      
+  FEATURE_ENGINEER:
+    description: "Construct features from raw data"
+    inputs:
+      dataset:
+        type: "DataFrame"
+        from: "LOAD_DATA"
+      feature_config:
+        type: "dict"
+        description: "Feature specifications"
+    outputs:
+      feature_matrix:
+        type: "DataFrame"
+        description: "Constructed features with metadata"
+    validates:
+      - check: "no_lookahead"
+        description: "Features use only past information"
+        reference: "DH-01"
+      - check: "finite_values"
+        description: "No inf/nan in output (or documented handling)"
+      - check: "documented"
+        description: "Each feature has description and rationale"
+    artifacts:
+      produces: ["feature_registry.yaml"]
+      
+  SPLIT_DATA:
+    description: "Split data for training and testing"
+    inputs:
+      dataset:
+        type: "DataFrame"
+      split_config:
+        type: "dict"
+        properties:
+          method: "walk_forward | expanding | purged_kfold"
+          train_period: "timedelta or fraction"
+          test_period: "timedelta or fraction"
+          embargo_period: "timedelta (for purged methods)"
+    outputs:
+      splits:
+        type: "list[tuple[train_idx, test_idx]]"
+    validates:
+      - check: "no_shuffle"
+        description: "Time series not shuffled"
+        reference: "BT-02"
+      - check: "embargo_applied"
+        description: "Gap between train and test if specified"
+      - check: "sufficient_test_periods"
+        description: "At least 3 years total test data"
+        reference: "BT-04"
+        
+  # ---------------------------------------------------------------------------
+  # MODEL PRIMITIVES
+  # ---------------------------------------------------------------------------
+  TRAIN_MODEL:
+    description: "Train model on training data"
+    inputs:
+      feature_matrix:
+        type: "DataFrame"
+      model_config:
+        type: "dict"
+        properties:
+          model_type: "string"
+          hyperparameters: "dict"
+          random_seed: "int"
+      cv_config:
+        type: "dict"
+    outputs:
+      model:
+        type: "object"
+        description: "Trained model"
+      cv_metrics:
+        type: "dict"
+        description: "Cross-validation performance metrics"
+    validates:
+      - check: "reproducible"
+        description: "Random seed set, same result on re-run"
+        reference: "MD-01"
+      - check: "purged_cv"
+        description: "CV respects temporal structure"
+        reference: "BT-02"
+      - check: "hyperparams_logged"
+        description: "All hyperparameters recorded"
+    artifacts:
+      produces: ["model.pkl", "cv_metrics.json", "config.yaml"]
+      
+  PREDICT:
+    description: "Generate predictions on new data"
+    inputs:
+      model:
+        type: "object"
+      feature_matrix:
+        type: "DataFrame"
+    outputs:
+      predictions:
+        type: "DataFrame"
+        description: "Model predictions with timestamps"
+    validates:
+      - check: "chronological_order"
+        description: "Predictions respect temporal ordering"
+      - check: "model_not_refit"
+        description: "Model unchanged during prediction"
+        
+  HYPERPARAMETER_SEARCH:
+    description: "Search for optimal hyperparameters"
+    inputs:
+      feature_matrix:
+        type: "DataFrame"
+      search_space:
+        type: "dict"
+        description: "Parameter ranges to search"
+      cv_config:
+        type: "dict"
+    outputs:
+      best_params:
+        type: "dict"
+      search_results:
+        type: "DataFrame"
+        description: "All evaluated configurations"
+    validates:
+      - check: "nested_cv"
+        description: "Inner CV for search, outer CV for evaluation"
+      - check: "search_logged"
+        description: "All evaluated configurations recorded"
+    artifacts:
+      produces: ["search_results.json"]
+      
+  # ---------------------------------------------------------------------------
+  # EVALUATION PRIMITIVES
+  # ---------------------------------------------------------------------------
+  BACKTEST:
+    description: "Simulate trading strategy performance"
+    inputs:
+      predictions:
+        type: "DataFrame"
+      universe:
+        type: "DataFrame"
+      cost_config:
+        type: "dict"
+        required_fields:
+          - "slippage_bps"
+          - "commission_bps"
+          - "market_impact_model"
+    outputs:
+      performance_metrics:
+        type: "dict"
+        fields: ["sharpe", "returns", "drawdown", "turnover"]
+      trade_log:
+        type: "DataFrame"
+        description: "All simulated trades with costs"
+    validates:
+      - check: "realistic_costs"
+        description: "Transaction costs applied"
+        reference: "BT-01"
+      - check: "capacity_check"
+        description: "Position sizes feasible given liquidity"
+    artifacts:
+      produces: ["performance.json", "trade_log.parquet"]
+      
+  EVALUATE:
+    description: "Compute comprehensive evaluation metrics"
+    inputs:
+      performance_metrics:
+        type: "dict"
+    outputs:
+      evaluation_report:
+        type: "dict"
+    validates:
+      - check: "multiple_testing_corrected"
+        description: "Significance adjusted for number of tests"
+        reference: "BT-03"
+      - check: "confidence_intervals"
+        description: "Bootstrap CIs for key metrics"
+    artifacts:
+      produces: ["evaluation_report.md"]
+      
+  ROBUSTNESS_CHECK:
+    description: "Run battery of robustness tests"
+    inputs:
+      strategy:
+        type: "object"
+        description: "Strategy to test"
+      robustness_config:
+        type: "dict"
+    outputs:
+      robustness_report:
+        type: "dict"
+        description: "Results of all robustness tests"
+    validates:
+      - check: "multiple_tests_included"
+        description: "At least 4 categories of robustness"
+    parallel_tests:
+      subperiod:
+        description: "Test on different time periods"
+      universe_perturbation:
+        description: "Test on perturbed universes"
+      cost_sensitivity:
+        description: "Test with varied cost assumptions"
+      parameter_sensitivity:
+        description: "Test with varied parameters"
+
+# =============================================================================
+# COMPOSITIONS (Standard Workflows)
+# =============================================================================
+compositions:
+  FACTOR_DISCOVERY:
+    description: "Standard workflow for discovering new factors"
+    version: "1.0.0"
+    
+    flow: |
+      LOAD_DATA -> [universe, prices]
+      FEATURE_ENGINEER(universe, prices) -> [factors]
+      FOR each factor IN factors:
+        SPLIT_DATA(factor) -> [splits]
+        FOR each split IN splits:
+          BACKTEST(factor, split) -> [split_perf]
+        AGGREGATE(split_perfs) -> [factor_perf]
+        EVALUATE(factor_perf) -> [factor_report]
+      AGGREGATE(factor_reports) -> [discovery_summary]
+      APPLY_MTC(discovery_summary) -> [significant_factors]
+      
+    gates:
+      pre_conditions:
+        - "Universe specification defined"
+        - "Factor hypotheses documented"
+        
+      post_conditions:
+        - "At least 3 factors survive MTC"
+        - "Average OOS Sharpe > 0.5"
+        - "All factors have economic rationale documented"
+        
+    required_artifacts:
+      - "config.yaml"
+      - "lineage.yaml"
+      - "factor_registry.yaml"
+      - "results.json with mtc_adjusted_pvalues"
+      - "discovery_summary.md"
+      
+    template_path: "templates/experiments/factor_discovery/"
+    
+  MODEL_ITERATION:
+    description: "Standard workflow for ML model development"
+    version: "1.0.0"
+    
+    flow: |
+      LOAD_DATA -> [dataset]
+      FEATURE_ENGINEER(dataset) -> [features]
+      SPLIT_DATA(features, method='walk_forward') -> [splits]
+      
+      # Inner loop: hyperparameter search on first N-1 splits
+      HYPERPARAMETER_SEARCH(features, splits[:-1]) -> [best_params]
+      
+      # Outer loop: final evaluation on last split
+      TRAIN_MODEL(features, best_params, splits[:-1]) -> [model, cv_metrics]
+      PREDICT(model, splits[-1].test) -> [predictions]
+      BACKTEST(predictions) -> [performance]
+      EVALUATE(performance) -> [report]
+      
+    gates:
+      pre_conditions:
+        - "Baseline model performance established"
+        - "Feature engineering documented"
+        
+      post_conditions:
+        - "cv_metrics.sharpe > baseline + 0.1"
+        - "performance.oos_sharpe / cv_metrics.sharpe > 0.8"
+        - "Interpretability analysis completed"
+        
+    required_artifacts:
+      - "config.yaml"
+      - "model.pkl"
+      - "cv_metrics.json"
+      - "performance.json"
+      - "interpretability_report.md"
+      
+    template_path: "templates/experiments/model_iteration/"
+    
+  ROBUSTNESS_BATTERY:
+    description: "Standard robustness verification workflow"
+    version: "1.0.0"
+    
+    flow: |
+      # Run in parallel
+      PARALLEL:
+        SUBPERIOD_ANALYSIS:
+          SPLIT(data, periods=['2010-2015', '2015-2020', '2020-2025'])
+          FOR each period:
+            BACKTEST(strategy, period) -> [period_perf]
+          CHECK: "Sharpe > 0.5 in all subperiods"
+          
+        UNIVERSE_PERTURBATION:
+          FOR variation IN ['drop_10_pct', 'sector_exclusion', 'size_quintile']:
+            PERTURB_UNIVERSE(universe, variation) -> [perturbed]
+            BACKTEST(strategy, perturbed) -> [var_perf]
+          CHECK: "Direction consistent across variations"
+          
+        COST_SENSITIVITY:
+          FOR multiplier IN [1.0, 2.0, 3.0]:
+            BACKTEST(strategy, costs * multiplier) -> [cost_perf]
+          CHECK: "Profitable at 2x cost"
+          
+        PARAMETER_SENSITIVITY:
+          FOR params IN perturb_params(base_params, ±20%):
+            TRAIN_MODEL(features, params) -> [variant_model]
+            BACKTEST(variant_model) -> [param_perf]
+          CHECK: "Sharpe > 1.0 for 80% of variations"
+          
+      AGGREGATE(all_checks) -> [robustness_summary]
+      
+    gates:
+      pre_conditions:
+        - "Base strategy passes primary thresholds"
+        
+      post_conditions:
+        - "Pass 3 of 4 robustness categories"
+        - "No catastrophic failure in any test"
+        
+    pass_criteria: "3_of_4"
+    
+    required_artifacts:
+      - "robustness_report.md"
+      - "sensitivity_charts.png"
+      
+  PAPER_REPLICATION:
+    description: "Workflow for replicating published research"
+    version: "1.0.0"
+    
+    flow: |
+      DOCUMENT(paper_reference, key_claims) -> [replication_spec]
+      LOAD_DATA(paper_specified_data) -> [dataset]
+      IMPLEMENT(paper_methodology) -> [implementation]
+      REPLICATE(implementation, dataset) -> [replication_results]
+      COMPARE(replication_results, paper_results) -> [comparison]
+      DOCUMENT_DEVIATIONS(comparison) -> [deviation_report]
+      
+    gates:
+      pre_conditions:
+        - "Paper fully documented in replication_spec"
+        - "Key claims identified"
+        - "Data sources mapped"
+        
+      post_conditions:
+        - "Results within 20% of paper on key metrics"
+        - "All deviations documented with hypotheses"
+        
+    required_artifacts:
+      - "replication_spec.md"
+      - "results_comparison.md"
+      - "deviation_report.md (if any)"
+
+# =============================================================================
+# TEMPLATE GENERATION
+# =============================================================================
+template_generation:
+  experiment_from_protocol:
+    description: "Generate experiment skeleton from protocol"
+    
+    process: |
+      1. Select protocol (e.g., FACTOR_DISCOVERY)
+      2. Generate config.yaml with required fields
+      3. Generate validation_gates.yaml from protocol.gates
+      4. Generate lineage.yaml template from primitives
+      5. Generate checkpoint markers from flow
+      
+    output_structure:
+      experiments/{exp_id}/:
+        - config.yaml:
+            generated_from: "RPA:{protocol_name}"
+            required_fields: "from protocol"
+            
+        - validation_gates.yaml:
+            pre_conditions: "from protocol.gates.pre_conditions"
+            post_conditions: "from protocol.gates.post_conditions"
+            
+        - lineage.yaml:
+            data_sources: "placeholder"
+            transformations: "from protocol.flow"
+            
+        - checkpoints/:
+            - "00_data_loaded.json"
+            - "01_features_built.json"
+            - "..."
+            
+  validation:
+    validate_experiment_against_protocol:
+      description: "Check if experiment followed protocol"
+      checks:
+        - "All required artifacts present"
+        - "All gates passed"
+        - "Flow checkpoints recorded"
+        
+    report_deviations:
+      description: "Document any protocol deviations"
+      required: "Justification for each deviation"
+
+# =============================================================================
+# INTEGRATION
+# =============================================================================
+integration:
+  skill_triggers:
+    - skill: "/dgsf_protocol_design"
+      action: "Select and customize protocol for new experiment"
+      
+    - skill: "/dgsf_execute"
+      action: "Validate against selected protocol during execution"
+      
+    - skill: "/dgsf_verify"
+      action: "Check all protocol gates satisfied"
+      
+  auto_triggers:
+    - pattern: "New experiment created"
+      action: "Suggest appropriate protocol"
+      
+    - pattern: "Experiment without protocol"
+      action: "Warn and suggest protocol assignment"
+      
+  template_command:
+    usage: "python scripts/generate_experiment.py --protocol FACTOR_DISCOVERY --name t42_new_factor"
+    output: "Creates experiment skeleton from protocol"
+
+# =============================================================================
+# EXTENSION
+# =============================================================================
+extension:
+  add_primitive:
+    required_fields:
+      - "description"
+      - "inputs (with types)"
+      - "outputs (with types)"
+      - "validates (at least 1)"
+    optional:
+      - "artifacts"
+      
+  add_composition:
+    required_fields:
+      - "description"
+      - "flow (using defined primitives)"
+      - "gates (pre and post)"
+      - "required_artifacts"
+    template_generation: "Optional but recommended"
+    
+  customize_for_project:
+    process: |
+      1. Inherit from base protocol
+      2. Override specific parameters
+      3. Add project-specific gates
+    example:
+      project_factor_discovery:
+        extends: "FACTOR_DISCOVERY"
+        gates:
+          post_conditions:
+            - "OOS Sharpe > 1.5 (stricter than base)"

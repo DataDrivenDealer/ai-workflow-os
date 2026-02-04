@@ -1,0 +1,236 @@
+# System Health Metrics Configuration
+# Defines metrics for evaluating OS operational health
+# Version: 1.0.0
+#
+# Part of AEP-5: System Health Metrics
+
+version: "1.0.0"
+
+# =============================================================================
+# METRIC DEFINITIONS
+# =============================================================================
+metrics:
+  # ---------------------------------------------------------------------------
+  # Evolution & Friction Metrics
+  # ---------------------------------------------------------------------------
+  mean_time_between_friction:
+    id: "mtbf"
+    description: "Average time between evolution signal occurrences"
+    unit: "hours"
+    direction: "higher_is_better"
+    target:
+      operator: ">="
+      value: 24
+    calculation:
+      method: "avg"
+      source: "evolution_signals"
+      field: "time_delta_between_signals"
+    alert:
+      threshold: 8  # Alert if MTBF drops below 8 hours
+      severity: "warning"
+
+  evolution_signal_velocity:
+    id: "esv"
+    description: "Rate of evolution signal generation (lower indicates stability)"
+    unit: "signals_per_week"
+    direction: "lower_is_better"
+    target:
+      operator: "<="
+      value: 5
+    calculation:
+      method: "count"
+      source: "evolution_signals"
+      window: "7d"
+    alert:
+      threshold: 15
+      severity: "warning"
+
+  # ---------------------------------------------------------------------------
+  # Skill Effectiveness Metrics
+  # ---------------------------------------------------------------------------
+  skill_invocation_success_rate:
+    id: "sisr"
+    description: "Percentage of skill invocations that complete successfully"
+    unit: "percentage"
+    direction: "higher_is_better"
+    target:
+      operator: ">="
+      value: 0.95
+    calculation:
+      method: "ratio"
+      numerator: "successful_skill_invocations"
+      denominator: "total_skill_invocations"
+    alert:
+      threshold: 0.85
+      severity: "error"
+
+  skill_retry_rate:
+    id: "srr"
+    description: "Percentage of skill invocations that required retry"
+    unit: "percentage"
+    direction: "lower_is_better"
+    target:
+      operator: "<="
+      value: 0.10
+    calculation:
+      method: "ratio"
+      numerator: "retried_skill_invocations"
+      denominator: "total_skill_invocations"
+    alert:
+      threshold: 0.25
+      severity: "warning"
+
+  # ---------------------------------------------------------------------------
+  # Contract & Validation Metrics
+  # ---------------------------------------------------------------------------
+  contract_validation_coverage:
+    id: "cvc"
+    description: "Percentage of defined contracts with automated validation"
+    unit: "percentage"
+    direction: "higher_is_better"
+    target:
+      operator: "=="
+      value: 1.0
+    calculation:
+      method: "ratio"
+      numerator: "contracts_with_validation_scripts"
+      denominator: "total_defined_contracts"
+    alert:
+      threshold: 0.8
+      severity: "warning"
+
+  validation_pass_rate:
+    id: "vpr"
+    description: "Percentage of validation checks that pass"
+    unit: "percentage"
+    direction: "higher_is_better"
+    target:
+      operator: ">="
+      value: 0.98
+    calculation:
+      method: "ratio"
+      numerator: "passed_validations"
+      denominator: "total_validations"
+    alert:
+      threshold: 0.90
+      severity: "error"
+
+  # ---------------------------------------------------------------------------
+  # Rule Coverage Metrics
+  # ---------------------------------------------------------------------------
+  rule_applicability_coverage:
+    id: "rac"
+    description: "Percentage of enumerated scenarios covered by explicit rules"
+    unit: "percentage"
+    direction: "higher_is_better"
+    target:
+      operator: ">="
+      value: 0.9
+    calculation:
+      method: "ratio"
+      numerator: "scenarios_with_applicable_rules"
+      denominator: "total_enumerated_scenarios"
+    alert:
+      threshold: 0.7
+      severity: "warning"
+
+  rule_friction_ratio:
+    id: "rfr"
+    description: "Ratio of rule friction signals to total rule applications"
+    unit: "percentage"
+    direction: "lower_is_better"
+    target:
+      operator: "<="
+      value: 0.05
+    calculation:
+      method: "ratio"
+      numerator: "rule_friction_signals"
+      denominator: "total_rule_applications"
+    alert:
+      threshold: 0.15
+      severity: "warning"
+
+  # ---------------------------------------------------------------------------
+  # Task Flow Metrics
+  # ---------------------------------------------------------------------------
+  task_cycle_time:
+    id: "tct"
+    description: "Average time from task start to completion"
+    unit: "hours"
+    direction: "lower_is_better"
+    target:
+      operator: "<="
+      value: 48  # Project-dependent, override in adapter
+    calculation:
+      method: "avg"
+      source: "task_events"
+      field: "duration_start_to_complete"
+    alert:
+      threshold: 96
+      severity: "warning"
+
+  wip_utilization:
+    id: "wipu"
+    description: "Average WIP slot utilization (should be balanced)"
+    unit: "percentage"
+    direction: "balanced"  # Neither too high nor too low is ideal
+    target:
+      operator: "in_range"
+      value: [0.5, 0.85]
+    calculation:
+      method: "avg"
+      source: "task_status_snapshots"
+      field: "running_count / max_wip"
+    alert:
+      threshold_low: 0.3   # Underutilization
+      threshold_high: 0.95 # Bottleneck
+      severity: "info"
+
+# =============================================================================
+# AGGREGATION & REPORTING
+# =============================================================================
+reporting:
+  # Dashboard generation frequency
+  frequency: "daily"
+  
+  # Output locations
+  outputs:
+    dashboard: "reports/health_dashboard.md"
+    metrics_log: "state/health_metrics.yaml"
+    alerts: "state/health_alerts.yaml"
+  
+  # Retention policy
+  retention:
+    metrics_history: "90d"
+    alert_history: "180d"
+
+# =============================================================================
+# BASELINE ESTABLISHMENT
+# =============================================================================
+baseline:
+  description: "Initial baseline requires 14 days of operation data"
+  minimum_data_points: 100
+  establishment_period: "14d"
+  recalibration_trigger:
+    - "major_version_upgrade"
+    - "new_project_onboarded"
+    - "manual_trigger"
+
+# =============================================================================
+# INTEGRATION HOOKS
+# =============================================================================
+hooks:
+  # Collect metrics after each skill invocation
+  post_skill_invocation:
+    enabled: true
+    async: true
+  
+  # Collect metrics on task state transitions
+  post_state_transition:
+    enabled: true
+    async: true
+  
+  # Periodic collection (even without activity)
+  periodic:
+    enabled: true
+    interval: "1h"

@@ -1,0 +1,350 @@
+# Rule Expression Language (REL) Specification
+# Version: 1.0.0
+# Part of AEP-9: Organizational Evolution Architecture
+
+version: "1.0.0"
+status: "active"
+author: "AI Workflow OS"
+created: "2026-02-04"
+
+# =============================================================================
+# 1. LANGUAGE PURPOSE
+# =============================================================================
+purpose: |
+  REL (Rule Expression Language) provides a structured, formally verifiable 
+  syntax for expressing governance rules in AI Workflow OS. It replaces 
+  natural language rules with compositional, parameterized expressions that:
+  
+  - Can be programmatically evaluated
+  - Support conditional exceptions
+  - Enable cross-layer parameterization
+  - Facilitate automated testing
+  - Reduce interpretation variance
+
+# =============================================================================
+# 2. GRAMMAR SPECIFICATION (EBNF)
+# =============================================================================
+grammar:
+  ebnf: |
+    (* Top-level rule structure *)
+    rule          = "rule:" header expression parameters? conditions? metadata ;
+    
+    (* Header fields *)
+    header        = id version name ;
+    id            = "id:" IDENTIFIER ;
+    version       = "version:" SEMVER ;
+    name          = "name:" STRING ;
+    
+    (* Expression body *)
+    expression    = "expression:" when_clause then_clause ;
+    when_clause   = "WHEN" condition { "AND" condition } ;
+    then_clause   = "THEN" action ;
+    
+    (* Conditions *)
+    condition     = path operator value ;
+    path          = IDENTIFIER { "." IDENTIFIER } ;
+    operator      = "==" | "!=" | ">=" | "<=" | ">" | "<" | "IN" | "MATCHES" | "NOT" ;
+    value         = STRING | NUMBER | BOOLEAN | path | "[" value_list "]" ;
+    value_list    = value { "," value } ;
+    
+    (* Actions *)
+    action        = "BLOCK" [ "with" STRING ] 
+                  | "ALLOW" 
+                  | "WARN" STRING 
+                  | "AUDIT" 
+                  | "HALT" 
+                  | "HANDOFF" 
+                  | action "AND" action ;
+    
+    (* Parameters *)
+    parameters    = "parameters:" { parameter } ;
+    parameter     = "-" param_def ;
+    param_def     = "name:" path "type:" type "default:" value constraints? "source:" path ;
+    type          = "string" | "integer" | "float" | "boolean" | "list" | "path" ;
+    constraints   = "min:" NUMBER | "max:" NUMBER | "enum:" "[" value_list "]" ;
+    
+    (* Conditional overrides *)
+    conditions    = "conditions:" { named_condition } ;
+    named_condition = "-" "name:" STRING "when:" expr ("override:" override | "action:" action) audit? ;
+    override      = IDENTIFIER ":" value { IDENTIFIER ":" value } ;
+    audit         = "requires_audit:" BOOLEAN ;
+    
+    (* Metadata *)
+    metadata      = "metadata:" meta_fields ;
+    meta_fields   = category? severity? rationale? test_file? ;
+    category      = "category:" STRING ;
+    severity      = "severity:" ("P1" | "P2" | "P3" | "P4") ;
+    rationale     = "rationale:" STRING ;
+    test_file     = "test_file:" STRING ;
+    
+    (* Lexical tokens *)
+    IDENTIFIER    = LETTER { LETTER | DIGIT | "_" } ;
+    STRING        = '"' { CHAR } '"' ;
+    NUMBER        = [ "-" ] DIGIT { DIGIT } [ "." DIGIT { DIGIT } ] ;
+    BOOLEAN       = "true" | "false" ;
+    SEMVER        = DIGIT "." DIGIT "." DIGIT ;
+
+# =============================================================================
+# 3. CONTEXT VARIABLES
+# =============================================================================
+# Variables available during rule evaluation
+
+context_variables:
+  # Agent context
+  agent:
+    - name: "agent.id"
+      type: "string"
+      description: "Unique identifier of the current agent"
+    - name: "agent.role_mode"
+      type: "string"
+      description: "Current role mode (executor, planner, etc.)"
+    - name: "agent.authority_level"
+      type: "integer"
+      description: "Current trust level (0-3)"
+    - name: "agent.session_id"
+      type: "string"
+      description: "Current session identifier"
+  
+  # Action context
+  action:
+    - name: "action.type"
+      type: "string"
+      description: "Type of action being attempted"
+    - name: "action.target"
+      type: "path"
+      description: "Target of the action (file path, etc.)"
+    - name: "action.timestamp"
+      type: "datetime"
+      description: "When the action was initiated"
+  
+  # Task context
+  task:
+    - name: "task.id"
+      type: "string"
+      description: "Current task identifier"
+    - name: "task.type"
+      type: "string"
+      description: "Task type (feature, hotfix, experiment, etc.)"
+    - name: "task.priority"
+      type: "string"
+      description: "Task priority (P0-P4)"
+    - name: "task.status"
+      type: "string"
+      description: "Current task status"
+  
+  # Project context
+  project:
+    - name: "project.id"
+      type: "string"
+      description: "Current project identifier"
+    - name: "project.paths.*"
+      type: "path"
+      description: "Project path mappings from adapter"
+  
+  # Organization context (when L-1 enabled)
+  org:
+    - name: "org.id"
+      type: "string"
+      description: "Organization identifier"
+    - name: "org.deployment_mode"
+      type: "string"
+      description: "Deployment mode (individual, team, institutional)"
+    - name: "org.constraints.*"
+      type: "varies"
+      description: "Organization-level constraints"
+  
+  # State context
+  context:
+    - name: "context.concurrent_tasks"
+      type: "integer"
+      description: "Number of currently running tasks"
+    - name: "context.wip_count"
+      type: "integer"
+      description: "Current WIP count"
+    - name: "context.test_status"
+      type: "string"
+      description: "Most recent test run status"
+
+# =============================================================================
+# 4. BUILT-IN FUNCTIONS
+# =============================================================================
+functions:
+  - name: "path_matches"
+    signature: "path_matches(path, pattern) -> boolean"
+    description: "Check if path matches glob pattern"
+    example: "path_matches(action.target, 'data/raw/**')"
+  
+  - name: "concurrent_tasks_by"
+    signature: "concurrent_tasks_by(agent_id, project_id?) -> integer"
+    description: "Count concurrent tasks for agent, optionally scoped to project"
+    example: "concurrent_tasks_by(agent.id, project.id)"
+  
+  - name: "has_evidence"
+    signature: "has_evidence(claim, evidence_type) -> boolean"
+    description: "Check if claim has supporting evidence of specified type"
+    example: "has_evidence('file_exists', 'Test-Path')"
+  
+  - name: "estimated_runtime"
+    signature: "estimated_runtime(action) -> duration"
+    description: "Estimate runtime of an action"
+    example: "estimated_runtime(action) > 300"
+
+# =============================================================================
+# 5. PRIORITY SYSTEM
+# =============================================================================
+priority:
+  description: "Rule priority determines evaluation order and conflict resolution"
+  
+  levels:
+    P4:
+      name: "critical"
+      description: "Security and data protection - always enforced, no exceptions"
+      examples: ["R4 (data protection)"]
+    P3:
+      name: "high"
+      description: "Safety and correctness - enforced with rare, audited exceptions"
+      examples: ["R3 (stop on failure)"]
+    P2:
+      name: "medium"
+      description: "Quality and process - enforced with context-based exceptions"
+      examples: ["R2 (task serialization)", "R6 (long-run handoff)"]
+    P1:
+      name: "low"
+      description: "Best practices - warnings with recommendations"
+      examples: ["R1 (verify before assert)", "R5 (no assumptions)"]
+  
+  conflict_resolution: |
+    When rules conflict:
+    1. Higher priority (P4 > P3 > P2 > P1) takes precedence
+    2. Within same priority, more specific condition wins
+    3. If still ambiguous, BLOCK with audit
+
+# =============================================================================
+# 6. EXAMPLE RULES
+# =============================================================================
+examples:
+  R2_parameterized:
+    description: "Task serialization with multi-agent support"
+    rel: |
+      rule:
+        id: "R2"
+        version: "2.0.0"
+        name: "task_serialization"
+        
+        expression: |
+          WHEN agent.action.type == "start_task"
+          AND concurrent_tasks_by(agent.id, project.id) >= params.max_parallel
+          THEN BLOCK with "WIP limit exceeded: {concurrent} >= {max_parallel}"
+        
+        parameters:
+          - name: params.max_parallel
+            type: integer
+            default: 1
+            min: 1
+            max: 10
+            source: adapter.behavior.max_parallel_tasks
+        
+        conditions:
+          - name: "institutional_scale"
+            when: "org.deployment_mode == 'institutional'"
+            override:
+              params.max_parallel: 3
+            requires_audit: false
+          
+          - name: "hotfix_bypass"
+            when: "task.type == 'hotfix' AND task.priority == 'P0'"
+            action: ALLOW
+            requires_audit: true
+        
+        metadata:
+          category: "flow_control"
+          severity: "P2"
+          rationale: "Prevent context switching while enabling institutional scale"
+          test_file: "kernel/tests/test_r2_rule.py"
+
+  R4_data_protection:
+    description: "Critical data protection - no exceptions"
+    rel: |
+      rule:
+        id: "R4"
+        version: "1.0.0"
+        name: "data_protection"
+        
+        expression: |
+          WHEN action.type IN ["write", "delete", "modify"]
+          AND path_matches(action.target, adapter.paths.data_protected + "/**")
+          THEN BLOCK with "Data protection violation" AND HALT AND AUDIT
+        
+        parameters: []
+        
+        conditions: []  # No exceptions allowed
+        
+        metadata:
+          category: "security"
+          severity: "P4"
+          rationale: "Raw data integrity is non-negotiable"
+          test_file: "kernel/tests/test_r4_rule.py"
+
+  R6_long_run:
+    description: "Long-running task handoff"
+    rel: |
+      rule:
+        id: "R6"
+        version: "1.0.0"
+        name: "long_run_handoff"
+        
+        expression: |
+          WHEN estimated_runtime(action) > params.threshold_seconds
+          THEN HANDOFF
+        
+        parameters:
+          - name: params.threshold_seconds
+            type: integer
+            default: 300
+            source: adapter.behavior.long_run_threshold_seconds
+        
+        conditions:
+          - name: "background_allowed"
+            when: "action.supports_background == true"
+            action: WARN "Consider running in background"
+            requires_audit: false
+        
+        metadata:
+          category: "execution"
+          severity: "P2"
+          rationale: "Long tasks block agent; better to delegate to human"
+          test_file: "kernel/tests/test_r6_rule.py"
+
+# =============================================================================
+# 7. VALIDATION
+# =============================================================================
+validation:
+  schema_check:
+    command: "python scripts/validate_rel_syntax.py"
+    frequency: "on-save"
+  
+  semantic_check:
+    command: "python scripts/validate_rel_semantics.py"
+    frequency: "pre-commit"
+  
+  test_generation:
+    enabled: true
+    output: "kernel/tests/generated/"
+
+# =============================================================================
+# 8. TOOLING
+# =============================================================================
+tooling:
+  editor:
+    syntax_highlighting: "configs/rel.tmLanguage.json"
+    snippets: "configs/rel.snippets.json"
+  
+  cli:
+    validate: "python -m kernel.rel validate {file}"
+    test: "python -m kernel.rel test {file}"
+    explain: "python -m kernel.rel explain {rule_id}"
+  
+  api:
+    evaluate: "kernel.rel.evaluate(rule_id, context)"
+    list_rules: "kernel.rel.list_rules(namespace?)"
+    get_rule: "kernel.rel.get_rule(rule_id)"

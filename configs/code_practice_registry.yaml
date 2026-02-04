@@ -1,0 +1,654 @@
+# Code Practice Registry (CPR)
+# Version: 1.0.0
+# Part of AEP-10: Institutional Quantitative Research Evolution
+#
+# Purpose: Living registry of quantitative code best practices with enforcement.
+# Provides anti-patterns, correct patterns, and enforcement mechanisms for
+# domain-specific code quality in quantitative trading systems.
+
+version: "1.0.0"
+created: "2026-02-04"
+status: "active"
+
+# =============================================================================
+# PRACTICE CATEGORIES
+# =============================================================================
+practices:
+  # ---------------------------------------------------------------------------
+  # DATA HANDLING (DH-*)
+  # ---------------------------------------------------------------------------
+  data_handling:
+    DH-01:
+      name: "Point-in-Time Correctness"
+      severity: "critical"
+      description: |
+        All features must use only information available at the time of prediction.
+        This prevents lookahead bias, which is one of the most common and severe
+        errors in quantitative research.
+        
+      anti_patterns:
+        - pattern: "df['future_return'] = df['price'].shift(-N)"
+          violation: "Using future data (negative shift) in feature construction"
+          detection: "regex: shift\\s*\\(\\s*-\\d+"
+          
+        - pattern: "df.fillna(df.mean())"
+          violation: "Using full-sample mean introduces lookahead"
+          detection: "ast_pattern: fillna(*.mean())"
+          correct: "df.fillna(method='ffill') or df.expanding().mean()"
+          
+        - pattern: "scaler.fit_transform(X)  # before split"
+          violation: "Fitting on full data includes test set information"
+          detection: "manual_review"
+          correct: "scaler.fit(X_train); X_test = scaler.transform(X_test)"
+          
+        - pattern: "universe = get_current_constituents()"
+          violation: "Using today's index membership for historical analysis"
+          detection: "keyword: current_constituents, current_members"
+          correct: "universe = get_historical_constituents(as_of_date)"
+          
+      correct_patterns:
+        - description: "Shift returns appropriately"
+          pattern: "df['return_t'] = df['price'].pct_change().shift(1)"
+          explanation: "Shift(1) ensures we use only past information"
+          
+        - description: "Fill with expanding window"
+          pattern: "df['feature'] = df['raw'].expanding().mean()"
+          explanation: "Expanding window only uses historical data"
+          
+        - description: "Pipeline for preprocessing"
+          pattern: |
+            from sklearn.pipeline import Pipeline
+            pipe = Pipeline([('scaler', StandardScaler()), ('model', model)])
+            pipe.fit(X_train, y_train)
+          explanation: "Pipeline ensures proper fit/transform separation"
+          
+      enforcement:
+        hooks:
+          - "hooks/check_quant_practices.py#DH-01"
+        code_review:
+          checklist_item: "Verify no lookahead in feature construction"
+        tests:
+          - "test_point_in_time.py"
+          
+      references:
+        - "de Prado (2018) AFML, Chapter 7"
+        - "Bailey et al (2014) Pseudo-Mathematics and Financial Charlatanism"
+
+    DH-02:
+      name: "Survivorship Bias Prevention"
+      severity: "critical"
+      description: |
+        Investment universe must include securities that existed at each historical
+        point, including those that were subsequently delisted or acquired.
+        
+      anti_patterns:
+        - pattern: "stocks = get_current_sp500()"
+          violation: "Using current index composition for historical backtest"
+          detection: "keyword: current_sp500, today_universe"
+          
+        - pattern: "universe = df[df['active'] == True]"
+          violation: "Filtering to currently active securities only"
+          detection: "manual_review"
+          
+      correct_patterns:
+        - description: "Point-in-time universe"
+          pattern: |
+            universe = get_historical_constituents(
+                index='SP500',
+                as_of_date=backtest_date
+            )
+          explanation: "Retrieves index membership as it was on that date"
+          
+        - description: "Include delisted securities"
+          pattern: |
+            returns = get_returns(
+                universe='all',  # Including delisted
+                handle_delisting='last_price'
+            )
+          explanation: "Delisted securities remain in sample with final returns"
+          
+      enforcement:
+        hooks:
+          - "hooks/check_quant_practices.py#DH-02"
+        code_review:
+          checklist_item: "Verify universe includes delisted securities"
+        data_lineage:
+          required_field: "survivorship_free: true"
+          
+      references:
+        - "Elton, Gruber, Blake (1996) Survivorship Bias"
+        - "Shumway (1997) The Delisting Bias"
+        
+      impact_estimate: "Survivorship bias typically inflates returns by 1-2% annually"
+
+    DH-03:
+      name: "Data Leakage Prevention"
+      severity: "critical"
+      description: |
+        Prevent information from the test set leaking into training through
+        preprocessing, feature engineering, or model selection.
+        
+      anti_patterns:
+        - pattern: "StandardScaler().fit_transform(X)"
+          context: "Before train-test split"
+          violation: "Scaler fitted on full data including test"
+          detection: "ast_pattern: fit_transform before split"
+          
+        - pattern: "df.fillna(df.median())"
+          context: "Full dataset"
+          violation: "Median computed using test data"
+          
+        - pattern: "SelectKBest().fit(X, y)"
+          context: "Full dataset"
+          violation: "Feature selection using test labels"
+          
+      correct_patterns:
+        - description: "Preprocessing in pipeline"
+          pattern: |
+            from sklearn.pipeline import Pipeline
+            from sklearn.model_selection import TimeSeriesSplit
+            
+            pipe = Pipeline([
+                ('imputer', SimpleImputer(strategy='ffill')),
+                ('scaler', StandardScaler()),
+                ('model', model)
+            ])
+            
+            cv = TimeSeriesSplit(n_splits=5)
+            for train_idx, test_idx in cv.split(X):
+                pipe.fit(X[train_idx], y[train_idx])
+                score = pipe.score(X[test_idx], y[test_idx])
+                
+        - description: "Purged cross-validation"
+          pattern: |
+            from kernel.quant_utils import PurgedKFold
+            
+            cv = PurgedKFold(
+                n_splits=5,
+                embargo_td=pd.Timedelta(days=5)
+            )
+          explanation: "Embargo period prevents information leakage at boundaries"
+          
+      enforcement:
+        hooks:
+          - "hooks/check_quant_practices.py#DH-03"
+        code_review:
+          checklist_item: "Verify preprocessing respects train-test boundary"
+          
+      references:
+        - "Kaufman & Rosset (2012) Leakage in Data Mining"
+        - "de Prado (2018) AFML, Chapter 7"
+
+    DH-04:
+      name: "Missing Data Handling"
+      severity: "high"
+      description: |
+        Handle missing data appropriately for time series financial data,
+        avoiding future information leakage.
+        
+      anti_patterns:
+        - pattern: "df.interpolate(method='linear')"
+          violation: "Linear interpolation uses future values"
+          
+        - pattern: "df.fillna(df.mean())"
+          violation: "Full-sample mean uses future information"
+          
+        - pattern: "df.dropna()"
+          context: "Without understanding selection bias"
+          violation: "May introduce selection bias if missingness is informative"
+          
+      correct_patterns:
+        - description: "Forward fill"
+          pattern: "df.fillna(method='ffill')"
+          use_when: "Assume last known value persists"
+          
+        - description: "Expanding mean"
+          pattern: "df.fillna(df.expanding().mean())"
+          use_when: "Use historical average"
+          
+        - description: "Industry/peer mean"
+          pattern: |
+            df['filled'] = df.groupby('industry')['value'].transform(
+                lambda x: x.fillna(x.expanding().mean())
+            )
+          use_when: "Cross-sectional imputation needed"
+          
+      enforcement:
+        code_review:
+          checklist_item: "Verify missing data handling is point-in-time correct"
+
+  # ---------------------------------------------------------------------------
+  # BACKTESTING (BT-*)
+  # ---------------------------------------------------------------------------
+  backtesting:
+    BT-01:
+      name: "Transaction Cost Realism"
+      severity: "high"
+      description: |
+        Backtests must include realistic transaction costs including commission,
+        spread, and market impact.
+        
+      required_parameters:
+        slippage_bps:
+          minimum: 5
+          typical: 10
+          high_frequency: 2
+          illiquid: 25
+          
+        commission_bps:
+          minimum: 1
+          typical: 3
+          retail: 5
+          
+        market_impact:
+          models:
+            - name: "linear"
+              formula: "impact = k * volume_fraction"
+              use_when: "Small orders"
+            - name: "square_root"
+              formula: "impact = k * sqrt(volume_fraction / ADV)"
+              use_when: "Institutional size orders"
+              reference: "Almgren & Chriss (2000)"
+              
+      anti_patterns:
+        - pattern: "returns = positions.shift(1) @ asset_returns"
+          violation: "No transaction costs applied"
+          
+        - pattern: "slippage = 0.0001  # 1 bp"
+          violation: "Unrealistically low slippage assumption"
+          
+      correct_patterns:
+        - description: "Comprehensive cost model"
+          pattern: |
+            def calculate_costs(trades, prices, volumes):
+                commission = abs(trades) * COMMISSION_BPS * 1e-4
+                spread = abs(trades) * SPREAD_BPS * 1e-4
+                impact = np.sqrt(abs(trades) / volumes) * IMPACT_COEF
+                return commission + spread + impact
+                
+      enforcement:
+        config_validation:
+          required_fields:
+            - "backtest.costs.slippage_bps"
+            - "backtest.costs.commission_bps"
+        gates:
+          - "configs/gates.yaml#backtest_completion"
+
+    BT-02:
+      name: "Walk-Forward Validation"
+      severity: "high"
+      description: |
+        Use expanding or rolling walk-forward validation for time series data.
+        Never shuffle time series data in cross-validation.
+        
+      anti_patterns:
+        - pattern: "train_test_split(X, y, test_size=0.2, shuffle=True)"
+          violation: "Shuffling destroys temporal structure, causes leakage"
+          detection: "regex: train_test_split.*shuffle\\s*=\\s*True"
+          auto_fix: "shuffle=False"
+          
+        - pattern: "KFold(n_splits=5, shuffle=True)"
+          context: "Time series data"
+          violation: "Shuffled K-fold inappropriate for time series"
+          
+        - pattern: "cross_val_score(model, X, y, cv=5)"
+          context: "Time series data"
+          violation: "Default CV shuffles, not time-aware"
+          
+      correct_patterns:
+        - description: "Time series split"
+          pattern: |
+            from sklearn.model_selection import TimeSeriesSplit
+            cv = TimeSeriesSplit(n_splits=5)
+          use_when: "Basic time series validation"
+          
+        - description: "Purged K-fold with embargo"
+          pattern: |
+            from kernel.quant_utils import PurgedKFold
+            cv = PurgedKFold(
+                n_splits=5,
+                embargo_td=pd.Timedelta(days=5)
+            )
+          use_when: "Need multiple folds with leakage prevention"
+          reference: "de Prado (2018)"
+          
+        - description: "Walk-forward optimization"
+          pattern: |
+            for end_train in pd.date_range(start_date, end_date, freq='Q'):
+                train = data[data.index < end_train]
+                test = data[(data.index >= end_train) & 
+                           (data.index < end_train + pd.DateOffset(months=3))]
+                model.fit(train)
+                predictions.append(model.predict(test))
+          use_when: "Production-like incremental training"
+          
+      enforcement:
+        hooks:
+          - "hooks/check_quant_practices.py#BT-02"
+        experiment_template:
+          required: "cv_type in ['TimeSeriesSplit', 'PurgedKFold', 'WalkForward']"
+
+    BT-03:
+      name: "Multiple Testing Correction"
+      severity: "high"
+      description: |
+        When testing multiple strategies/factors/parameters, adjust significance
+        thresholds for the number of tests to control false discovery.
+        
+      formula: |
+        # Bonferroni (controls Family-Wise Error Rate)
+        adjusted_alpha = base_alpha / num_tests
+        
+        # Benjamini-Hochberg (controls False Discovery Rate)
+        # Sort p-values, find largest k where p[k] <= k/m * alpha
+        
+        # Practical t-statistic threshold (Harvey et al 2016)
+        # For factor discovery: use t > 3.0 instead of t > 2.0
+        
+      anti_patterns:
+        - pattern: "if pvalue < 0.05: significant = True"
+          context: "Multiple factors tested"
+          violation: "Uncorrected p-value with multiple tests"
+          
+        - pattern: "best_params = grid_search.best_params_"
+          context: "Large parameter grid"
+          violation: "Best of many is likely overfit without correction"
+          
+      correct_patterns:
+        - description: "Bonferroni correction"
+          pattern: |
+            alpha = 0.05
+            num_tests = len(factors_tested)
+            adjusted_alpha = alpha / num_tests
+            
+            significant_factors = [
+                f for f, p in zip(factors, pvalues)
+                if p < adjusted_alpha
+            ]
+            
+        - description: "Benjamini-Hochberg FDR"
+          pattern: |
+            from scipy.stats import false_discovery_control
+            
+            reject, adjusted_pvalues = false_discovery_control(
+                pvalues, 
+                alpha=0.05,
+                method='bh'
+            )
+            significant_factors = [f for f, r in zip(factors, reject) if r]
+            
+        - description: "Report both adjusted and raw"
+          pattern: |
+            results = pd.DataFrame({
+                'factor': factors,
+                'raw_pvalue': pvalues,
+                'bonferroni_adj': pvalues * len(factors),
+                'bh_adj': adjusted_pvalues,
+                'significant_bonferroni': pvalues < (0.05 / len(factors)),
+                'significant_bh': reject
+            })
+            
+      enforcement:
+        experiment_gate:
+          check: "num_tests_reported > 1 implies mtc_applied == true"
+        verify_prompt:
+          auto_check: "If multiple factors, verify MTC applied"
+
+    BT-04:
+      name: "Out-of-Sample Period Requirements"
+      severity: "medium"
+      description: |
+        Ensure sufficient out-of-sample period for meaningful evaluation.
+        
+      requirements:
+        minimum_oos_years: 3
+        preferred_oos_years: 5
+        regime_coverage: |
+          OOS period should ideally include:
+          - At least one bull market
+          - At least one bear market (>20% drawdown)
+          - At least one volatility regime change
+          
+      anti_patterns:
+        - pattern: "test_period = '2024-01-01' to '2024-06-01'"
+          violation: "Only 6 months OOS - insufficient for statistical significance"
+          
+      enforcement:
+        experiment_template:
+          validation: "oos_years >= 3"
+        warning: "OOS < 3 years will be flagged in verification"
+
+  # ---------------------------------------------------------------------------
+  # PERFORMANCE PATTERNS (PF-*)
+  # ---------------------------------------------------------------------------
+  performance:
+    PF-01:
+      name: "Vectorized Operations"
+      severity: "medium"
+      description: |
+        Prefer vectorized operations over loops for computational efficiency.
+        This is especially important for large-scale backtesting.
+        
+      anti_patterns:
+        - pattern: "for i in range(len(df)):"
+          violation: "Row-wise iteration in pandas is extremely slow"
+          detection: "regex: for\\s+\\w+\\s+in\\s+range\\(len\\(df"
+          
+        - pattern: "df.iterrows()"
+          violation: "iterrows() is slow and should be avoided"
+          detection: "keyword: iterrows"
+          
+        - pattern: "df.apply(func, axis=1)"
+          context: "Simple operations"
+          violation: "apply() with axis=1 is slow for simple operations"
+          
+      correct_patterns:
+        - description: "Vectorized pandas"
+          pattern: "result = df['a'] * df['b'] + df['c']"
+          
+        - description: "NumPy broadcasting"
+          pattern: |
+            result = np.where(
+                condition,
+                true_value,
+                false_value
+            )
+            
+        - description: "Numba JIT for complex logic"
+          pattern: |
+            @numba.jit(nopython=True)
+            def fast_calculation(arr):
+                result = np.empty_like(arr)
+                for i in range(len(arr)):
+                    result[i] = complex_logic(arr[i])
+                return result
+                
+      enforcement:
+        code_review:
+          checklist_item: "Check for unnecessary loops over dataframes"
+        profiling:
+          threshold: "Operations on >10K rows should be vectorized"
+
+    PF-02:
+      name: "Memory-Efficient Data Types"
+      severity: "medium"
+      description: |
+        Use appropriate dtypes to reduce memory footprint for large datasets.
+        
+      recommendations:
+        float64_to_float32:
+          when: "Precision allows (most financial data)"
+          savings: "50% memory reduction"
+          pattern: "df = df.astype('float32')"
+          
+        category_for_strings:
+          when: "Column has repeated string values"
+          savings: "Often 90%+ reduction"
+          pattern: "df['sector'] = df['sector'].astype('category')"
+          
+        datetime_not_string:
+          when: "Date columns"
+          pattern: "df['date'] = pd.to_datetime(df['date'])"
+          benefit: "Faster comparisons, proper sorting"
+          
+        int_downcasting:
+          when: "Integer columns with limited range"
+          pattern: "df['count'] = pd.to_numeric(df['count'], downcast='integer')"
+          
+      enforcement:
+        data_loading_template:
+          recommended: "Apply dtype optimization on load"
+
+  # ---------------------------------------------------------------------------
+  # MODEL DEVELOPMENT (MD-*)
+  # ---------------------------------------------------------------------------
+  modeling:
+    MD-01:
+      name: "Reproducibility Requirements"
+      severity: "critical"
+      description: |
+        All experiments must be fully reproducible. This requires explicit
+        random seed control, environment specification, and artifact versioning.
+        
+      requirements:
+        random_seeds:
+          pattern: |
+            import random
+            import numpy as np
+            import torch  # if applicable
+            
+            def set_seed(seed):
+                random.seed(seed)
+                np.random.seed(seed)
+                torch.manual_seed(seed)
+                if torch.cuda.is_available():
+                    torch.cuda.manual_seed_all(seed)
+                    
+          config: "experiment.config.random_seed must be set"
+          
+        environment:
+          required_files:
+            - "requirements.txt with pinned versions"
+            - "config.yaml with all hyperparameters"
+          pattern: |
+            # In config.yaml
+            environment:
+              python_version: "3.10.12"
+              requirements_hash: "sha256:abc123..."
+              
+        data_versioning:
+          required: "lineage.yaml with data source hashes"
+          pattern: |
+            # In lineage.yaml
+            data_sources:
+              features:
+                path: "data/processed/features.parquet"
+                sha256: "abc123..."
+                created_at: "2026-02-01"
+                
+      enforcement:
+        experiment_template:
+          required_fields:
+            - "random_seed"
+            - "requirements_hash"
+        pre_commit:
+          check: "config.yaml has random_seed"
+
+    MD-02:
+      name: "Interpretability Documentation"
+      severity: "medium"
+      description: |
+        Document model decisions with appropriate interpretability methods.
+        
+      requirements_by_model_type:
+        linear_models:
+          - "Coefficient table with significance"
+          - "VIF for multicollinearity"
+          
+        tree_ensembles:
+          - "Feature importance (gain or permutation)"
+          - "SHAP values for top predictions"
+          
+        neural_networks:
+          - "Attention visualization (if applicable)"
+          - "SHAP or integrated gradients"
+          - "Sample of explained predictions"
+          
+      patterns:
+        shap_example: |
+          import shap
+          
+          explainer = shap.TreeExplainer(model)
+          shap_values = explainer.shap_values(X_test)
+          
+          # Summary plot
+          shap.summary_plot(shap_values, X_test, show=False)
+          plt.savefig('reports/shap_summary.png')
+          
+      enforcement:
+        experiment_checklist:
+          item: "Interpretability analysis included in results"
+
+# =============================================================================
+# ENFORCEMENT INTEGRATION
+# =============================================================================
+enforcement:
+  pre_commit:
+    enabled: true
+    hook_path: "hooks/check_quant_practices.py"
+    practices_checked:
+      - "DH-01"
+      - "DH-03"
+      - "BT-02"
+    failure_action: "block_commit"
+    bypass: "git commit --no-verify  # Use sparingly with justification"
+    
+  code_review:
+    checklist_template: "templates/code_review_checklist.md"
+    auto_generate: true
+    practices_included: "all"
+    
+  experiment_gate:
+    gate_config: "configs/gates.yaml#experiment_completion"
+    required_checks:
+      - "BT-01: costs_configured"
+      - "BT-02: walk_forward_cv"
+      - "BT-03: mtc_if_multiple_tests"
+      - "MD-01: reproducibility"
+      
+  continuous_monitoring:
+    enabled: true
+    scan_frequency: "weekly"
+    report_path: "reports/practice_compliance.md"
+
+# =============================================================================
+# EXTENSION
+# =============================================================================
+extension:
+  add_practice:
+    process: |
+      1. Identify pattern from code review or failure analysis
+      2. Document anti-patterns and correct patterns
+      3. Add enforcement mechanism
+      4. Update code_review_checklist.md
+      5. Add to pre-commit hook if critical
+      
+    required_fields:
+      - "name"
+      - "severity: critical | high | medium | low"
+      - "description"
+      - "anti_patterns (at least 1)"
+      - "correct_patterns (at least 1)"
+      - "enforcement (at least 1 mechanism)"
+      
+  deprecate_practice:
+    process: |
+      1. Mark status: deprecated
+      2. Add deprecation_reason
+      3. Remove from enforcement after grace period
+      
+  report_violation:
+    process: |
+      1. Log via evolution_signal.py with category='practice_violation'
+      2. Include practice_id, file, line, severity
+      3. Aggregate for monthly review

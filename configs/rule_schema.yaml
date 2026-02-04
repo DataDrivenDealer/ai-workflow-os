@@ -1,0 +1,156 @@
+# Rule Schema Definition
+# Formalizes the syntax for rule inheritance, override, and parameterization
+# Version: 1.0.0
+
+$schema: "http://json-schema.org/draft-07/schema#"
+version: "1.0.0"
+
+# =============================================================================
+# RULE DEFINITION SCHEMA
+# =============================================================================
+rule_definition:
+  type: object
+  required: [id, description, priority, scope]
+  properties:
+    id:
+      type: string
+      pattern: "^[A-Z][0-9]+$"  # R1, R2, P1, E1, etc.
+      description: "Unique rule identifier with namespace prefix"
+      
+    description:
+      type: string
+      maxLength: 200
+      description: "Human-readable rule statement"
+      
+    priority:
+      type: string
+      enum: [P1, P2, P3, P4]
+      description: "Priority level (P4 highest)"
+      
+    scope:
+      type: string
+      enum: [kernel, project, experiment]
+      description: "Layer at which rule is defined"
+      
+    parameters:
+      type: object
+      description: "Parameterized values that can be overridden"
+      additionalProperties:
+        type: object
+        properties:
+          default: {}
+          type: {type: string}
+          constraints: {type: object}
+          
+    verification:
+      type: object
+      properties:
+        method:
+          type: string
+          enum: [auto_script, manual_review, runtime_check]
+        script:
+          type: string
+        frequency:
+          type: string
+          enum: [pre_execution, post_execution, continuous]
+          
+    violation_examples:
+      type: array
+      items:
+        type: string
+      description: "Examples of rule violations for clarity"
+
+# =============================================================================
+# RULE INHERITANCE SCHEMA
+# =============================================================================
+rule_inheritance:
+  type: object
+  required: [source_rule, inheritance_type]
+  properties:
+    source_rule:
+      type: string
+      pattern: "^[A-Z][0-9]+$"
+      
+    inheritance_type:
+      type: string
+      enum: [full, partial, override]
+      
+    # For partial inheritance
+    included_aspects:
+      type: array
+      items:
+        type: string
+        enum: [description, priority, parameters, verification]
+        
+    # For override
+    overridden_values:
+      type: object
+      properties:
+        description: {type: string}
+        priority: {type: string}
+        parameters: {type: object}
+        
+    rationale:
+      type: string
+      description: "Justification for non-full inheritance"
+
+# =============================================================================
+# RULE CONFLICT DETECTION
+# =============================================================================
+conflict_detection:
+  rules:
+    - id: "CD1"
+      description: "Same-scope rules cannot have contradictory requirements"
+      detection_logic: |
+        For rules R_a and R_b in same scope:
+        if R_a.requirements ∩ R_b.prohibitions ≠ ∅:
+          raise Conflict(R_a, R_b, "requirement-prohibition overlap")
+          
+    - id: "CD2"
+      description: "Lower-scope override cannot weaken higher-scope security rules"
+      detection_logic: |
+        For rule R_child inheriting from R_parent:
+        if R_parent.priority == P4 and R_child.overrides.priority in [P1, P2, P3]:
+          raise Conflict(R_child, R_parent, "security downgrade")
+          
+    - id: "CD3"
+      description: "Parameterized rules must have compatible types across scopes"
+      detection_logic: |
+        For parameter P in R_parent and R_child:
+        if typeof(R_child.P) != typeof(R_parent.P):
+          raise Conflict(R_child, R_parent, f"type mismatch for {P}")
+
+# =============================================================================
+# EXAMPLE: PARAMETERIZED RULE
+# =============================================================================
+examples:
+  parameterized_rule:
+    id: "R2"
+    description: "One task at a time per {scope_unit}"
+    priority: P2
+    scope: kernel
+    parameters:
+      scope_unit:
+        default: "agent"
+        type: string
+        constraints:
+          enum: [agent, project, global]
+      max_concurrent:
+        default: 1
+        type: integer
+        constraints:
+          minimum: 1
+          maximum: 10
+    verification:
+      method: runtime_check
+      script: "scripts/check_wip_limit.py"
+      frequency: continuous
+
+  project_override:
+    source_rule: "R2"
+    inheritance_type: override
+    overridden_values:
+      parameters:
+        scope_unit: "agent_project_pair"
+        max_concurrent: 3
+    rationale: "Institutional deployment with multiple agents per project"

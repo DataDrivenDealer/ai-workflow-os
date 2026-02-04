@@ -1,0 +1,367 @@
+# Quant Knowledge Base (QKB)
+# Version: 1.0.0
+# Part of AEP-10: Institutional Quantitative Research Evolution
+#
+# Purpose: Systematic tracking and integration of quantitative finance research frontiers.
+# This configuration enables the AI Workflow OS to provide current, evidence-based
+# guidance on quantitative research methodology.
+
+version: "1.0.0"
+created: "2026-02-04"
+status: "active"
+
+# =============================================================================
+# KNOWLEDGE DOMAINS
+# =============================================================================
+knowledge_domains:
+  # ---------------------------------------------------------------------------
+  # FACTOR RESEARCH
+  # ---------------------------------------------------------------------------
+  factor_research:
+    description: "Factor zoo, risk premia, anomalies, asset pricing"
+    
+    key_sources:
+      academic:
+        - name: "Journal of Finance"
+          url: "https://onlinelibrary.wiley.com/journal/15406261"
+          tracking: "toc_alerts"
+          relevance: "core"
+          
+        - name: "Journal of Financial Economics"
+          url: "https://www.sciencedirect.com/journal/journal-of-financial-economics"
+          tracking: "toc_alerts"
+          relevance: "core"
+          
+        - name: "Review of Financial Studies"
+          url: "https://academic.oup.com/rfs"
+          tracking: "toc_alerts"
+          relevance: "core"
+          
+      preprint:
+        - name: "SSRN Finance"
+          url: "https://www.ssrn.com/index.cfm/en/fin/"
+          tracking: "keyword_monitor"
+          keywords: ["factor", "anomaly", "risk premium", "SDF", "cross-section"]
+          
+        - name: "arXiv q-fin"
+          url: "https://arxiv.org/list/q-fin/new"
+          tracking: "daily_scan"
+          
+      practitioner:
+        - name: "AQR Research"
+          url: "https://www.aqr.com/Insights/Research"
+          tracking: "quarterly_review"
+          
+        - name: "Two Sigma Research"
+          tracking: "quarterly_review"
+          
+        - name: "Man Group Research"
+          tracking: "quarterly_review"
+    
+    current_consensus:
+      factor_replication_crisis:
+        status: "ongoing"
+        key_insight: |
+          Most published anomalies fail to replicate out-of-sample.
+          Use stringent t-statistics (t > 3.0) for new factor discoveries.
+        implications:
+          - "Apply skeptical priors to single-paper findings"
+          - "Require replication with alternative methods"
+          - "Adjust for multiple testing (see BT-03)"
+        last_updated: "2026-01"
+        key_references:
+          - citation: "Harvey, Liu, Zhu (2016) ...and the Cross-Section of Expected Returns"
+            doi: "10.1093/rfs/hhv059"
+          - citation: "Hou, Xue, Zhang (2020) Replicating Anomalies"
+            doi: "10.1093/rfs/hhy131"
+          - citation: "Jensen, Kelly, Pedersen (2023) Is There a Replication Crisis in Finance?"
+            doi: "10.1111/jofi.13249"
+      
+      machine_learning_in_asset_pricing:
+        status: "maturing"
+        key_insight: |
+          ML methods can capture non-linear relationships in cross-sectional returns,
+          but require careful cross-validation to avoid overfitting.
+        implications:
+          - "Use purged K-fold or walk-forward validation"
+          - "Ensemble methods (RF, GBDT) often outperform neural networks"
+          - "Interpretability via SHAP or permutation importance"
+        last_updated: "2026-01"
+        key_references:
+          - citation: "Gu, Kelly, Xiu (2020) Empirical Asset Pricing via Machine Learning"
+            doi: "10.1093/rfs/hhaa009"
+          - citation: "Avramov, Cheng, Metzker (2023) Machine Learning vs Economic Restrictions"
+            doi: "10.1287/mnsc.2022.4449"
+      
+      factor_momentum:
+        status: "established"
+        key_insight: |
+          Factors themselves exhibit momentum: recent outperformers tend to continue.
+        implications:
+          - "Consider dynamic factor allocation"
+          - "Factor timing has out-of-sample validity"
+        last_updated: "2025-06"
+        key_references:
+          - citation: "Arnott et al (2019) Factor Momentum"
+            doi: "10.3905/jpm.2019.1.085"
+    
+    methodology_standards:
+      portfolio_sorts:
+        current_best_practice: "Double-sorted with controls, or Fama-MacBeth with characteristics"
+        avoid: "Single-sorted without controls"
+        rationale: "Omitted variable bias in single sorts"
+        reference: "Fama-French (1993, 2015)"
+        
+      cross_sectional_regression:
+        current_best_practice: "Fama-MacBeth with Newey-West standard errors"
+        avoid: "Pooled OLS without clustering"
+        rationale: "Cross-sectional and time-series correlation in errors"
+        
+      out_of_sample_testing:
+        current_best_practice: "Purged walk-forward with embargo period"
+        avoid: "Simple train-test split with shuffling"
+        rationale: "Temporal leakage in financial time series"
+        reference: "de Prado (2018) AFML"
+        
+      multiple_testing:
+        current_best_practice: "Bonferroni or Benjamini-Hochberg, report both"
+        advanced: "Romano-Wolf stepdown for correlated tests"
+        avoid: "Reporting uncorrected p-values for multiple factors"
+        reference: "Harvey, Liu, Zhu (2016)"
+
+  # ---------------------------------------------------------------------------
+  # STATISTICAL METHODS
+  # ---------------------------------------------------------------------------
+  statistical_methods:
+    description: "Statistical testing, inference, econometrics for finance"
+    
+    current_consensus:
+      multiple_testing_correction:
+        status: "mandatory"
+        methods:
+          bonferroni:
+            use_when: "Small number of tests, want strict control"
+            formula: "adjusted_alpha = alpha / num_tests"
+            
+          benjamini_hochberg:
+            use_when: "Large number of tests, accept some false positives"
+            controls: "False Discovery Rate (FDR)"
+            
+          romano_wolf:
+            use_when: "Correlated test statistics"
+            advantage: "Accounts for correlation structure"
+            
+        implementation: "Always report adjusted p-values alongside raw"
+        
+      bootstrap_methods:
+        status: "established"
+        for_time_series:
+          preferred: "Stationary bootstrap (Politis-Romano)"
+          alternative: "Block bootstrap with optimal block length"
+          avoid: "IID bootstrap (destroys temporal structure)"
+          
+        for_panel_data:
+          preferred: "Cluster bootstrap by time"
+          alternative: "Double cluster (time + entity)"
+          
+      standard_error_estimation:
+        status: "established"
+        cross_sectional:
+          preferred: "Fama-MacBeth with Newey-West adjustment"
+          lags: "Auto-select via Newey-West or Andrews"
+          
+        panel_data:
+          preferred: "Double-clustered (firm + time)"
+          reference: "Petersen (2009)"
+          
+      distributional_assumptions:
+        status: "important"
+        fat_tails:
+          insight: "Financial returns have fatter tails than normal"
+          implications:
+            - "Use robust statistics (median, IQR)"
+            - "Consider t-distribution for modeling"
+            - "Stress test at extreme quantiles"
+
+  # ---------------------------------------------------------------------------
+  # MACHINE LEARNING IN FINANCE
+  # ---------------------------------------------------------------------------
+  ml_in_finance:
+    description: "Machine learning methods for alpha, risk, and execution"
+    
+    current_consensus:
+      tree_ensembles:
+        status: "proven"
+        methods: ["Random Forest", "XGBoost", "LightGBM", "CatBoost"]
+        strengths:
+          - "Handle non-linearity"
+          - "Robust to outliers"
+          - "Feature importance built-in"
+        caveats:
+          - "Prone to overfit without proper CV"
+          - "Hyperparameter sensitive"
+        best_practices:
+          - "Use purged K-fold for validation"
+          - "Early stopping on validation set"
+          - "Ensemble multiple random seeds"
+          
+      deep_learning:
+        status: "emerging"
+        use_cases:
+          - "High-dimensional feature spaces"
+          - "Sequential data (LSTM, Transformer)"
+          - "Alternative data (images, text)"
+        caveats:
+          - "Large sample size requirements"
+          - "Difficult interpretability"
+          - "Hyperparameter sensitivity"
+        best_practices:
+          - "Start with simpler models as baseline"
+          - "Use attention visualization for interpretability"
+          - "Regularize aggressively (dropout, weight decay)"
+          
+      transformers:
+        status: "experimental"
+        applications:
+          - "NLP for sentiment/news"
+          - "Sequence modeling for returns"
+          - "Cross-sectional attention"
+        caveats:
+          - "Computational cost"
+          - "Data hunger"
+          - "Limited finance-specific pre-training"
+          
+      reinforcement_learning:
+        status: "experimental"
+        applications:
+          - "Execution optimization"
+          - "Portfolio construction"
+          - "Market making"
+        caveats:
+          - "Sample efficiency issues"
+          - "Non-stationarity of financial markets"
+          - "Reward shaping challenges"
+
+  # ---------------------------------------------------------------------------
+  # BACKTESTING METHODOLOGY
+  # ---------------------------------------------------------------------------
+  backtesting:
+    description: "Backtesting standards, pitfalls, and best practices"
+    
+    current_consensus:
+      lookahead_bias:
+        status: "critical"
+        description: "Using information not available at decision time"
+        common_sources:
+          - "Point-in-time data errors"
+          - "Filling missing values with full-sample statistics"
+          - "Adjustments published after the fact"
+        prevention:
+          - "Use point-in-time databases (Compustat PIT, WRDS)"
+          - "Fill forward only"
+          - "Verify data timestamps"
+          
+      survivorship_bias:
+        status: "critical"
+        description: "Testing only on currently existing securities"
+        impact: "Overestimates returns by ~1-2% annually for stocks"
+        prevention:
+          - "Include delisted securities"
+          - "Use historical index constituents"
+          - "Handle delistings with realistic returns"
+          
+      transaction_costs:
+        status: "important"
+        components:
+          - "Commission: ~1-5 bps (institutional)"
+          - "Spread: 5-50 bps depending on liquidity"
+          - "Market impact: Square root model for large orders"
+        best_practice:
+          - "Model all components explicitly"
+          - "Vary cost assumptions in sensitivity analysis"
+          - "Use higher estimates for less liquid securities"
+          
+      overfitting:
+        status: "critical"
+        description: "Model fits noise rather than signal"
+        detection:
+          - "Large gap between IS and OOS performance"
+          - "Sensitivity to small parameter changes"
+          - "Failure in different time periods"
+        prevention:
+          - "Limit degrees of freedom"
+          - "Use walk-forward validation"
+          - "Report multiple testing adjusted significance"
+
+# =============================================================================
+# REFRESH PROTOCOL
+# =============================================================================
+refresh_protocol:
+  daily:
+    - source: "arxiv.org/list/q-fin/new"
+      action: "Scan titles, flag relevant papers"
+      automation: "keyword_filter"
+      
+  weekly:
+    - action: "Review flagged papers"
+    - action: "Update review_queue with promising papers"
+    - action: "Check SSRN top downloads in finance"
+    
+  monthly:
+    - action: "Review accumulated papers in depth"
+    - action: "Update current_consensus if warranted"
+    - action: "Propose methodology updates via /dgsf_spec_propose"
+    - action: "Update code_practice_registry if new best practices identified"
+    
+  quarterly:
+    - action: "Produce research_summary for each domain"
+    - action: "Review practitioner publications"
+    - action: "Assess if project thresholds need adjustment"
+    - action: "Update key_references with significant new papers"
+    
+  annual:
+    - action: "Major review of all domains"
+    - action: "Assess which consensus items may be outdated"
+    - action: "Plan knowledge acquisition for emerging areas"
+
+# =============================================================================
+# INTEGRATION
+# =============================================================================
+integration:
+  skill_triggers:
+    - skill: "/dgsf_research"
+      action: "Consult QKB for relevant domain knowledge"
+      
+    - skill: "/dgsf_knowledge_sync"
+      action: "Update QKB from recent sources"
+      
+  auto_triggers:
+    - pattern: "User asks about best practice for *"
+      action: "Lookup relevant QKB domain and cite current_consensus"
+      
+    - pattern: "New methodology proposed"
+      action: "Validate against QKB methodology_standards"
+      
+    - pattern: "Factor discovery claim"
+      action: "Apply factor_replication_crisis skepticism"
+
+# =============================================================================
+# EXTENSION POINTS
+# =============================================================================
+extension:
+  add_domain:
+    process: "Create new domain section following existing structure"
+    required_fields:
+      - "description"
+      - "key_sources"
+      - "current_consensus (at least 2 items)"
+      
+  add_reference:
+    process: "Add to key_references under relevant consensus item"
+    required_fields:
+      - "citation"
+      - "doi or url"
+      
+  challenge_consensus:
+    process: "Via /dgsf_spec_propose with evidence"
+    required: "At least 2 supporting papers"

@@ -1,0 +1,356 @@
+# Strategic Debt Ledger (SDL)
+# Version: 1.0.0
+# Part of AEP-10: Institutional Quantitative Research Evolution
+#
+# Purpose: Track technical and research debt systematically with explicit
+# cost/benefit analysis and prioritized remediation paths.
+
+version: "1.0.0"
+created: "2026-02-04"
+status: "active"
+last_reviewed: "2026-02-04"
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+config:
+  review_cadence: "weekly"
+  sprint_allocation: 0.20  # 20% of capacity for debt remediation
+  priority_formula: |
+    priority_score = (
+      0.4 * impact_score +
+      0.3 * interest_rate_score +
+      0.3 * (1 - effort_normalized)
+    )
+  
+  interest_rates:
+    critical: 1.0  # Actively causing problems
+    high: 0.8      # Getting worse over time
+    medium: 0.5    # Stable but dragging
+    low: 0.2       # Minor inconvenience
+    
+  effort_scale:
+    trivial: 0.5   # < 0.5 day
+    small: 1       # 0.5-1 day
+    medium: 3      # 1-3 days
+    large: 5       # 3-5 days
+    major: 10      # 5-10 days
+    epic: 20       # > 10 days
+
+# =============================================================================
+# DEBT CATEGORIES
+# =============================================================================
+categories:
+  technical_debt:
+    code_quality:
+      description: "Deferred refactoring, duplication, complexity"
+      impact_metrics:
+        - maintenance_cost
+        - bug_rate
+        - onboarding_time
+        
+    test_coverage:
+      description: "Missing tests, brittle tests, slow tests"
+      impact_metrics:
+        - confidence
+        - deployment_risk
+        - iteration_speed
+        
+    infrastructure:
+      description: "Manual processes, missing automation"
+      impact_metrics:
+        - operational_cost
+        - error_rate
+        - scalability
+        
+    documentation:
+      description: "Missing or outdated documentation"
+      impact_metrics:
+        - onboarding_time
+        - knowledge_transfer
+        - audit_readiness
+        
+  research_debt:
+    methodology_debt:
+      description: "Using outdated statistical methods"
+      impact_metrics:
+        - false_discovery_risk
+        - replication_probability
+        
+    replication_debt:
+      description: "Results not yet replicated with alternative methods"
+      impact_metrics:
+        - confidence
+        - robustness
+        
+    validation_debt:
+      description: "Missing robustness checks"
+      impact_metrics:
+        - production_risk
+        - overfitting_risk
+        
+  evolutionary_debt:
+    spec_drift:
+      description: "Implementation diverged from specification"
+      impact_metrics:
+        - governance_integrity
+        - predictability
+        
+    knowledge_decay:
+      description: "Institutional knowledge not captured"
+      impact_metrics:
+        - onboarding_cost
+        - repeated_mistakes
+
+# =============================================================================
+# CURRENT LEDGER
+# =============================================================================
+ledger:
+  # ---------------------------------------------------------------------------
+  # TECHNICAL DEBT
+  # ---------------------------------------------------------------------------
+  - debt_id: "TD-001"
+    category: "technical_debt.code_quality"
+    title: "Backtest engine high cyclomatic complexity"
+    created: "2026-01-15"
+    status: "open"
+    
+    description: |
+      The backtest engine module has cyclomatic complexity > 20 in main function.
+      This makes it hard to modify, test, and understand.
+    
+    location: "projects/dgsf/repo/src/dgsf/backtest/engine.py"
+    
+    symptoms:
+      - "3 bugs in last month related to this module"
+      - "New developers take 2+ days to understand"
+      - "Unit tests are brittle and slow"
+    
+    interest_rate: "high"
+    interest_rationale: "Each new strategy type increases complexity further"
+    
+    impact:
+      maintenance_cost: 0.8
+      bug_rate: 0.7
+      onboarding_time: 0.6
+    
+    remediation:
+      description: |
+        1. Extract strategy execution into StrategyRunner class
+        2. Create position sizing module
+        3. Separate cost calculation
+        4. Add integration tests for each component
+      effort_days: 3
+      risk: "low"
+      dependencies: []
+    
+    priority_score: 0.85
+    
+  - debt_id: "TD-002"
+    category: "technical_debt.test_coverage"
+    title: "Feature pipeline lacks unit tests"
+    created: "2026-01-18"
+    status: "open"
+    
+    description: |
+      Feature engineering pipeline has minimal test coverage (~30%).
+      Changes are risky because bugs may go undetected.
+    
+    location: "projects/dgsf/repo/src/dgsf/features/"
+    
+    interest_rate: "medium"
+    
+    impact:
+      confidence: 0.6
+      deployment_risk: 0.7
+    
+    remediation:
+      description: "Add pytest fixtures and test each feature function"
+      effort_days: 2
+      risk: "low"
+    
+    priority_score: 0.72
+
+  # ---------------------------------------------------------------------------
+  # RESEARCH DEBT
+  # ---------------------------------------------------------------------------
+  - debt_id: "RD-001"
+    category: "research_debt.methodology_debt"
+    title: "Early experiments use simple train-test split"
+    created: "2026-01-20"
+    status: "open"
+    
+    description: |
+      Experiments t01, t02, t03 used simple train_test_split without
+      purged walk-forward validation. Results may be overstated.
+    
+    affected_experiments:
+      - "t01_baseline"
+      - "t02_simple"
+      - "t03_features"
+    
+    interest_rate: "medium"
+    interest_rationale: "These are baseline experiments that others build upon"
+    
+    impact:
+      false_discovery_risk: 0.8
+      replication_probability: 0.7
+    
+    remediation:
+      description: |
+        1. Re-run experiments with PurgedKFold
+        2. Update results.json with new metrics
+        3. Adjust conclusions if significant change
+      effort_days: 2
+      risk: "medium"  # May invalidate some findings
+      dependencies: []
+    
+    priority_score: 0.82
+
+  - debt_id: "RD-002"
+    category: "research_debt.methodology_debt"
+    title: "MTC not applied to factor discovery experiments"
+    created: "2026-01-22"
+    status: "open"
+    
+    description: |
+      Factor discovery experiments (t04-t06) tested multiple factors
+      but did not apply Bonferroni or BH correction to significance.
+    
+    affected_experiments:
+      - "t04_factor_discovery"
+      - "t05_factor_momentum"
+      - "t06_factor_value"
+    
+    interest_rate: "high"
+    interest_rationale: "These experiments inform current strategy development"
+    
+    impact:
+      false_discovery_risk: 0.9
+      replication_probability: 0.8
+    
+    remediation:
+      description: |
+        1. Apply Bonferroni correction retroactively
+        2. Update p-values and conclusions
+        3. Flag any factors that no longer pass
+      effort_days: 1
+      risk: "high"  # Some factors may be invalidated
+    
+    priority_score: 0.90
+
+  - debt_id: "RD-003"
+    category: "research_debt.validation_debt"
+    title: "Production strategies lack robustness battery"
+    created: "2026-01-25"
+    status: "open"
+    
+    description: |
+      Strategies marked as production-ready have not been run through
+      the full robustness battery defined in RPA.
+    
+    affected_experiments:
+      - "t10_production_v1"
+    
+    interest_rate: "critical"
+    interest_rationale: "Production capital at risk"
+    
+    remediation:
+      description: "Run ROBUSTNESS_BATTERY protocol from RPA"
+      effort_days: 2
+      risk: "medium"
+    
+    priority_score: 0.95
+
+  # ---------------------------------------------------------------------------
+  # EVOLUTIONARY DEBT
+  # ---------------------------------------------------------------------------
+  - debt_id: "ED-001"
+    category: "evolutionary_debt.knowledge_decay"
+    title: "Decision rationale for threshold choices not documented"
+    created: "2026-01-28"
+    status: "open"
+    
+    description: |
+      Several key thresholds (OOS Sharpe 1.5, turnover 200%) were set
+      but the rationale and alternatives considered are not in IMG.
+    
+    interest_rate: "medium"
+    
+    remediation:
+      description: |
+        1. Interview team about original decisions
+        2. Document in IMG via /dgsf_decision_log
+        3. Link to supporting evidence
+      effort_days: 0.5
+    
+    priority_score: 0.65
+
+# =============================================================================
+# REMEDIATED (HISTORICAL)
+# =============================================================================
+remediated:
+  - debt_id: "TD-000"
+    category: "technical_debt.code_quality"
+    title: "Data loader mixed concerns"
+    original_priority: 0.78
+    remediated_date: "2026-01-30"
+    effort_actual: 1.5
+    effort_estimated: 2
+    outcome: "Separated data loading and validation, 40% faster"
+    lessons: "Smaller scope than estimated, could have done earlier"
+
+# =============================================================================
+# TRENDS
+# =============================================================================
+trends:
+  history:
+    - date: "2026-01-01"
+      technical: 3
+      research: 2
+      evolutionary: 1
+      
+    - date: "2026-01-15"
+      technical: 4
+      research: 3
+      evolutionary: 1
+      
+    - date: "2026-02-01"
+      technical: 3  # 1 remediated
+      research: 4
+      evolutionary: 2
+      
+  observations:
+    - "Research debt growing faster than remediation rate"
+    - "Technical debt stable due to consistent remediation"
+    - "Evolutionary debt emerging as new category"
+    
+  recommendations:
+    - "Increase research debt allocation in next sprint"
+    - "Add IMG capture to standard workflow to prevent ED"
+
+# =============================================================================
+# INTEGRATION
+# =============================================================================
+integration:
+  sprint_planning:
+    action: "Select top priority items for 20% allocation"
+    criteria: "priority_score desc"
+    max_items: 3
+    
+  evolution_signals:
+    on_new_debt:
+      signal_type: "debt_accumulated"
+      fields: ["debt_id", "category", "priority_score"]
+      
+    on_remediation:
+      signal_type: "debt_remediated"
+      fields: ["debt_id", "effort_actual", "outcome"]
+      
+  reporting:
+    weekly_dashboard: "reports/debt_dashboard.md"
+    metrics:
+      - "Total items by category"
+      - "Average age of open items"
+      - "Remediation velocity"
+      - "Interest accumulation trend"

@@ -1,0 +1,443 @@
+# Meta-Evolution Monitoring Configuration
+# Version: 1.0.0
+# Part of AEP-9: Organizational Evolution Architecture
+# 
+# This configuration defines the self-referential monitoring system
+# that tracks the effectiveness of the evolution system itself.
+
+version: "1.0.0"
+created: "2026-02-04"
+status: "active"
+
+# =============================================================================
+# OVERVIEW
+# =============================================================================
+overview:
+  purpose: |
+    Meta-evolution monitoring addresses the self-referential measurement problem:
+    How do we know if the evolution system is working well, when the evolution
+    system's success could create blind spots in our ability to detect problems?
+    
+  key_capabilities:
+    - "Blind spot detection for uncovered code paths"
+    - "Evolution effectiveness measurement"
+    - "Confidence scoring for proposals"
+    - "Regression tracking for applied changes"
+    - "Cross-project pattern recognition"
+    
+  metrics_philosophy: |
+    We measure the evolution system at multiple levels:
+    1. Signal Level: Are we detecting friction where it exists?
+    2. Process Level: Are signals being addressed efficiently?
+    3. Outcome Level: Do applied evolutions improve the system?
+    4. Meta Level: Is our measurement system itself healthy?
+
+# =============================================================================
+# CORE METRICS
+# =============================================================================
+metrics:
+  # ---------------------------------------------------------------------------
+  # SIGNAL QUALITY METRICS
+  # ---------------------------------------------------------------------------
+  signal_quality:
+    signal_coverage:
+      id: "SQ-01"
+      description: "Percentage of code modules with signal instrumentation"
+      calculation: "modules_with_signals / total_modules"
+      target: 0.8
+      warning: 0.6
+      critical: 0.4
+      measurement_frequency: "weekly"
+      data_source: "scripts/measure_signal_coverage.py"
+      
+    signal_precision:
+      id: "SQ-02"
+      description: "Percentage of signals that lead to actionable changes"
+      calculation: "count(status='actioned') / count(status in ['actioned', 'dismissed'])"
+      target: 0.5
+      warning: 0.3
+      critical: 0.2
+      measurement_frequency: "monthly"
+      data_source: "evolution_signals aggregation"
+      
+    signal_freshness:
+      id: "SQ-03"
+      description: "Average age of unprocessed signals"
+      calculation: "avg(now - created_at) for signals where status='new'"
+      target_days: 7
+      warning_days: 14
+      critical_days: 30
+      measurement_frequency: "daily"
+      
+    signal_distribution:
+      id: "SQ-04"
+      description: "Entropy of signal types (higher = better coverage)"
+      calculation: "shannon_entropy(signal_type_counts)"
+      target: 0.7  # Normalized 0-1
+      warning: 0.5
+      critical: 0.3
+      rationale: "Low entropy means signals concentrated in few areas = blind spots elsewhere"
+
+  # ---------------------------------------------------------------------------
+  # PROCESS EFFICIENCY METRICS
+  # ---------------------------------------------------------------------------
+  process_efficiency:
+    signal_to_action_time:
+      id: "PE-01"
+      description: "Average time from signal creation to action"
+      calculation: "avg(actioned_at - created_at) for status='actioned'"
+      target_days: 14
+      warning_days: 21
+      critical_days: 30
+      measurement_frequency: "weekly"
+      
+    aggregation_efficiency:
+      id: "PE-02"
+      description: "Signals successfully grouped into actionable clusters"
+      calculation: "clusters_formed / expected_clusters"
+      target: 0.8
+      warning: 0.6
+      measurement_frequency: "monthly"
+      
+    review_throughput:
+      id: "PE-03"
+      description: "Signals reviewed per week"
+      calculation: "count(reviewed_this_week)"
+      target: 10
+      warning: 5
+      critical: 2
+      measurement_frequency: "weekly"
+
+  # ---------------------------------------------------------------------------
+  # OUTCOME QUALITY METRICS
+  # ---------------------------------------------------------------------------
+  outcome_quality:
+    evolution_success_rate:
+      id: "OQ-01"
+      description: "Evolutions that achieved target outcomes within 30 days"
+      calculation: "count(success) / count(applied)"
+      target: 0.7
+      warning: 0.5
+      critical: 0.3
+      measurement_frequency: "monthly"
+      
+    regression_rate:
+      id: "OQ-02"
+      description: "Evolutions rolled back or causing new problems"
+      calculation: "count(rolled_back OR caused_new_friction) / count(applied)"
+      target: 0.1
+      warning: 0.2
+      critical: 0.3
+      measurement_frequency: "monthly"
+      
+    friction_reduction_rate:
+      id: "OQ-03"
+      description: "Reduction in same-type friction after evolution"
+      calculation: "1 - (friction_after / friction_before)"
+      target: 0.3
+      warning: 0.1
+      critical: 0  # No improvement
+      measurement_frequency: "per_evolution"
+
+  # ---------------------------------------------------------------------------
+  # META METRICS (Measuring the Measurement)
+  # ---------------------------------------------------------------------------
+  meta_metrics:
+    blind_spot_proxy:
+      id: "MM-01"
+      description: "Code changes without corresponding signals (potential blind spots)"
+      calculation: "high_change_low_signal_modules / total_modules"
+      target: 0.2
+      warning: 0.3
+      critical: 0.5
+      measurement_frequency: "weekly"
+      
+    metric_reliability:
+      id: "MM-02"
+      description: "Consistency of metric collection (no missing data)"
+      calculation: "collected_measurements / expected_measurements"
+      target: 0.99
+      warning: 0.95
+      critical: 0.9
+      measurement_frequency: "daily"
+      
+    self_signal_rate:
+      id: "MM-03"
+      description: "Evolution signals about the evolution system itself"
+      calculation: "count(signals about evolution_system) / count(all_signals)"
+      target_range: [0.05, 0.15]  # Too low = blind spot, too high = noise
+      measurement_frequency: "monthly"
+      rationale: "Some self-signals expected; too many indicates instability"
+
+# =============================================================================
+# BLIND SPOT DETECTION
+# =============================================================================
+blind_spot_detection:
+  enabled: true
+  
+  detection_methods:
+    change_signal_correlation:
+      description: "Detect modules with high change frequency but low signal rate"
+      algorithm: |
+        For each module:
+          change_rate = commits_per_week
+          signal_rate = signals_per_week
+          if change_rate > threshold AND signal_rate < threshold:
+            flag_as_potential_blind_spot
+      thresholds:
+        high_change: 2  # commits per week
+        low_signal: 0.5  # signals per week
+      action: "flag_for_review"
+      
+    cold_zone_detection:
+      description: "Detect modules with no recent signals"
+      algorithm: |
+        For each module:
+          last_signal = max(signal.created_at)
+          if now - last_signal > cold_threshold:
+            flag_as_cold_zone
+      cold_threshold_days: 30
+      action: "schedule_manual_review"
+      
+    new_code_monitoring:
+      description: "Track new code paths for initial signal generation"
+      algorithm: |
+        When new module added:
+          add_to_monitoring_queue
+          wait monitoring_window
+          if no_signals_generated:
+            flag_as_potential_blind_spot
+      monitoring_window_days: 7
+      action: "alert_and_review"
+  
+  reporting:
+    output_path: "reports/blind_spots_{date}.md"
+    frequency: "weekly"
+    include:
+      - blind_spot_candidates
+      - cold_zones
+      - new_code_without_signals
+      - trend_analysis
+
+# =============================================================================
+# CONFIDENCE SCORING
+# =============================================================================
+confidence_scoring:
+  enabled: true
+  
+  factors:
+    signal_count:
+      weight: 0.25
+      scoring:
+        1: 0.2
+        2: 0.4
+        3: 0.6
+        5: 0.8
+        10: 1.0
+      interpolation: "linear"
+      
+    signal_consistency:
+      weight: 0.20
+      description: "Same signal type from different contexts"
+      scoring:
+        single_context: 0.3
+        two_contexts: 0.6
+        three_plus_contexts: 1.0
+        
+    historical_success:
+      weight: 0.25
+      description: "Success rate of similar past evolutions"
+      scoring:
+        no_history: 0.5  # Neutral
+        low_success: 0.3
+        medium_success: 0.6
+        high_success: 0.9
+      similarity_metric: "signal_type + affected_component"
+      
+    scope_risk:
+      weight: 0.15
+      description: "Lower confidence for higher-impact changes"
+      scoring:
+        experiment_scope: 1.0
+        project_scope: 0.8
+        adapter_scope: 0.6
+        kernel_scope: 0.4
+        canon_scope: 0.2
+        
+    recency:
+      weight: 0.15
+      description: "More recent signals have higher weight"
+      decay_rate: 0.95  # Per week
+      
+  thresholds:
+    very_high: 0.85
+    high: 0.65
+    medium: 0.45
+    low: 0.25
+    
+  actions_by_confidence:
+    very_high:
+      action: "auto_propose_with_minimal_review"
+      human_involvement: "notification_only"
+      fast_track_eligible: true
+      
+    high:
+      action: "queue_for_expedited_review"
+      human_involvement: "light_review"
+      fast_track_eligible: true
+      
+    medium:
+      action: "queue_for_standard_review"
+      human_involvement: "full_review"
+      fast_track_eligible: false
+      
+    low:
+      action: "aggregate_only"
+      human_involvement: "none_until_confidence_increases"
+      fast_track_eligible: false
+
+# =============================================================================
+# FAST-TRACK EVOLUTION
+# =============================================================================
+fast_track:
+  enabled: true
+  
+  eligibility:
+    confidence_threshold: 0.65  # High or very high confidence
+    
+    allowed_scopes:
+      - "threshold_adjustment"
+      - "parameter_tuning"
+      - "documentation_update"
+      - "cosmetic_rule_change"
+      
+    excluded_scopes:
+      - "canon_modification"
+      - "authority_change"
+      - "data_protection_change"
+      - "kernel_rule_addition"
+  
+  protocol:
+    test_window_days: 7
+    
+    rollback_triggers:
+      - metric: "regression_rate"
+        condition: "> 0.05"
+        action: "immediate_rollback"
+        
+      - metric: "new_friction_count"
+        condition: "> 3"
+        action: "pause_and_review"
+        
+      - metric: "affected_task_failure_rate"
+        condition: "> 0.1"
+        action: "immediate_rollback"
+    
+    graduation_criteria:
+      observations_required: 50
+      success_rate_required: 0.95
+      no_rollback_triggers: true
+    
+    on_graduation:
+      - "mark_evolution_verified"
+      - "update_evolution_policy"
+      - "generate_success_report"
+
+# =============================================================================
+# CROSS-PROJECT PATTERNS
+# =============================================================================
+cross_project_patterns:
+  enabled: true
+  requires: "organization_layer"
+  
+  detection:
+    same_friction_across_projects:
+      description: "Same rule friction in multiple projects"
+      threshold: 2  # projects
+      action: "elevate_to_kernel_review"
+      
+    correlated_failures:
+      description: "Failures in one project predict failures in another"
+      correlation_threshold: 0.7
+      action: "investigate_shared_cause"
+      
+    skill_gap_pattern:
+      description: "Same missing skill requested across projects"
+      threshold: 2
+      action: "propose_kernel_skill_addition"
+
+# =============================================================================
+# DASHBOARDS & REPORTING
+# =============================================================================
+reporting:
+  dashboards:
+    evolution_health:
+      path: "reports/evolution_health_{date}.md"
+      frequency: "daily"
+      sections:
+        - signal_quality_summary
+        - process_efficiency_summary
+        - recent_evolutions
+        - blind_spot_alerts
+        
+    meta_evolution_health:
+      path: "reports/meta_evolution_health_{date}.md"
+      frequency: "weekly"
+      sections:
+        - meta_metrics_summary
+        - blind_spot_analysis
+        - confidence_score_distribution
+        - trend_analysis
+        
+    cmm_progress:
+      path: "reports/cmm_progress_{date}.md"
+      frequency: "monthly"
+      sections:
+        - current_level_assessment
+        - dimension_breakdown
+        - progression_blockers
+        - roadmap_status
+  
+  alerts:
+    channels:
+      - type: "log"
+        path: "state/evolution_alerts.log"
+      - type: "report"
+        path: "reports/evolution_alerts_{date}.md"
+    
+    severity_thresholds:
+      critical:
+        - "blind_spot_proxy > 0.5"
+        - "regression_rate > 0.3"
+        - "metric_reliability < 0.9"
+      warning:
+        - "signal_to_action_time > 21 days"
+        - "evolution_success_rate < 0.5"
+        - "signal_coverage < 0.6"
+
+# =============================================================================
+# IMPLEMENTATION STATUS
+# =============================================================================
+implementation:
+  status: "specification_complete"
+  
+  components:
+    metrics_collection:
+      status: "partial"
+      implemented: ["signal_collection", "basic_aggregation"]
+      todo: ["blind_spot_detection", "cross_project_correlation"]
+      
+    confidence_scoring:
+      status: "designed"
+      implemented: []
+      todo: ["scoring_algorithm", "threshold_tuning", "integration"]
+      
+    fast_track:
+      status: "designed"
+      implemented: []
+      todo: ["A/B_framework", "rollback_automation", "graduation_logic"]
+      
+    dashboards:
+      status: "partial"
+      implemented: ["evolution_signals_report"]
+      todo: ["meta_health_dashboard", "cmm_progress_dashboard"]

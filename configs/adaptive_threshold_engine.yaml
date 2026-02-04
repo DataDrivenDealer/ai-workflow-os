@@ -1,0 +1,375 @@
+# Adaptive Threshold Engine (ATE)
+# Version: 1.0.0
+# Part of AEP-10: Institutional Quantitative Research Evolution
+#
+# Purpose: Context-aware success thresholds that adapt to market regime,
+# strategy type, and sample characteristics while maintaining governance integrity.
+
+version: "1.0.0"
+created: "2026-02-04"
+status: "active"
+
+# =============================================================================
+# BASE THRESHOLDS
+# =============================================================================
+base_thresholds:
+  # Primary metrics (from adapter.yaml)
+  oos_sharpe:
+    value: 1.5
+    unit: "ratio"
+    description: "Out-of-sample Sharpe ratio"
+    
+  oos_is_ratio:
+    value: 0.9
+    unit: "ratio"
+    description: "OOS/IS performance ratio (robustness indicator)"
+    
+  max_drawdown:
+    value: 0.20
+    unit: "percentage"
+    description: "Maximum drawdown tolerance"
+    
+  turnover:
+    value: 2.0
+    unit: "annual_ratio"
+    description: "Annual portfolio turnover limit"
+    
+  # Secondary metrics
+  calmar_ratio:
+    value: 1.0
+    unit: "ratio"
+    description: "Return over max drawdown"
+
+# =============================================================================
+# REGIME ADJUSTMENTS
+# =============================================================================
+regime_adjustments:
+  # ---------------------------------------------------------------------------
+  # MARKET VOLATILITY
+  # ---------------------------------------------------------------------------
+  market_volatility:
+    description: "Adjust based on VIX regime during test period"
+    
+    detection:
+      indicator: "VIX"
+      method: "rolling_average"
+      window: 63  # ~3 months
+      source: "market_data/vix.parquet"
+      
+    regimes:
+      low_vol:
+        condition: "vix_avg < 15"
+        rationale: |
+          In low volatility environments, alpha should be more apparent
+          without market noise. Strategies should demonstrate stronger edge.
+        adjustments:
+          oos_sharpe: 
+            multiplier: 1.2
+            absolute: null
+            rationale: "Higher bar in calm markets"
+          max_drawdown:
+            multiplier: 0.8
+            rationale: "Lower drawdown expected in calm markets"
+            
+      normal_vol:
+        condition: "15 <= vix_avg <= 25"
+        rationale: "Base case, no adjustment needed"
+        adjustments: {}
+        
+      high_vol:
+        condition: "25 < vix_avg <= 35"
+        rationale: |
+          High volatility compresses risk premia and increases costs.
+          Strategies naturally show lower Sharpe but may still be valid.
+        adjustments:
+          oos_sharpe:
+            multiplier: 0.8
+            absolute: null
+            rationale: "Lower Sharpe acceptable in stressed markets"
+          max_drawdown:
+            multiplier: 1.25
+            rationale: "Higher drawdowns expected"
+            
+      crisis:
+        condition: "vix_avg > 35"
+        rationale: |
+          Crisis periods are exceptional. Performance evaluation should
+          focus on risk management rather than return generation.
+        adjustments:
+          oos_sharpe:
+            multiplier: 0.6
+            absolute: null
+            rationale: "Survival more important than alpha"
+          max_drawdown:
+            multiplier: 1.5
+            rationale: "Crisis drawdowns are expected"
+          oos_is_ratio:
+            multiplier: 0.8
+            rationale: "Regime break expected"
+
+  # ---------------------------------------------------------------------------
+  # STRATEGY TYPE
+  # ---------------------------------------------------------------------------
+  strategy_type:
+    description: "Adjust based on strategy characteristics"
+    
+    types:
+      momentum:
+        description: "Trend-following strategies"
+        adjustments:
+          oos_sharpe:
+            multiplier: 0.87  # Lower by ~0.2 from 1.5
+            rationale: "Known decay in momentum premium"
+          turnover:
+            multiplier: 2.0
+            rationale: "Momentum naturally high turnover"
+        typical_profile:
+          expected_sharpe: "1.0-1.5"
+          expected_turnover: "200-400%"
+          drawdown_profile: "Regime-dependent"
+          
+      value:
+        description: "Value-based strategies"
+        adjustments:
+          oos_sharpe:
+            multiplier: 0.80
+            rationale: "Value premium realized over longer horizon"
+          turnover:
+            multiplier: 0.25
+            rationale: "Value requires patience"
+        typical_profile:
+          expected_sharpe: "0.8-1.2"
+          expected_turnover: "30-100%"
+          drawdown_profile: "Extended but recoverable"
+          
+      statistical_arbitrage:
+        description: "Mean reversion, pairs trading"
+        adjustments:
+          oos_sharpe:
+            multiplier: 1.33  # Higher bar
+            rationale: "Capacity constrained, should be high Sharpe"
+          turnover:
+            multiplier: 5.0
+            rationale: "Very high turnover expected"
+        typical_profile:
+          expected_sharpe: "2.0-3.0"
+          expected_turnover: "500-2000%"
+          drawdown_profile: "Small but frequent"
+          
+      factor_timing:
+        description: "Dynamic factor allocation"
+        adjustments:
+          oos_sharpe:
+            multiplier: 0.87
+            rationale: "Timing is difficult, lower bar"
+          oos_is_ratio:
+            multiplier: 0.9
+            rationale: "More regime sensitivity expected"
+        typical_profile:
+          expected_sharpe: "1.0-1.5"
+          drawdown_profile: "Regime-dependent"
+          
+      long_short_equity:
+        description: "Market neutral equity strategies"
+        adjustments:
+          oos_sharpe:
+            multiplier: 1.0
+            rationale: "Base case strategy type"
+        typical_profile:
+          expected_sharpe: "1.0-2.0"
+          expected_turnover: "100-300%"
+
+  # ---------------------------------------------------------------------------
+  # SAMPLE CHARACTERISTICS
+  # ---------------------------------------------------------------------------
+  sample_characteristics:
+    description: "Adjust based on statistical power of test"
+    
+    sample_size:
+      short_sample:
+        condition: "oos_years < 3"
+        adjustments:
+          oos_sharpe:
+            multiplier: 1.2
+            rationale: "Higher threshold to compensate for variance"
+        confidence_penalty: 0.2
+        warning: "Short sample - results should be interpreted cautiously"
+        
+      normal_sample:
+        condition: "3 <= oos_years <= 10"
+        adjustments: {}
+        
+      long_sample:
+        condition: "oos_years > 10"
+        adjustments:
+          oos_sharpe:
+            multiplier: 0.9
+            rationale: "Can accept slightly lower with more evidence"
+        bonus: "survivability_evidence"
+        
+    regime_coverage:
+      description: "Bonus/penalty based on market regimes covered"
+      full_coverage:
+        definition: "Includes bull, bear, and high-vol periods"
+        bonus: "confidence +0.1"
+      limited_coverage:
+        definition: "Only one market regime represented"
+        penalty: "confidence -0.2"
+        warning: "Consider robustness across regimes"
+
+# =============================================================================
+# GOVERNANCE CONSTRAINTS
+# =============================================================================
+governance_constraints:
+  description: |
+    Hard constraints that the adaptive engine cannot breach.
+    These represent absolute risk tolerances.
+    
+  absolute_minimums:
+    oos_sharpe:
+      floor: 0.5
+      rationale: "Below 0.5, strategy is likely noise"
+      breach_action: "FAIL regardless of adjustments"
+      
+    oos_is_ratio:
+      floor: 0.5
+      rationale: "Below 0.5, severe overfitting is certain"
+      breach_action: "FAIL regardless of adjustments"
+      
+    calmar_ratio:
+      floor: 0.3
+      rationale: "Minimum risk-adjusted return threshold"
+      
+  absolute_maximums:
+    max_drawdown:
+      ceiling: 0.40
+      rationale: "Above 40%, risk of ruin too high"
+      breach_action: "FAIL regardless of adjustments"
+      
+    turnover:
+      ceiling: 20.0
+      rationale: "Above 2000%, costs likely prohibitive"
+      
+  adjustment_limits:
+    max_relaxation:
+      value: 0.30
+      description: "Can relax any threshold by at most 30%"
+      example: "1.5 Sharpe can go to 1.05 at minimum"
+      
+    max_tightening:
+      value: 0.50
+      description: "Can tighten any threshold by at most 50%"
+      example: "1.5 Sharpe can go to 2.25 at maximum"
+      
+  human_override:
+    required_for:
+      - "Adjustments beyond limits"
+      - "Breach of absolute minimums with justification"
+      - "New regime not in configuration"
+    approval_path: "/dgsf_spec_propose → human review"
+    documentation_required: true
+
+# =============================================================================
+# THRESHOLD RESOLUTION PROTOCOL
+# =============================================================================
+resolution_protocol:
+  steps:
+    1_load_base:
+      action: "Load base_thresholds for requested metric"
+      
+    2_detect_regime:
+      action: "For each adjustment category, detect current context"
+      categories:
+        - market_volatility
+        - strategy_type
+        - sample_characteristics
+        
+    3_apply_adjustments:
+      action: "Apply multipliers in order"
+      order:
+        - market_volatility
+        - strategy_type
+        - sample_characteristics
+      method: "multiplicative"
+      
+    4_governance_clamp:
+      action: "Ensure result within governance constraints"
+      checks:
+        - "result >= absolute_minimum"
+        - "relaxation <= max_relaxation * base"
+        - "tightening <= max_tightening * base"
+        
+    5_document:
+      action: "Record all adjustments for audit trail"
+      output:
+        - resolved_value
+        - base_value
+        - adjustments_applied
+        - regime_context
+        - governance_status
+
+  output_schema:
+    resolved_thresholds:
+      metric_name:
+        resolved_value: "number"
+        base_value: "number"
+        adjustments_applied:
+          - "adjustment_description"
+        regime_context:
+          volatility: "regime_name"
+          strategy: "strategy_type"
+          sample: "sample_category"
+        governance_status: "OK | BINDING | BREACH"
+        confidence_adjustment: "number"
+
+# =============================================================================
+# INTEGRATION
+# =============================================================================
+integration:
+  verify_prompt:
+    description: "Called before threshold verification"
+    action: "Resolve thresholds, include regime context in output"
+    display: "Show resolved thresholds with adjustment rationale"
+    
+  experiment_config:
+    description: "Experiments can declare strategy type"
+    field: "experiment.strategy_type"
+    validation: "Must match one of defined types"
+    
+  results_json:
+    description: "Record threshold context in results"
+    fields:
+      - "thresholds.resolved"
+      - "thresholds.adjustments"
+      - "thresholds.regime_context"
+      
+  audit_trail:
+    description: "All threshold resolutions are logged"
+    destination: "state/threshold_resolutions.yaml"
+    retention: "indefinite"
+
+# =============================================================================
+# EXTENSION
+# =============================================================================
+extension:
+  add_regime:
+    process: |
+      1. Define regime conditions
+      2. Specify adjustments for each metric
+      3. Provide rationale
+      4. Update detection logic if needed
+    required_approval: "human"
+    
+  add_strategy_type:
+    process: |
+      1. Document strategy characteristics
+      2. Define adjustments based on empirical evidence
+      3. Add to strategy_type section
+    required_approval: "human"
+    
+  adjust_governance:
+    process: |
+      1. Submit via /dgsf_spec_propose
+      2. Provide evidence for change
+      3. Require human approval
+    change_type: "canon_amendment"

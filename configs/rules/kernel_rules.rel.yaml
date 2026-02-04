@@ -1,0 +1,283 @@
+# Kernel Core Rules in REL Format
+# Version: 1.0.0
+# These rules are the runtime-enforceable governance constraints
+
+version: "1.0.0"
+namespace: "kernel"
+status: "active"
+
+# =============================================================================
+# R1: VERIFY BEFORE ASSERTING
+# =============================================================================
+R1:
+  id: "R1"
+  version: "1.0.0"
+  name: "verify_before_assert"
+  
+  expression: |
+    WHEN agent.action.type == "assert"
+    AND NOT has_evidence(action.claim, action.evidence_type)
+    THEN BLOCK with "Assertion requires verification evidence"
+  
+  parameters:
+    - name: evidence_types
+      type: list
+      default: ["Test-Path", "Get-Content", "grep_search", "read_file"]
+      description: "Valid evidence collection methods"
+  
+  conditions:
+    - name: "cached_verification"
+      when: "context.verification_cache.contains(action.target, within='5m')"
+      action: ALLOW
+      requires_audit: false
+  
+  metadata:
+    category: "correctness"
+    severity: "P1"
+    rationale: "Prevent incorrect assumptions that lead to wasted effort"
+    test_file: "kernel/tests/test_rules.py::test_r1"
+    violation_example: "Saying 'file exists at X' without Test-Path verification"
+
+# =============================================================================
+# R2: TASK SERIALIZATION (Parameterized for Multi-Agent)
+# =============================================================================
+R2:
+  id: "R2"
+  version: "2.0.0"
+  name: "task_serialization"
+  
+  expression: |
+    WHEN agent.action.type == "start_task"
+    AND concurrent_tasks_by(agent.id, project.id) >= params.max_parallel
+    THEN BLOCK with "WIP limit exceeded: currently {concurrent_count} tasks"
+  
+  parameters:
+    - name: params.max_parallel
+      type: integer
+      default: 1
+      min: 1
+      max: 10
+      source: "adapter.behavior.max_parallel_tasks"
+      description: "Maximum concurrent tasks per agent per project"
+  
+  conditions:
+    - name: "institutional_deployment"
+      when: "org.deployment_mode == 'institutional'"
+      override:
+        params.max_parallel: 3
+      requires_audit: false
+      rationale: "Institutional scale requires higher parallelism"
+    
+    - name: "team_deployment"
+      when: "org.deployment_mode == 'team'"
+      override:
+        params.max_parallel: 2
+      requires_audit: false
+    
+    - name: "p0_hotfix"
+      when: "task.type == 'hotfix' AND task.priority == 'P0'"
+      action: ALLOW
+      requires_audit: true
+      rationale: "Critical hotfixes bypass serialization"
+    
+    - name: "trusted_agent"
+      when: "agent.authority_level >= 2"
+      override:
+        params.max_parallel: 2
+      requires_audit: false
+      rationale: "Trusted agents can handle more parallelism"
+  
+  metadata:
+    category: "flow_control"
+    severity: "P2"
+    rationale: "Prevent context switching overhead; force prioritization"
+    test_file: "kernel/tests/test_rules.py::test_r2"
+    violation_example: "Starting new task while another is in progress"
+
+# =============================================================================
+# R3: STOP ON FAILURE
+# =============================================================================
+R3:
+  id: "R3"
+  version: "1.0.0"
+  name: "stop_on_failure"
+  
+  expression: |
+    WHEN context.test_status == "fail"
+    OR context.last_command_exit_code != 0
+    THEN STOP with "Failure detected - stopping for diagnosis"
+  
+  parameters: []
+  
+  conditions:
+    - name: "expected_failure"
+      when: "action.expects_failure == true"
+      action: ALLOW
+      requires_audit: true
+      rationale: "Some tests intentionally verify failure cases"
+    
+    - name: "flaky_test_retry"
+      when: "context.failure_count <= 1 AND task.flaky_tests_allowed == true"
+      action: WARN "Retrying after potential flaky test"
+      requires_audit: true
+  
+  metadata:
+    category: "safety"
+    severity: "P3"
+    rationale: "Prevent cascading errors; enable early diagnosis"
+    test_file: "kernel/tests/test_rules.py::test_r3"
+    violation_example: "Continuing after pytest failure"
+
+# =============================================================================
+# R4: PROTECT RAW DATA (Critical - No Exceptions)
+# =============================================================================
+R4:
+  id: "R4"
+  version: "1.0.0"
+  name: "data_protection"
+  
+  expression: |
+    WHEN action.type IN ["write", "delete", "modify", "move"]
+    AND path_matches(action.target, adapter.paths.data_protected + "/**")
+    THEN BLOCK with "CRITICAL: Data protection violation" AND HALT AND AUDIT
+  
+  parameters: []
+  
+  # NO CONDITIONS - This rule has no exceptions
+  conditions: []
+  
+  enforcement:
+    priority: "P4"  # Highest priority - cannot be overridden
+    halt_on_violation: true
+    log_to_audit: true
+    notify: ["governance-alerts"]
+  
+  metadata:
+    category: "security"
+    severity: "P4"
+    rationale: "Raw data integrity is the foundation of reproducibility"
+    test_file: "kernel/tests/test_rules.py::test_r4"
+    violation_example: "Any write to projects/dgsf/data/raw/"
+    canonical_reference: "GOVERNANCE_INVARIANTS §4"
+
+# =============================================================================
+# R5: NO ASSUMPTIONS
+# =============================================================================
+R5:
+  id: "R5"
+  version: "1.0.0"
+  name: "no_assumptions"
+  
+  expression: |
+    WHEN agent.action.type == "claim"
+    AND NOT has_evidence(action.claim_value, ["file_read", "command_output", "api_response"])
+    THEN BLOCK with "Claim requires evidence - no invented values"
+  
+  parameters:
+    - name: allowed_assumptions
+      type: list
+      default: []
+      source: "adapter.behavior.allowed_assumptions"
+      description: "Explicitly allowed assumption types (usually empty)"
+  
+  conditions:
+    - name: "documented_default"
+      when: "action.claim_source == 'documented_default'"
+      action: ALLOW
+      requires_audit: false
+      rationale: "Using documented defaults is not an assumption"
+  
+  metadata:
+    category: "correctness"
+    severity: "P1"
+    rationale: "Assumptions compound into incorrect conclusions"
+    test_file: "kernel/tests/test_rules.py::test_r5"
+    violation_example: "Inventing a config value without reading it"
+
+# =============================================================================
+# R6: LONG-RUN HANDOFF
+# =============================================================================
+R6:
+  id: "R6"
+  version: "1.0.0"
+  name: "long_run_handoff"
+  
+  expression: |
+    WHEN estimated_runtime(action) > params.threshold_seconds
+    THEN HANDOFF with "Task requires ~{estimated_minutes} minutes - providing plan for human execution"
+  
+  parameters:
+    - name: params.threshold_seconds
+      type: integer
+      default: 300
+      min: 60
+      max: 3600
+      source: "adapter.behavior.long_run_threshold_seconds"
+      description: "Seconds after which to hand off to human"
+  
+  conditions:
+    - name: "background_execution"
+      when: "action.supports_background == true AND agent.authority_level >= 1"
+      action: WARN "Consider background execution"
+      requires_audit: false
+    
+    - name: "trusted_extended"
+      when: "agent.authority_level >= 2"
+      override:
+        params.threshold_seconds: 600
+      requires_audit: false
+      rationale: "Trusted agents can run longer tasks"
+  
+  handoff_protocol:
+    steps:
+      - "STATE: Describe task and estimated duration"
+      - "PROVIDE: Ready-to-run code or command"
+      - "WAIT: For human execution and result report"
+  
+  metadata:
+    category: "execution"
+    severity: "P2"
+    rationale: "Long tasks block agent context; human execution more efficient"
+    test_file: "kernel/tests/test_rules.py::test_r6"
+    violation_example: "Running 10-minute training without handoff"
+
+# =============================================================================
+# RULE INHERITANCE
+# =============================================================================
+inheritance:
+  description: |
+    These kernel rules (R1-R6) are inherited by all layers:
+    - Organization layer: Inherits all, may parameterize via org.yaml
+    - Adapter layer: Inherits all, may parameterize via adapter.yaml
+    - Project layer: Inherits all, may add P-prefixed rules
+    - Experiment layer: Inherits all, read-only
+  
+  override_policy: "parameterize_only"
+  
+  prohibited_overrides:
+    - rule: "R4"
+      reason: "Data protection cannot be weakened"
+    - rule: "R3"
+      field: "enabled"
+      reason: "Cannot disable stop-on-failure"
+
+# =============================================================================
+# EVALUATION ENGINE
+# =============================================================================
+evaluation:
+  order: "priority_desc"  # Evaluate higher priority rules first
+  
+  conflict_resolution:
+    same_priority: "first_match"
+    different_priority: "higher_wins"
+  
+  caching:
+    enabled: true
+    ttl: "5m"
+    invalidation: ["context_change", "rule_update"]
+  
+  logging:
+    evaluations: true
+    violations: true
+    exceptions: true
+    output: "state/rule_evaluations.log"
