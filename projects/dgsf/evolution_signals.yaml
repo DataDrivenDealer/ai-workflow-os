@@ -1,0 +1,21 @@
+# Evolution Signals Registry
+# 
+# 当规则触发不当（false-positive 或 false-negative）时，在此记录。
+# 用户定期审查此文件，决定是否触发演化审查。
+#
+# 格式:
+#   - rule: R{N}
+#     type: false-positive | false-negative | missing-coverage
+#     date: YYYY-MM-DD
+#     context: 简短描述触发场景
+#     resolution: pending | addressed-in-vX.Y.Z | wont-fix
+
+signals: []
+
+# 示例:
+# signals:
+#   - rule: R2
+#     type: false-positive
+#     date: 2026-02-04
+#     context: "R2 阻止了跨模块重构，但该重构是原子性的"
+#     resolution: pending
