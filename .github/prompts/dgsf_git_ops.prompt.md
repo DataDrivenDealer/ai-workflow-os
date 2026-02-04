@@ -1,6 +1,7 @@
 ---
 description: Git 运维子流程 - 状态检查、提交与同步
 mode: agent
+inherits_rules: [R1, R3, R4]
 ---
 
 # DGSF Git Ops Prompt

@@ -1,6 +1,7 @@
 ---
 description: Execute a planned DGSF task with verification
 mode: agent
+inherits_rules: [R1, R2, R3, R4, R5, R6]
 ---
 
 # DGSF Execute Prompt

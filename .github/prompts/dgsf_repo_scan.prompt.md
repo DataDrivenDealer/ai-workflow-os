@@ -1,6 +1,7 @@
 ---
 description: Scan and report on DGSF repository structure and state
 mode: agent
+inherits_rules: [R1, R5]
 ---
 
 # DGSF Repo Scan Prompt

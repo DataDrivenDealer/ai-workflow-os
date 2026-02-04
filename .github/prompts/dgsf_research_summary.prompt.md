@@ -1,6 +1,7 @@
 ---
 description: Summarize DGSF research findings or experiment results
 mode: agent
+inherits_rules: [R1, R3]
 ---
 
 # DGSF Research Summary Prompt

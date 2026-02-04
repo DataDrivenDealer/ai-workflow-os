@@ -1,6 +1,7 @@
 ---
 description: Diagnose failures in DGSF experiments or code execution
 mode: agent
+inherits_rules: [R1, R3]
 ---
 
 # DGSF Diagnose Prompt

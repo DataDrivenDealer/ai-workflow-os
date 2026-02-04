@@ -1,6 +1,7 @@
 ---
 description: Create a research or development plan for DGSF work
 mode: agent
+inherits_rules: [R1, R2]
 ---
 
 # DGSF Plan Prompt

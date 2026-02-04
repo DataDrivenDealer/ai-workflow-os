@@ -1,6 +1,7 @@
 ---
 description: Verify DGSF code, experiments, or research claims
 mode: agent
+inherits_rules: [R1, R3]
 ---
 
 # DGSF Verify Prompt

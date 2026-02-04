@@ -1,6 +1,7 @@
 ---
 description: Update DGSF project state and track progress
 mode: agent
+inherits_rules: [R1, R3]
 ---
 
 # DGSF State Update Prompt

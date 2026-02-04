@@ -1,6 +1,7 @@
 ---
 description: Abort a research/plan direction when proven infeasible
 mode: agent
+inherits_rules: [R1, R5]
 ---
 
 # DGSF Abort Prompt

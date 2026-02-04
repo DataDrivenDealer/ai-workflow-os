@@ -1,6 +1,7 @@
 ---
 description: Research approaches or methods before planning DGSF work
 mode: agent
+inherits_rules: [R1, R5]
 ---
 
 # DGSF Research Prompt

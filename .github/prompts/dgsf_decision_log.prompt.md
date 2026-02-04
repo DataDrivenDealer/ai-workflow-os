@@ -1,6 +1,7 @@
 ---
 description: Log key decisions with rationale for institutional memory
 mode: agent
+inherits_rules: [R1, R5]
 ---
 
 # DGSF Decision Log Prompt

@@ -4,6 +4,326 @@
 
 ---
 
+## Version 8.0.1 — Architecture Convergence (2026-02-04)
+
+### 变更摘要
+
+**架构级收敛**：以 GitHub Copilot + VS Code 运行机制为约束，系统性审计并收敛 `copilot-instructions.md`，确保所有声称的能力均可在运行时真正落地。
+
+### 关键变更
+
+| 变更项 | 原状态 | 新状态 | 原因 |
+|--------|--------|--------|------|
+| AUTOMATIC TRIGGERS | 声称程序化自动执行 | RECOMMENDED RESPONSE PATTERNS | Copilot 不支持程序化触发 |
+| MCP Tools 直接调用 | "可在对话中直接调用" | External tools only | Copilot 不集成自定义 MCP |
+| IMG 自动记录 | "做出重要决策 → IMG 记录" | 手动文件创建 | 无 IMG 后端实现 |
+| SDL 自动登记 | "发现技术债务 → SDL 登记" | 手动文件创建 | SDL 仅为配置模式 |
+
+### 验证证据
+
+```
+pytest kernel/tests/ -v --tb=short
+# 结果: 237 passed in 40.72s
+
+pytest projects/dgsf/tests/test_spec_evolution_e2e.py -v
+# 结果: 17 passed in 0.55s
+```
+
+### 新增文档
+
+- `docs/CAPABILITY_MATRIX.md` — 已验证能力清单
+
+### 回滚方案
+
+```bash
+git log --oneline -5
+git revert <commit-hash>
+pytest kernel/tests/ -v
+```
+
+---
+
+## Version 8.0.0 (2026-02-04)
+
+### 变更摘要
+
+**机构级量化研究演进（AEP-10）**：面向量化交易系统研究开发的领域驱动架构深化，确保系统体现量化金融前沿最佳实践，实现持续的研究智能、代码质量与长期演进。
+
+### 设计动机
+
+本次进化源自对AEP-9之后系统的开放式自主分析：
+- **领域专精**：从通用治理框架到量化金融研究领域的深度适配
+- **前沿跟踪**：系统性追踪量化金融研究前沿，避免方法论过时
+- **最佳实践**：将量化代码最佳实践编码为可执行规则
+- **组织学习**：建立机构记忆，避免重复错误
+
+### 识别的领域张力
+
+| 类别 | 张力 | 解决方案 |
+|------|------|----------|
+| **前沿研究(F)** | 无系统性文献跟踪 | Quant Knowledge Base (QKB) |
+| **代码实践(G)** | 量化代码模式缺失 | Code Practice Registry (CPR) |
+| **研究设计(H)** | 实验方法论不一致 | Research Protocol Algebra (RPA) |
+| **开发流程(I)** | 无结构化研究sprint | Sprint integration in RPA |
+| **长期演进(J)** | 技术债务隐性累积 | Strategic Debt Ledger (SDL) |
+| **组织学习(J)** | 决策理由随时间丢失 | Institutional Memory Graph (IMG) |
+| **阈值管理(G)** | 固定阈值vs市场状态变化 | Adaptive Threshold Engine (ATE) |
+
+### 新增核心概念
+
+#### 1. 量化知识库 (QKB)
+```yaml
+# configs/quant_knowledge_base.yaml
+knowledge_domains:
+  factor_research:
+    current_consensus:
+      factor_replication_crisis:
+        status: "ongoing"
+        implication: "Use t > 3.0 for new factors"
+```
+- 追踪因子研究、统计方法、ML in Finance 前沿
+- 每周扫描、月度审查、季度综合
+- 与代码实践注册表联动
+
+#### 2. 代码实践注册表 (CPR)
+```yaml
+# configs/code_practice_registry.yaml
+practices:
+  DH-01:  # Point-in-Time Correctness
+    severity: "critical"
+    anti_patterns: ["df.fillna(df.mean())"]
+    correct_patterns: ["df.fillna(method='ffill')"]
+    enforcement: "pre_commit + code_review"
+```
+- 数据处理(DH-*)、回测(BT-*)、性能(PF-*)、建模(MD-*)
+- 自动检测反模式
+- 代码审查清单自动生成
+
+#### 3. 研究协议代数 (RPA)
+```yaml
+# configs/research_protocol_algebra.yaml
+primitives:
+  LOAD_DATA -> FEATURE_ENGINEER -> TRAIN_MODEL -> BACKTEST -> EVALUATE
+
+compositions:
+  FACTOR_DISCOVERY:
+    gates:
+      - "At least 3 factors survive MTC"
+      - "Average OOS Sharpe > 0.5"
+```
+- 可组合的研究原语
+- 预定义工作流组合
+- 自动生成实验模板
+
+#### 4. 战略债务账本 (SDL)
+- 技术债务 + 研究债务 + 演进债务
+- 优先级评分公式
+- 20% Sprint 容量分配
+
+#### 5. 机构记忆图 (IMG)
+- 决策、实验、学习、失败节点
+- 可查询：为什么这样决定？之前失败过什么？
+- 自动从 decision_log 和实验结果捕获
+
+#### 6. 自适应阈值引擎 (ATE)
+```yaml
+regime_adjustments:
+  high_vol:  # VIX > 25
+    oos_sharpe: 1.2  # Base 1.5, relaxed for stress
+governance_constraints:
+  absolute_minimums:
+    oos_sharpe: 0.5  # Cannot go below
+```
+- 市场状态感知
+- 策略类型适配
+- 治理硬约束保护
+
+### 新增技能 (6个)
+
+| 技能 | 用途 | 类别 |
+|------|------|------|
+| `/dgsf_knowledge_sync` | 查询/更新QKB | 智能 |
+| `/dgsf_practice_check` | 检查代码符合CPR | 质量 |
+| `/dgsf_protocol_design` | 用RPA设计实验 | 方法论 |
+| `/dgsf_debt_review` | 审查优先级化债务 | 维护 |
+| `/dgsf_memory_query` | 查询机构记忆 | 学习 |
+| `/dgsf_threshold_resolve` | 获取上下文感知阈值 | 适应 |
+
+### 新增自动触发器
+
+| 触发模式 | 自动调用 | 说明 |
+|----------|----------|------|
+| 询问最佳实践 | QKB + CPR 查询 | 确保使用最新知识 |
+| 新建实验 | RPA 模板检查 | 强制使用研究协议 |
+| `train_test_split` + 时间序列 | 警告 + CPR引用 | 推荐 purged walk-forward |
+| 多因子测试无 MTC | 阻止 + 引用 BT-03 | 强制多重检验校正 |
+
+### 新增规则 (R7-R9)
+
+| 规则 | 表达式 | 说明 |
+|------|--------|------|
+| R7 | `WHEN train_test_split AND time_series THEN WARN` | 方法论时效性 |
+| R8 | `WHEN factors > 1 AND NOT mtc THEN BLOCK` | 多重检验强制 |
+| R9 | `WHEN production_ready AND NOT robustness THEN BLOCK` | 稳健性要求 |
+
+### 新增文件
+
+| 文件 | 类型 | 描述 |
+|------|------|------|
+| `docs/proposals/AEP-10_INSTITUTIONAL_QUANT_EVOLUTION.md` | 提案 | 完整架构演进提案 |
+| `configs/quant_knowledge_base.yaml` | 配置 | 量化知识库 |
+| `configs/code_practice_registry.yaml` | 配置 | 代码实践注册表 |
+| `configs/research_protocol_algebra.yaml` | 配置 | 研究协议代数 |
+| `configs/strategic_debt_ledger.yaml` | 配置 | 战略债务账本 |
+| `configs/adaptive_threshold_engine.yaml` | 配置 | 自适应阈值引擎 |
+| `.github/prompts/dgsf_knowledge_sync.prompt.md` | 技能 | 知识同步 |
+| `.github/prompts/dgsf_practice_check.prompt.md` | 技能 | 实践检查 |
+| `.github/prompts/dgsf_protocol_design.prompt.md` | 技能 | 协议设计 |
+| `.github/prompts/dgsf_debt_review.prompt.md` | 技能 | 债务审查 |
+| `.github/prompts/dgsf_memory_query.prompt.md` | 技能 | 记忆查询 |
+| `.github/prompts/dgsf_threshold_resolve.prompt.md` | 技能 | 阈值解析 |
+
+### 修改文件
+
+| 文件 | 变更类型 | 描述 |
+|------|---------|------|
+| `.github/copilot-instructions.md` | **升级** | v7.0→v8.0；新增领域上下文、AEP-10触发器、6新技能 |
+| `projects/dgsf/adapter.yaml` | **更新** | 添加6个新技能映射、自适应阈值配置 |
+| `spec_registry.yaml` | **更新** | 注册5个新规范(QKB, CPR, RPA, SDL, ATE) |
+
+### CMM 评估（演进后）
+
+| 维度 | 当前级别 | 目标级别 | 证据 |
+|------|----------|----------|------|
+| 知识管理 | CMM-4 | CMM-5 | QKB + IMG 创建 |
+| 代码治理 | CMM-4 | CMM-5 | CPR + 自动执行 |
+| 研究方法论 | CMM-3 | CMM-4 | RPA 协议代数 |
+| 技术健康 | CMM-3 | CMM-4 | SDL 债务跟踪 |
+| 阈值管理 | CMM-4 | CMM-5 | ATE 状态感知 |
+
+**整体评估**：**CMM-4 (Quantified)**
+
+### 成功指标（目标）
+
+| 指标 | 当前 | 目标 |
+|------|------|------|
+| 研究方法论时效 | 未测量 | < 6个月落后于前沿 |
+| 代码实践合规率 | 手动检查 | > 90% 自动检查 |
+| 实验协议覆盖率 | 临时 | > 80% 使用RPA模板 |
+| 技术债务可见性 | 隐性 | 100% 在SDL中跟踪 |
+| 决策可追溯性 | 部分 | 100% 在IMG中 |
+
+---
+
+## Version 7.0.0 (2026-02-04)
+
+### 变更摘要
+
+**组织化演进架构（AEP-9）**：系统性探索工作流操作系统在规模化、长期演进与机构化量化研发场景下的最大可能性，推动其向更高能力上限与更强组织形态演进。
+
+### 设计动机
+
+本次进化源自对现有系统的开放式架构级自主分析：
+- **张力识别**：系统性暴露规模化、长期演进与机构化场景下的结构性不足
+- **边界突破**：不预设实现边界，探索结构抽象与规则表达的最大可能性
+- **自演化机制**：引入元演化监控，解决自指向测量问题
+- **组织化能力**：从单项目到多项目组合的治理升级
+
+### 识别的核心张力
+
+| 类别 | 张力 | 解决方案 |
+|------|------|----------|
+| **规模化(A)** | 单项目范围限制 | Organization Layer (L-1) |
+| **规模化(A)** | 并发语义未定义 | Concurrency Model in state_machine.yaml |
+| **信任(B)** | 每项目重建信任 | Trust Transfer Protocol |
+| **演化(C)** | 37天反馈周期过长 | Fast-Track Evolution Circuit |
+| **演化(C)** | 自指向测量盲区 | Meta-Evolution Monitoring |
+| **治理(D)** | 静态阈值不适应市场状态 | Conditional Thresholds in REL |
+| **表达力(E)** | 自然语言规则不可组合 | Rule Expression Language (REL) |
+
+### 新增核心概念
+
+#### 1. 五层架构（原四层）
+```
+Organization (L-1) → Kernel (L0) → Adapter (L1) → Project (L2) → Experiment (L3)
+```
+
+#### 2. 规则表达语言（REL）
+```yaml
+WHEN agent.action.type == "start_task"
+AND concurrent_tasks_by(agent.id) >= params.max_parallel
+THEN BLOCK with "WIP limit exceeded"
+```
+- 可参数化
+- 支持条件例外
+- 可形式验证
+- 减少解释方差
+
+#### 3. 信任转移协议
+- 跨项目信任可转移（带衰减）
+- 支持机构化部署
+- 保留人工审批边界
+
+#### 4. 能力成熟度模型（CMM）
+| 级别 | 名称 | 关键特征 |
+|------|------|----------|
+| CMM-1 | Initial | 自然语言规则 |
+| CMM-2 | Managed | 结构化 YAML 配置 |
+| CMM-3 | Defined | REL + 组织层 |
+| CMM-4 | Quantified | 元演化监控 |
+| CMM-5 | Optimizing | 预测性治理 |
+
+当前评估：**CMM-3**（本次演进后）
+
+### 新增文件
+
+| 文件 | 类型 | 描述 |
+|------|------|------|
+| `docs/proposals/AEP-9_ORGANIZATIONAL_EVOLUTION_ARCHITECTURE.md` | 提案 | 完整架构演进提案 |
+| `specs/canon/ORGANIZATION_CANON.md` | L0 Canon | 组织层宪章 |
+| `configs/rules/REL_SPECIFICATION.yaml` | 规范 | 规则表达语言规范 |
+| `configs/rules/kernel_rules.rel.yaml` | 规则 | R1-R6 REL 格式 |
+| `docs/architecture/capability_maturity_model.yaml` | 框架 | CMM 评估框架 |
+| `configs/meta_evolution_monitoring.yaml` | 配置 | 元演化监控配置 |
+
+### 修改文件
+
+| 文件 | 变更类型 | 描述 |
+|------|---------|------|
+| `.github/copilot-instructions.md` | **升级** | v6.0→v7.0；引入层级上下文、组合规则、自动触发规则 |
+| `docs/architecture/meta_model.yaml` | **升级** | v2.0→v3.0；新增 Organization 层定义和跨层契约 |
+| `spec_registry.yaml` | **更新** | 注册 4 个新规范 |
+
+### CMM 评估（演进后）
+
+| 维度 | 当前级别 | 证据 |
+|------|----------|------|
+| 规则表达力 | CMM-3 | REL 规范创建，核心规则已转换 |
+| 演化能力 | CMM-4 | evolution_policy.yaml 中的元监控 |
+| 多项目协调 | CMM-3 | ORGANIZATION_CANON 创建 |
+| 信任管理 | CMM-3 | Trust Transfer Protocol 定义 |
+| 治理自动化 | CMM-3 | 参数化规则带条件例外 |
+
+### 测试验证
+
+```
+================================================ 237 passed in 40.38s =================================================
+```
+
+### 后续路线图
+
+1. **CMM-3 → CMM-4**（目标：2026-03-15）
+   - 实现盲区检测 Python 代码
+   - 部署置信度评分算法
+   - 添加第二个项目到组合
+
+2. **CMM-4 → CMM-5**（目标：2026-06-01）
+   - 实现 A/B 测试框架
+   - 训练预测性摩擦模型
+   - 设计信任联邦协议
+
+---
+
 ## Version 6.0.0 (2026-02-04)
 
 ### 变更摘要
