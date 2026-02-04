@@ -1,5 +1,5 @@
-registry_version: 0.1
-updated_at: "2026-02-01"
+registry_version: 0.3
+updated_at: "2026-02-04"
 owners:
   company_governance:
     name: "AI Workflow OS Governance"
@@ -8,6 +8,294 @@ owners:
     name: "Registry Maintainer"
 
 specs:
+  # ==========================================================================
+  # AEP-10 NEW SPECIFICATIONS (Institutional Quant Evolution)
+  # ==========================================================================
+  
+  - spec_id: "QUANT_KNOWLEDGE_BASE"
+    title: "Quant Knowledge Base (QKB)"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/quant_knowledge_base.yaml"
+      format: "yaml"
+    applies_to:
+      - "project:dgsf"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
+    consumers:
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_knowledge_sync.prompt.md"
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_research.prompt.md"
+    compatibility:
+      level: "compatible"
+      notes: "Systematic frontier research tracking for quant finance."
+    change_control:
+      edit_policy: "proposal_optional"
+      proposal_type: "knowledge_update"
+    links:
+      proposals:
+        - "docs/proposals/AEP-10_INSTITUTIONAL_QUANT_EVOLUTION.md"
+
+  - spec_id: "CODE_PRACTICE_REGISTRY"
+    title: "Code Practice Registry (CPR)"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/code_practice_registry.yaml"
+      format: "yaml"
+    applies_to:
+      - "project:dgsf"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "QUANT_KNOWLEDGE_BASE"
+    consumers:
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_practice_check.prompt.md"
+      - kind: "hook"
+        ref: "hooks/check_quant_practices.py"
+    compatibility:
+      level: "strict"
+      notes: "Code best practices enforcement for quant systems."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "practice_update"
+    links:
+      proposals:
+        - "docs/proposals/AEP-10_INSTITUTIONAL_QUANT_EVOLUTION.md"
+
+  - spec_id: "RESEARCH_PROTOCOL_ALGEBRA"
+    title: "Research Protocol Algebra (RPA)"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/research_protocol_algebra.yaml"
+      format: "yaml"
+    applies_to:
+      - "project:dgsf"
+      - "experiments:*"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "CODE_PRACTICE_REGISTRY"
+    consumers:
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_protocol_design.prompt.md"
+    compatibility:
+      level: "compatible"
+      notes: "Composable research workflow patterns."
+    change_control:
+      edit_policy: "proposal_optional"
+    links:
+      proposals:
+        - "docs/proposals/AEP-10_INSTITUTIONAL_QUANT_EVOLUTION.md"
+
+  - spec_id: "STRATEGIC_DEBT_LEDGER"
+    title: "Strategic Debt Ledger (SDL)"
+    scope: "operational"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/strategic_debt_ledger.yaml"
+      format: "yaml"
+    applies_to:
+      - "project:dgsf"
+    owners:
+      - "role:company_governance"
+    depends_on: []
+    consumers:
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_debt_review.prompt.md"
+    compatibility:
+      level: "compatible"
+      notes: "Technical and research debt tracking."
+    change_control:
+      edit_policy: "open"
+    links:
+      proposals:
+        - "docs/proposals/AEP-10_INSTITUTIONAL_QUANT_EVOLUTION.md"
+
+  - spec_id: "ADAPTIVE_THRESHOLD_ENGINE"
+    title: "Adaptive Threshold Engine (ATE)"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/adaptive_threshold_engine.yaml"
+      format: "yaml"
+    applies_to:
+      - "project:dgsf"
+      - "experiments:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
+    consumers:
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_threshold_resolve.prompt.md"
+      - kind: "skill"
+        ref: ".github/prompts/dgsf_verify.prompt.md"
+    compatibility:
+      level: "strict"
+      notes: "Context-aware threshold adjustment with governance constraints."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "threshold_amendment"
+    links:
+      proposals:
+        - "docs/proposals/AEP-10_INSTITUTIONAL_QUANT_EVOLUTION.md"
+
+  # ==========================================================================
+  # AEP-9 SPECIFICATIONS
+  # ==========================================================================
+  
+  - spec_id: "ORGANIZATION_CANON"
+    title: "Organization Canon (L-1)"
+    scope: "canon"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "specs/canon/ORGANIZATION_CANON.md"
+      format: "markdown"
+    applies_to:
+      - "organization:*"
+      - "company_os"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "GOVERNANCE_INVARIANTS"
+      - "MULTI_AGENT_CANON"
+      - "AUTHORITY_CANON"
+    consumers:
+      - kind: "kernel"
+        ref: "kernel"
+      - kind: "config"
+        ref: "configs/organization.yaml"
+    compatibility:
+      level: "strict"
+      notes: "Defines multi-project coordination and trust transfer."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "canon_amendment"
+      required_artifacts:
+        - "ops/audit/*"
+        - "ops/decision-log/*"
+    links:
+      issues: []
+      prs: []
+      proposals:
+        - "docs/proposals/AEP-9_ORGANIZATIONAL_EVOLUTION_ARCHITECTURE.md"
+
+  - spec_id: "REL_SPECIFICATION"
+    title: "Rule Expression Language Specification"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/rules/REL_SPECIFICATION.yaml"
+      format: "yaml"
+    applies_to:
+      - "company_os"
+      - "project:*"
+    owners:
+      - "role:company_governance"
+    depends_on: []
+    consumers:
+      - kind: "kernel"
+        ref: "kernel"
+      - kind: "config"
+        ref: "configs/rules/*.rel.yaml"
+    compatibility:
+      level: "compatible"
+      notes: "Rule Expression Language for formal governance rules."
+    change_control:
+      edit_policy: "proposal_required"
+      proposal_type: "framework_upgrade"
+    links:
+      proposals:
+        - "docs/proposals/AEP-9_ORGANIZATIONAL_EVOLUTION_ARCHITECTURE.md"
+
+  - spec_id: "CAPABILITY_MATURITY_MODEL"
+    title: "Capability Maturity Model"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "docs/architecture/capability_maturity_model.yaml"
+      format: "yaml"
+    applies_to:
+      - "company_os"
+    owners:
+      - "role:company_governance"
+    depends_on: []
+    consumers:
+      - kind: "scripts"
+        ref: "scripts/assess_cmm_level.py"
+    compatibility:
+      level: "compatible"
+      notes: "System evolution assessment framework."
+    change_control:
+      edit_policy: "proposal_optional"
+      proposal_type: "framework_upgrade"
+    links:
+      proposals:
+        - "docs/proposals/AEP-9_ORGANIZATIONAL_EVOLUTION_ARCHITECTURE.md"
+
+  - spec_id: "META_EVOLUTION_MONITORING"
+    title: "Meta-Evolution Monitoring Configuration"
+    scope: "framework"
+    status: "active"
+    version:
+      semver: "1.0.0"
+      frozen: false
+    location:
+      path: "configs/meta_evolution_monitoring.yaml"
+      format: "yaml"
+    applies_to:
+      - "company_os"
+    owners:
+      - "role:company_governance"
+    depends_on:
+      - "ORGANIZATION_CANON"
+    consumers:
+      - kind: "kernel"
+        ref: "kernel/evolution_signal.py"
+    compatibility:
+      level: "compatible"
+      notes: "Self-referential monitoring for evolution effectiveness."
+    change_control:
+      edit_policy: "proposal_optional"
+    links:
+      proposals:
+        - "docs/proposals/AEP-9_ORGANIZATIONAL_EVOLUTION_ARCHITECTURE.md"
+
+  # ==========================================================================
+  # EXISTING SPECIFICATIONS
+  # ==========================================================================
+
   - spec_id: "ARCH_BLUEPRINT_MASTER"
     title: "Architecture Blueprint Master"
     scope: "canon"

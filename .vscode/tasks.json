@@ -1,0 +1,82 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Test: Spec Evolution E2E",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "-m", "pytest",
+        "projects/dgsf/tests/test_spec_evolution_e2e.py",
+        "-v",
+        "--tb=short"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Demo: Spec Workflow Scenarios",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "projects/dgsf/scripts/validate_spec_workflow.py"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Pre-Spec-Change Hook (dry run)",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "hooks/pre-spec-change",
+        "projects/dgsf/specs/TEST_SPEC.yaml",
+        "modify",
+        "test-approval"
+      ],
+      "windows": {
+        "command": "bash",
+        "args": [
+          "hooks/pre-spec-change",
+          "projects/dgsf/specs/TEST_SPEC.yaml",
+          "modify",
+          "test-approval"
+        ]
+      },
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: All Kernel Tests",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "-m", "pytest",
+        "kernel/tests/",
+        "-v",
+        "--tb=short"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
