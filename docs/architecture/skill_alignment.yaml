@@ -1,0 +1,271 @@
+# Skill-Role-State Alignment Matrix
+# Formalizes the relationship between Skills, Role Modes, and State Transitions
+# Version: 1.0.0
+
+version: "1.0.0"
+
+# =============================================================================
+# SKILL DEFINITIONS
+# =============================================================================
+# Each skill declares:
+# - role_modes: Which roles can invoke this skill
+# - state_preconditions: Required task state before invocation
+# - state_effects: State transitions this skill can trigger
+# - input_schema: Structured input contract
+# - output_schema: Structured output contract
+
+skills:
+  dgsf_research:
+    description: "Explore before planning - gather context and identify approaches"
+    role_modes: [planner, architect]
+    state_preconditions:
+      task_status: [draft, ready, running]
+      requires_active_task: false  # Can be invoked without task context
+    state_effects:
+      triggers: []  # Informational, no state change
+      produces:
+        - type: research_notes
+          location: "experiments/{exp}/research/"
+    input_schema:
+      required:
+        - question: {type: string, description: "Research question"}
+      optional:
+        - scope: {type: string, enum: [narrow, broad]}
+    output_schema:
+      required:
+        - findings: {type: array, items: {type: string}}
+        - recommended_actions: {type: array}
+
+  dgsf_plan:
+    description: "Define steps and success criteria"
+    role_modes: [planner]
+    state_preconditions:
+      task_status: [draft, ready]
+    state_effects:
+      triggers:
+        - transition: draft_to_ready
+          condition: "plan.status == approved"
+      produces:
+        - type: plan_document
+          location: "experiments/{exp}/plan.yaml"
+    input_schema:
+      required:
+        - objective: {type: string}
+        - constraints: {type: array}
+      optional:
+        - time_budget: {type: string}
+    output_schema:
+      required:
+        - steps: {type: array, items: {type: object}}
+        - success_criteria: {type: array}
+        - estimated_duration: {type: string}
+
+  dgsf_execute:
+    description: "Implement and test"
+    role_modes: [executor, builder]
+    state_preconditions:
+      task_status: [ready, running, revision_needed]
+    state_effects:
+      triggers:
+        - transition: ready_to_running
+          condition: "execution_started"
+        - transition: running_to_code_review
+          condition: "execution_complete AND changes_made"
+      produces:
+        - type: code_changes
+          location: "{target_files}"
+        - type: execution_log
+          location: "experiments/{exp}/run.log"
+    input_schema:
+      required:
+        - task: {type: string, description: "What to do"}
+        - target: {type: string, description: "File path(s)"}
+      optional:
+        - expected_outcome: {type: string, default: "Tests pass"}
+    output_schema:
+      required:
+        - status: {type: string, enum: [success, failure, blocked]}
+        - changes_made: {type: array}
+        - test_results: {type: object}
+
+  dgsf_verify:
+    description: "Validate claims with primary evidence"
+    role_modes: [reviewer]
+    state_preconditions:
+      task_status: [running, code_review, reviewing]
+    state_effects:
+      triggers:
+        - transition: reviewing_to_merged
+          condition: "verdict == PASS AND approver == human"
+        - transition: code_review_to_revision_needed
+          condition: "verdict == FAIL"
+      produces:
+        - type: verification_report
+          location: "experiments/{exp}/verification.md"
+    input_schema:
+      required:
+        - claim: {type: string}
+        - evidence_path: {type: string}
+    output_schema:
+      required:
+        - verdict: {type: string, enum: [PASS, FAIL, INCONCLUSIVE]}
+        - checks: {type: array}
+        - reason: {type: string}
+
+  dgsf_diagnose:
+    description: "Find root cause of failures"
+    role_modes: [executor, builder]
+    state_preconditions:
+      task_status: [running, blocked, revision_needed]
+    state_effects:
+      triggers: []  # Informational
+      produces:
+        - type: diagnosis_report
+          location: "experiments/{exp}/diagnosis.md"
+    input_schema:
+      required:
+        - symptom: {type: string}
+        - context: {type: object}
+    output_schema:
+      required:
+        - root_cause: {type: string}
+        - evidence: {type: array}
+        - recommended_fix: {type: string}
+
+  dgsf_abort:
+    description: "Exit infeasible path"
+    role_modes: [executor, planner]
+    state_preconditions:
+      task_status: [running, blocked, draft, ready]
+    state_effects:
+      triggers:
+        - transition: any_to_abandoned
+          condition: "abort_approved"
+      produces:
+        - type: abort_record
+          location: "experiments/{exp}/abort.md"
+    input_schema:
+      required:
+        - reason: {type: string}
+        - attempted_approaches: {type: array}
+    output_schema:
+      required:
+        - decision: {type: string, enum: [ABORT, RETRY_WITH_CHANGES]}
+        - lessons_learned: {type: array}
+
+  dgsf_decision_log:
+    description: "Record key choices"
+    role_modes: [planner, executor]
+    state_preconditions:
+      task_status: [draft, ready, running, reviewing]
+      requires_active_task: false
+    state_effects:
+      triggers: []
+      produces:
+        - type: decision_record
+          location: "experiments/{exp}/decisions.yaml"
+    input_schema:
+      required:
+        - decision: {type: string}
+        - alternatives: {type: array}
+        - rationale: {type: string}
+    output_schema:
+      required:
+        - logged: {type: boolean}
+        - decision_id: {type: string}
+
+  dgsf_state_update:
+    description: "Track progress"
+    role_modes: [executor]
+    state_preconditions:
+      task_status: [running, code_review, reviewing]
+    state_effects:
+      triggers:
+        - transition: varies
+          condition: "depends on update_type"
+      produces:
+        - type: state_record
+          location: "state/tasks.yaml"
+    input_schema:
+      required:
+        - update_type: {type: string, enum: [progress, complete, blocked]}
+        - details: {type: object}
+    output_schema:
+      required:
+        - new_status: {type: string}
+        - timestamp: {type: string}
+
+  dgsf_research_summary:
+    description: "Synthesize findings"
+    role_modes: [planner, architect]
+    state_preconditions:
+      requires_active_task: false
+    state_effects:
+      triggers: []
+      produces:
+        - type: summary_document
+          location: "experiments/{exp}/summary.md"
+    input_schema:
+      required:
+        - sources: {type: array}
+        - focus: {type: string}
+    output_schema:
+      required:
+        - key_findings: {type: array}
+        - open_questions: {type: array}
+        - recommendations: {type: array}
+
+  dgsf_repo_scan:
+    description: "Understand repository state"
+    role_modes: [executor, planner, architect]
+    state_preconditions:
+      requires_active_task: false
+    state_effects:
+      triggers: []
+      produces: []
+    input_schema:
+      optional:
+        - scope: {type: string, enum: [full, changes_only]}
+    output_schema:
+      required:
+        - structure: {type: object}
+        - recent_changes: {type: array}
+
+  dgsf_git_ops:
+    description: "Git status check, commit, tag, push"
+    role_modes: [executor]
+    state_preconditions:
+      working_tree_dirty: true  # Only invoke when there are changes
+    state_effects:
+      triggers:
+        - transition: code_review_to_reviewing
+          condition: "commit_successful"
+      produces:
+        - type: commit_record
+          location: "git log"
+    input_schema:
+      required:
+        - operation: {type: string, enum: [status, commit, tag, push]}
+      optional:
+        - message: {type: string}
+        - tag_name: {type: string}
+    output_schema:
+      required:
+        - success: {type: boolean}
+        - details: {type: object}
+
+# =============================================================================
+# VALIDATION RULES
+# =============================================================================
+validation:
+  - rule: "Skill invocation must match allowed role_modes"
+    check: "current_role in skill.role_modes"
+    on_violation: "reject_invocation"
+    
+  - rule: "Task status must satisfy state_preconditions"
+    check: "task.status in skill.state_preconditions.task_status"
+    on_violation: "reject_invocation"
+    
+  - rule: "State transitions must follow state_machine.yaml"
+    check: "skill.state_effects.triggers.transition in state_machine.transitions"
+    on_violation: "reject_transition"

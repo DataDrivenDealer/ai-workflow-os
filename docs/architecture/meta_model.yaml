@@ -1,0 +1,148 @@
+# Meta Model Configuration
+# Defines the structural contract between Kernel, Adapter, Project, and Experiment layers
+# Version: 2.0.0
+#
+# AEP-1: Introduced Adapter Layer for Kernel-Project decoupling
+
+version: "2.0.0"
+
+# =============================================================================
+# LAYER DEFINITIONS (4-Layer Architecture)
+# =============================================================================
+layers:
+  kernel:
+    description: "Platform-level invariants, agnostic to any specific project"
+    artifacts:
+      - path: ".github/copilot-instructions.md"
+        type: "behavioral_contract"
+        scope: "global"
+      - path: "kernel/*.yaml"
+        type: "state_machine"
+        scope: "global"
+      - path: "configs/gates.yaml"
+        type: "governance_gates"
+        scope: "global"
+      - path: "configs/project_interface.yaml"
+        type: "interface_contract"
+        scope: "global"
+      - path: "configs/evolution_policy.yaml"
+        type: "evolution_config"
+        scope: "global"
+    rules:
+      namespace: "R"  # R1, R2, ...
+      definition_file: ".github/copilot-instructions.md"
+
+  adapter:
+    description: "Project-to-Kernel binding layer that implements the interface contract"
+    artifacts:
+      - path: "projects/{project}/adapter.yaml"
+        type: "interface_implementation"
+        required: true
+        implements: "configs/project_interface.yaml"
+    rules:
+      namespace: "A"  # Adapter-level rules (rare)
+      inherits_from: "kernel"
+      override_policy: "interface_only"  # Can only customize via interface
+    responsibilities:
+      - "Translate kernel abstractions to project-specific paths"
+      - "Bind skill prefixes to prompt files"
+      - "Provide threshold values for verification"
+      - "Define project-specific behavioral overrides"
+      
+  project:
+    description: "Domain-specific configuration bound to a project scope"
+    artifacts:
+      - path: "projects/{project}/project.yaml"
+        type: "project_manifest"
+        required: true
+      - path: "projects/{project}/configs/thresholds.yaml"
+        type: "success_criteria"
+        required: true
+      - path: "projects/{project}/configs/rules_override.yaml"
+        type: "rule_customization"
+        required: false
+    rules:
+      namespace: "P"  # P1, P2, ... (project-specific)
+      inherits_from: "adapter"
+      override_policy: "explicit_only"  # Must declare overrides
+      
+  experiment:
+    description: "Individual experiment instance within a project"
+    artifacts:
+      - path: "projects/{project}/experiments/{exp}/config.yaml"
+        type: "experiment_config"
+        required: true
+      - path: "projects/{project}/experiments/{exp}/results.json"
+        type: "experiment_results"
+        required: false
+      - path: "projects/{project}/experiments/{exp}/lineage.yaml"
+        type: "data_lineage"
+        required: false
+    rules:
+      namespace: "E"  # E1, E2, ... (experiment-specific)
+      inherits_from: "project"
+      override_policy: "inherit_only"  # Cannot override, only inherit
+
+# =============================================================================
+# CROSS-LAYER CONTRACTS
+# =============================================================================
+contracts:
+  kernel_to_adapter:
+    - constraint: "adapter.yaml must implement project_interface.yaml"
+      validation: "adapter.implements == 'configs/project_interface.yaml'"
+    - constraint: "adapter must provide all required interface fields"
+      validation: "validate_adapter_completeness(adapter, project_interface)"
+    - constraint: "kernel_version in adapter must be compatible"
+      validation: "semantic_version_compatible(adapter.identity.kernel_version, kernel.version)"
+
+  adapter_to_project:
+    - constraint: "adapter paths must resolve to existing project directories"
+      validation: "all(path_exists(adapter.paths[key]) for key in adapter.paths.required)"
+    - constraint: "adapter skill prompts must exist"
+      validation: "all(file_exists(prompt) for prompt in adapter.skills.prompt_files.values())"
+      
+  project_to_experiment:
+    - constraint: "experiment config must reference project thresholds or override"
+      validation: "experiment.config.thresholds_source in ['inherit', 'override']"
+    - constraint: "experiment naming must follow project convention"
+      validation: "regex_match(experiment.name, adapter.experiment.naming_pattern)"
+    - constraint: "experiment results must conform to adapter schema"
+      validation: "validate_results_schema(experiment.results, adapter.experiment.results_schema)"
+
+# =============================================================================
+# LAYER LOADING PROTOCOL
+# =============================================================================
+loading:
+  sequence:
+    1: "Load kernel artifacts (configs/*.yaml, .github/copilot-instructions.md)"
+    2: "Resolve active project_id (from context or default)"
+    3: "Load adapter from projects/{project_id}/adapter.yaml"
+    4: "Validate adapter against project_interface.yaml"
+    5: "Resolve paths and skills via adapter"
+    6: "Load project artifacts via adapter.paths"
+    7: "Load experiment if in experiment context"
+  
+  runtime_binding:
+    description: "How Kernel references are resolved at runtime"
+    examples:
+      - kernel_reference: "adapter.paths.source"
+        resolution: "projects/dgsf/repo/src/dgsf"
+      - kernel_reference: "adapter.thresholds.primary_metrics.oos_sharpe"
+        resolution: "1.5"
+      - kernel_reference: "adapter.skills.prefix"
+        resolution: "dgsf"
+
+# =============================================================================
+# VALIDATION COMMANDS
+# =============================================================================
+validation:
+  check_layer_integrity:
+    command: "python scripts/validate_meta_model.py"
+    frequency: "pre-commit"
+  check_cross_layer_contracts:
+    command: "python scripts/validate_layer_contracts.py"
+    frequency: "ci"
+  check_adapter_implementation:
+    command: "python scripts/validate_project_adapter.py {project_id}"
+    frequency: "on-adapter-change"
+

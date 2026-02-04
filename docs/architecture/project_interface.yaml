@@ -1,0 +1,148 @@
+# Project Interface Contract
+# Defines the abstract interface that Kernel expects from any Project
+# Version: 1.0.0
+# 
+# This file is part of AEP-1: Kernel-Project Decoupling
+# Projects implement this interface via their adapter.yaml
+
+version: "1.0.0"
+
+# =============================================================================
+# INTERFACE DEFINITION
+# =============================================================================
+# Any project must provide implementations for these abstract definitions
+
+interface:
+  # ---------------------------------------------------------------------------
+  # Project Identity
+  # ---------------------------------------------------------------------------
+  identity:
+    required:
+      - project_id        # Unique identifier (e.g., "dgsf", "alpha_model")
+      - project_name      # Human-readable name
+      - kernel_version    # Compatible kernel version (semver)
+    optional:
+      - description       # Brief description
+      - owners            # List of responsible parties
+
+  # ---------------------------------------------------------------------------
+  # Success Thresholds
+  # ---------------------------------------------------------------------------
+  # Projects define their own success criteria
+  thresholds:
+    schema:
+      primary_metrics:
+        description: "Metrics that MUST pass for experiment success"
+        type: "map[string, threshold_definition]"
+        required: true
+      secondary_metrics:
+        description: "Metrics that SHOULD pass (warnings only)"
+        type: "map[string, threshold_definition]"
+        required: false
+      multiple_testing:
+        description: "Correction method for parallel experiments"
+        type: "enum[bonferroni, holm, fdr, none]"
+        default: "bonferroni"
+    
+    threshold_definition:
+      operator: "enum[>=, <=, ==, !=, in_range]"
+      value: "number | [number, number]"  # single value or range
+      unit: "string"  # optional, for documentation
+
+  # ---------------------------------------------------------------------------
+  # Path Mappings
+  # ---------------------------------------------------------------------------
+  # Projects define their directory structure
+  paths:
+    required:
+      - source           # Main source code directory
+      - tests            # Test directory
+      - experiments      # Experiment output directory
+      - data_safe        # Writable data directory
+      - data_protected   # Read-only data directory
+    optional:
+      - configs          # Project-specific configs
+      - decisions        # Decision log directory
+      - reports          # Generated reports
+
+  # ---------------------------------------------------------------------------
+  # Skill Bindings
+  # ---------------------------------------------------------------------------
+  # Projects can customize which skills are active and their prefixes
+  skills:
+    schema:
+      prefix: "string"           # e.g., "dgsf" → "/dgsf_research"
+      enabled_skills:            # Subset of kernel skills to enable
+        type: "list[skill_id]"
+        default: "all"
+      skill_overrides:           # Project-specific skill customizations
+        type: "map[skill_id, override_config]"
+        required: false
+
+    # Kernel-defined skill IDs (projects select from these)
+    kernel_skills:
+      - research
+      - plan
+      - execute
+      - verify
+      - diagnose
+      - abort
+      - decision_log
+      - state_update
+      - research_summary
+      - repo_scan
+      - git_ops
+
+  # ---------------------------------------------------------------------------
+  # Rules Inheritance
+  # ---------------------------------------------------------------------------
+  # Projects inherit kernel rules and can add project-specific ones
+  rules:
+    schema:
+      inherit_kernel_rules:
+        type: "list[rule_id] | 'all'"
+        default: "all"
+      project_rules:
+        type: "map[rule_id, rule_definition]"
+        required: false
+      rule_overrides:
+        type: "map[rule_id, override_config]"
+        description: "Override kernel rule parameters (not behavior)"
+        required: false
+
+  # ---------------------------------------------------------------------------
+  # Behavioral Defaults
+  # ---------------------------------------------------------------------------
+  # Project-specific behavioral configurations
+  behavior:
+    schema:
+      scope_pattern:
+        description: "Glob pattern for allowed file modifications"
+        type: "string"
+        required: true
+      long_run_threshold_seconds:
+        description: "When to trigger human handoff"
+        type: "number"
+        default: 180
+      auto_git_ops:
+        description: "Whether to auto-invoke git_ops on stage complete"
+        type: "boolean"
+        default: true
+
+# =============================================================================
+# VALIDATION
+# =============================================================================
+validation:
+  adapter_schema_check:
+    description: "Validate project adapter against this interface"
+    command: "python scripts/validate_project_adapter.py {project_id}"
+  
+  required_files:
+    - "projects/{project_id}/adapter.yaml"
+    - "projects/{project_id}/project.yaml"
+    - "projects/{project_id}/configs/thresholds.yaml"
+
+# =============================================================================
+# EXAMPLE ADAPTER STRUCTURE
+# =============================================================================
+# See projects/dgsf/adapter.yaml for reference implementation
