@@ -1,0 +1,158 @@
+# Evolution Signals - 2026-02-04 Architecture Analysis
+
+# Generated from open-ended architecture evolution analysis
+# These signals should be aggregated into the evolution tracking system
+
+version: "1.0.0"
+generated: "2026-02-04T00:00:00Z"
+source: "cognitive_simulation_analysis"
+
+signals:
+  # ==========================================================================
+  # High Priority Signals (Blocking Scalability)
+  # ==========================================================================
+  
+  - signal_id: "sig_2026020401"
+    signal_type: "scope_escape"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      Multi-agent concurrency requires state machine modifications 
+      that touch kernel layer - currently no formal concurrency model exists.
+      Tension: A2 - State machine concurrent semantics undefined
+    severity: "high"
+    suggested_evolution: |
+      Formalize concurrency model in state_machine.yaml with explicit 
+      locking semantics and conflict resolution strategies.
+    status: "new"
+    
+  - signal_id: "sig_2026020402"
+    signal_type: "threshold_tension"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      Evolution feedback loop minimum cycle is ~37 days (7d aggregation + 
+      30d measurement). Too slow for rapid iteration quantitative research.
+      Tension: C3 - Feedback loop latency too long
+    severity: "high"
+    suggested_evolution: |
+      Introduce parallel A/B testing track with shorter feedback windows 
+      for lower-risk evolutions (see AEP-6).
+    status: "new"
+
+  - signal_id: "sig_2026020403"
+    signal_type: "missing_skill"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      No mechanism to transfer agent trust across projects. Each project 
+      requires rebuilding trust from Level 0, blocking institutional deployment.
+      Tension: B1 - Human approval bottleneck not scalable
+    severity: "high"
+    suggested_evolution: |
+      Introduce Organization Layer with trust transfer mechanism 
+      (see AEP-7).
+    status: "new"
+
+  # ==========================================================================
+  # Medium Priority Signals (Affecting Governance Quality)
+  # ==========================================================================
+    
+  - signal_id: "sig_2026020404"
+    signal_type: "rule_friction"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: "R2"
+    context: |
+      Rule R2 (one task at a time) expressed in natural language cannot be 
+      parameterized for multi-agent scenarios or conditional exceptions.
+      Tension: E1 - Rule expressiveness is non-compositional
+    severity: "medium"
+    suggested_evolution: |
+      Introduce Rule Expression Language (REL) for structured rule 
+      definition with parameters and conditions (see AEP-8).
+    status: "new"
+
+  - signal_id: "sig_2026020405"
+    signal_type: "ambiguous_guidance"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      Evolution effectiveness measurement relies on friction signals,
+      but evolution can reduce friction signal collection rate (blind spots).
+      No mechanism to distinguish "real improvement" from "expanded blind spots".
+      Tension: C1 - Self-referential measurement problem
+    severity: "medium"
+    suggested_evolution: |
+      Introduce meta-evolution monitoring with blind spot detection 
+      (see AEP-6 blind_spot_detection section).
+    status: "new"
+
+  - signal_id: "sig_2026020406"
+    signal_type: "tooling_gap"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      No tooling to validate cross-project dependencies at runtime.
+      R9 requires declaration in lineage.yaml but verification is 
+      only at experiment start, not during long-running experiments.
+      Tension: A3 - Cross-project reference verification timing
+    severity: "medium"
+    suggested_evolution: |
+      Implement continuous checksum validation for external references
+      with configurable polling interval.
+    status: "new"
+
+  # ==========================================================================
+  # Lower Priority Signals (Quality of Life)
+  # ==========================================================================
+
+  - signal_id: "sig_2026020407"
+    signal_type: "threshold_tension"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      Gate thresholds (e.g., OOS Sharpe >= 1.5) are static, but quantitative 
+      research may need context-dependent thresholds (market regime, risk level).
+      Tension: D1 - Gate system is static
+    severity: "low"
+    suggested_evolution: |
+      Extend threshold schema to support conditional values based on 
+      experiment context (see AEP-8 conditional thresholds section).
+    status: "new"
+
+  - signal_id: "sig_2026020408"
+    signal_type: "ambiguous_guidance"
+    timestamp: "2026-02-04T00:00:00Z"
+    rule_id: null
+    context: |
+      Rule priority system (P4 > P3 > P2 > P1) is static with no runtime 
+      adjustment mechanism. Hotfix scenarios may need temporary priority shifts.
+      Tension: C2 - Rule priority is static
+    severity: "low"
+    suggested_evolution: |
+      Introduce priority modifier mechanism with audit trail 
+      (see AEP-8 priority_modifiers section).
+    status: "new"
+
+# ==========================================================================
+# AGGREGATION METADATA
+# ==========================================================================
+
+aggregation:
+  total_signals: 8
+  by_type:
+    scope_escape: 1
+    threshold_tension: 2
+    missing_skill: 1
+    rule_friction: 1
+    ambiguous_guidance: 2
+    tooling_gap: 1
+  by_severity:
+    high: 3
+    medium: 3
+    low: 2
+  weighted_severity_score: 17.3  # Using weights from evolution_policy.yaml
+  
+  # This exceeds the threshold of 10 for automatic review trigger
+  triggers_review: true
+  recommended_action: "Schedule architecture evolution review"
