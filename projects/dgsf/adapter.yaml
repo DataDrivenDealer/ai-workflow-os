@@ -1,0 +1,229 @@
+# DGSF Project Adapter
+# Implements the Kernel's Project Interface (configs/project_interface.yaml)
+# Version: 1.0.0
+#
+# This adapter binds DGSF to the Kernel layer, providing concrete implementations
+# for all abstract interface requirements.
+
+version: "1.0.0"
+implements: "configs/project_interface.yaml@1.0.0"
+
+# =============================================================================
+# PROJECT IDENTITY
+# =============================================================================
+identity:
+  project_id: "dgsf"
+  project_name: "Dynamic Generative SDF Forest"
+  kernel_version: ">=4.0.0,<5.0.0"
+  description: "Quantitative research system for SDF-based factor discovery"
+  owners:
+    - role: "project_lead"
+      contact: "dgsf-team"
+
+# =============================================================================
+# SUCCESS THRESHOLDS
+# =============================================================================
+thresholds:
+  source_file: "configs/thresholds.yaml"
+  
+  primary_metrics:
+    oos_sharpe:
+      operator: ">="
+      value: 1.5
+      unit: "ratio"
+      description: "Out-of-sample Sharpe ratio"
+    
+    oos_is_ratio:
+      operator: ">="
+      value: 0.9
+      unit: "ratio"
+      description: "OOS/IS performance ratio (robustness)"
+    
+    max_drawdown:
+      operator: "<="
+      value: 0.20
+      unit: "percentage"
+      description: "Maximum drawdown tolerance"
+    
+    turnover:
+      operator: "<="
+      value: 2.0
+      unit: "annual_ratio"
+      description: "Annual turnover limit"
+
+  secondary_metrics:
+    calmar_ratio:
+      operator: ">="
+      value: 1.0
+      unit: "ratio"
+      description: "Calmar ratio (return/max_drawdown)"
+
+  multiple_testing: "bonferroni"
+
+# =============================================================================
+# PATH MAPPINGS
+# =============================================================================
+paths:
+  # Required paths (relative to projects/dgsf/)
+  source: "repo/src/dgsf"
+  tests: "repo/tests"
+  experiments: "experiments"
+  data_safe: "data/processed"
+  data_protected: "data/raw"
+  
+  # Optional paths
+  configs: "configs"
+  decisions: "decisions"
+  reports: "reports"
+  scripts: "scripts"
+  
+  # Verification commands for each path
+  verify:
+    source: "Test-Path {path}"
+    tests: "pytest --collect-only -q {path}"
+    data_protected: "Get-FileHash {path}/*.parquet -Algorithm SHA256"
+
+# =============================================================================
+# SKILL BINDINGS
+# =============================================================================
+skills:
+  prefix: "dgsf"  # Skills become /dgsf_research, /dgsf_plan, etc.
+  
+  enabled_skills: "all"  # Use all kernel skills
+  
+  # Prompt file mappings (Core skills)
+  prompt_files:
+    research: ".github/prompts/dgsf_research.prompt.md"
+    plan: ".github/prompts/dgsf_plan.prompt.md"
+    execute: ".github/prompts/dgsf_execute.prompt.md"
+    verify: ".github/prompts/dgsf_verify.prompt.md"
+    diagnose: ".github/prompts/dgsf_diagnose.prompt.md"
+    abort: ".github/prompts/dgsf_abort.prompt.md"
+    decision_log: ".github/prompts/dgsf_decision_log.prompt.md"
+    state_update: ".github/prompts/dgsf_state_update.prompt.md"
+    research_summary: ".github/prompts/dgsf_research_summary.prompt.md"
+    repo_scan: ".github/prompts/dgsf_repo_scan.prompt.md"
+    git_ops: ".github/prompts/dgsf_git_ops.prompt.md"
+    # Spec governance skills
+    spec_triage: ".github/prompts/dgsf_spec_triage.prompt.md"
+    spec_propose: ".github/prompts/dgsf_spec_propose.prompt.md"
+    spec_commit: ".github/prompts/dgsf_spec_commit.prompt.md"
+    # AEP-10 domain skills
+    knowledge_sync: ".github/prompts/dgsf_knowledge_sync.prompt.md"
+    practice_check: ".github/prompts/dgsf_practice_check.prompt.md"
+    protocol_design: ".github/prompts/dgsf_protocol_design.prompt.md"
+    debt_review: ".github/prompts/dgsf_debt_review.prompt.md"
+    memory_query: ".github/prompts/dgsf_memory_query.prompt.md"
+    threshold_resolve: ".github/prompts/dgsf_threshold_resolve.prompt.md"
+
+  # Skill-specific overrides (if any)
+  overrides:
+    verify:
+      # DGSF-specific verification thresholds
+      auto_check_thresholds: true
+      threshold_source: "configs/thresholds.yaml"
+      # AEP-10: Use adaptive threshold resolution
+      adaptive_thresholds: true
+      adaptive_engine: "configs/adaptive_threshold_engine.yaml"
+
+# =============================================================================
+# RULES INHERITANCE
+# =============================================================================
+rules:
+  inherit_kernel_rules: "all"  # [R1, R2, R3, R4, R5, R6]
+  
+  project_rules:
+    P1:
+      description: "All features must be point-in-time correct"
+      priority: "P4"
+      violation_example: "Using future data in feature calculation"
+      verification: "scripts/check_point_in_time.py"
+    
+    P2:
+      description: "No survivorship bias in universe construction"
+      priority: "P3"
+      violation_example: "Using only currently-listed stocks in backtest"
+      verification: "manual_review"
+
+  rule_overrides:
+    R2:
+      # Parameterize "one task at a time" for multi-agent scenarios
+      description: "One task per agent per project scope"
+      rationale: "Support parallel agents in institutional deployment"
+
+# =============================================================================
+# BEHAVIORAL DEFAULTS
+# =============================================================================
+behavior:
+  scope_pattern: "projects/dgsf/**"
+  long_run_threshold_seconds: 180
+  auto_git_ops: true
+  
+  # DGSF-specific behaviors
+  domain_specific:
+    protect_raw_data: true
+    raw_data_path: "data/raw"
+    require_lineage: true  # Experiments must produce lineage.yaml
+    
+  # Stage completion triggers
+  stage_triggers:
+    on_complete: ["/dgsf_git_ops"]
+    on_fail: ["/dgsf_diagnose"]
+
+# =============================================================================
+# MODULES (DGSF-specific)
+# =============================================================================
+modules:
+  - name: "paneltree"
+    path: "repo/src/dgsf/paneltree"
+    description: "Panel data tree structures"
+  - name: "sdf"
+    path: "repo/src/dgsf/sdf"
+    description: "Stochastic Discount Factor models"
+  - name: "ea"
+    path: "repo/src/dgsf/ea"
+    description: "Evolutionary algorithms"
+  - name: "rolling"
+    path: "repo/src/dgsf/rolling"
+    description: "Rolling window operations"
+  - name: "dataeng"
+    path: "repo/src/dgsf/dataeng"
+    description: "Data engineering utilities"
+  - name: "backtest"
+    path: "repo/src/dgsf/backtest"
+    description: "Backtesting framework"
+  - name: "factors"
+    path: "repo/src/dgsf/factors"
+    description: "Factor construction"
+  - name: "eval"
+    path: "repo/src/dgsf/eval"
+    description: "Evaluation metrics"
+  - name: "utils"
+    path: "repo/src/dgsf/utils"
+    description: "Shared utilities"
+
+# =============================================================================
+# EXPERIMENT FORMAT
+# =============================================================================
+experiment:
+  naming_pattern: "t{NN}_{name}"
+  branching_pattern: "t{NN}.{SS}_{name}"
+  
+  required_artifacts:
+    - "config.yaml"
+    - "results.json"
+  
+  optional_artifacts:
+    - "run.log"
+    - "lineage.yaml"
+    - "*.pth"
+  
+  results_schema:
+    required_fields:
+      - "oos_sharpe"
+      - "is_sharpe"
+      - "max_drawdown"
+      - "annual_turnover"
+    optional_fields:
+      - "calmar_ratio"
+      - "adjusted_pvalue"

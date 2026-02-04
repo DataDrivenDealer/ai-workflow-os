@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-02-04T06:25:27Z",
+  "gamma": 0.01,
+  "criteria": {
+    "lex_elite_consistent": true,
+    "thr_elite_consistent": true,
+    "wgt_penalized": true,
+    "baseline_has_inconsistent": true,
+    "ranking_complete": true,
+    "telemetry_complete": true,
+    "elapsed_fast": true
+  },
+  "all_pass": true,
+  "consistent_count": 69,
+  "inconsistent_count": 31,
+  "elapsed": 0.038004398345947266
+}

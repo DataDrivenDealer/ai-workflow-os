@@ -1,0 +1,118 @@
+# DGSF Project Manifest
+# Binds this project to the Kernel and defines domain-specific configuration
+# Version: 1.0.0
+
+version: "1.0.0"
+project_id: "dgsf"
+display_name: "Dynamic Generative SDF Forest"
+domain: "quantitative_research"
+
+# =============================================================================
+# KERNEL BINDING
+# =============================================================================
+kernel:
+  min_version: "3.6.0"
+  max_version: "4.0.0"  # Exclusive upper bound
+  compatibility_mode: "strict"  # strict | relaxed
+
+# =============================================================================
+# RULE INHERITANCE
+# =============================================================================
+rules:
+  inherits: [R1, R2, R3, R4, R5, R6]  # From Kernel
+  
+  overrides:
+    # R2: "One task at a time" → parameterized for multi-agent
+    R2:
+      original: "One task at a time"
+      override: "One task per agent per project scope"
+      scope: "project"
+      rationale: "Support parallel agents in institutional deployment"
+      
+  additions:
+    # Project-specific rules
+    P1:
+      description: "All features must be point-in-time correct"
+      priority: P4
+      verification: "scripts/check_point_in_time.py"
+    P2:
+      description: "No survivorship bias in universe construction"
+      priority: P3
+      verification: "manual_review"
+
+# =============================================================================
+# SUCCESS CRITERIA
+# =============================================================================
+success_criteria:
+  source: "configs/thresholds.yaml"
+  allow_experiment_override: true
+  
+# =============================================================================
+# EXPERIMENT CONVENTIONS
+# =============================================================================
+experiments:
+  naming_pattern: "t{NN}_{name}"  # NN = zero-padded stage
+  branching_pattern: "t{NN}.{SS}_{name}"  # SS = sub-experiment
+  required_artifacts:
+    - config.yaml
+    - results.json
+  optional_artifacts:
+    - run.log
+    - lineage.yaml
+    - "*.pth"
+
+# =============================================================================
+# DATA GOVERNANCE
+# =============================================================================
+data:
+  raw:
+    path: "data/raw/"
+    policy: "read_only"
+    integrity_check: "scripts/verify_raw_data_integrity.py"
+  processed:
+    path: "data/processed/"
+    policy: "write_allowed"
+    lineage_required: true
+
+# =============================================================================
+# SKILL BINDINGS
+# =============================================================================
+skills:
+  prefix: "dgsf_"
+  available:
+    - name: "research"
+      role_modes: [planner, architect]
+    - name: "plan"
+      role_modes: [planner]
+    - name: "execute"
+      role_modes: [executor, builder]
+    - name: "verify"
+      role_modes: [reviewer]
+    - name: "diagnose"
+      role_modes: [executor, builder]
+    - name: "abort"
+      role_modes: [executor, planner]
+    - name: "decision_log"
+      role_modes: [planner, executor]
+    - name: "state_update"
+      role_modes: [executor]
+    - name: "research_summary"
+      role_modes: [planner, architect]
+    - name: "repo_scan"
+      role_modes: [executor, planner, architect]
+    - name: "git_ops"
+      role_modes: [executor]
+    # Spec Evolution Skills (added 2026-02-04)
+    - name: "spec_triage"
+      role_modes: [planner, architect]
+      description: "Analyze problems to determine if spec change is needed"
+      mcp_tools: [spec_triage, spec_list, spec_read]
+    - name: "spec_propose"
+      role_modes: [planner, architect]
+      description: "Create spec change proposals"
+      mcp_tools: [spec_read, spec_propose]
+    - name: "spec_commit"
+      role_modes: [executor]
+      description: "Commit approved spec changes"
+      mcp_tools: [spec_commit]
+      requires_approval: true

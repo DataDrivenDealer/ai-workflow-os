@@ -1,0 +1,143 @@
+{
+  "timestamp": "2026-02-04T07:10:46.285154",
+  "verdict": "PASS",
+  "board_coverage": {
+    "SH Main (60xxxx)": 1702,
+    "SZ Main (00xxxx)": 1491,
+    "ChiNext (30xxxx)": 1392,
+    "STAR (68xxxx)": 601,
+    "BSE (8xxxxx)": 0
+  },
+  "daily_coverage": {
+    "000001.SZ": {
+      "rows": 20,
+      "start": "20150105",
+      "status": "OK"
+    },
+    "600000.SH": {
+      "rows": 20,
+      "start": "20150105",
+      "status": "OK"
+    },
+    "300001.SZ": {
+      "rows": 20,
+      "start": "20150105",
+      "status": "OK"
+    }
+  },
+  "fina_coverage": {
+    "000001.SZ": {
+      "rows": 8,
+      "periods": [
+        "20151231",
+        "20150930",
+        "20150630",
+        "20150331"
+      ],
+      "status": "OK"
+    },
+    "600000.SH": {
+      "rows": 8,
+      "periods": [
+        "20151231",
+        "20150930",
+        "20150630",
+        "20150331"
+      ],
+      "status": "OK"
+    },
+    "300001.SZ": {
+      "rows": 8,
+      "periods": [
+        "20151231",
+        "20150930",
+        "20150630",
+        "20150331"
+      ],
+      "status": "OK"
+    }
+  },
+  "macro_coverage": {
+    "CPI": {
+      "rows": 12,
+      "status": "OK"
+    },
+    "PPI": {
+      "rows": 12,
+      "status": "OK"
+    },
+    "M2": {
+      "rows": 12,
+      "status": "OK"
+    },
+    "GDP": {
+      "rows": 4,
+      "status": "OK"
+    }
+  },
+  "index_weight_status": "OK",
+  "api_limits": {
+    "daily": {
+      "rows_per_call": 5000,
+      "calls_per_min": 500,
+      "note": "按股票+日期分批"
+    },
+    "monthly": {
+      "rows_per_call": 5000,
+      "calls_per_min": 200,
+      "note": "月频，量较小"
+    },
+    "adj_factor": {
+      "rows_per_call": "unlimited",
+      "calls_per_min": 500,
+      "note": "复权因子"
+    },
+    "daily_basic": {
+      "rows_per_call": 5000,
+      "calls_per_min": 500,
+      "note": "含市值"
+    },
+    "fina_indicator": {
+      "rows_per_call": 200,
+      "calls_per_min": 200,
+      "note": "最大瓶颈"
+    },
+    "income": {
+      "rows_per_call": 200,
+      "calls_per_min": 200,
+      "note": "财报"
+    },
+    "balancesheet": {
+      "rows_per_call": 200,
+      "calls_per_min": 200,
+      "note": "财报"
+    },
+    "cashflow": {
+      "rows_per_call": 200,
+      "calls_per_min": 200,
+      "note": "财报"
+    },
+    "cn_cpi": {
+      "rows_per_call": 1000,
+      "calls_per_min": 200,
+      "note": "宏观"
+    },
+    "cn_ppi": {
+      "rows_per_call": 1000,
+      "calls_per_min": 200,
+      "note": "宏观"
+    },
+    "cn_m": {
+      "rows_per_call": 1000,
+      "calls_per_min": 200,
+      "note": "货币供应"
+    },
+    "index_weight": {
+      "rows_per_call": 5000,
+      "calls_per_min": 200,
+      "note": "指数成分"
+    }
+  },
+  "gaps": [],
+  "recommendations": []
+}

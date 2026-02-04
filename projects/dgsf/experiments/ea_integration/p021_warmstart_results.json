@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-02-04T06:19:43Z",
+  "criteria": {
+    "population_created": true,
+    "ratio_valid": true,
+    "drift_computed": true,
+    "telemetry_complete": true,
+    "baseline_valid": true,
+    "elapsed_fast": true
+  },
+  "all_pass": true,
+  "warm_start_ratio": 0.5,
+  "avg_drift": 0.15,
+  "elapsed": 0.018001079559326172
+}

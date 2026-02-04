@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-02-04T05:47:51.120363",
+  "data_source": "REAL",
+  "T": 56,
+  "D": 48,
+  "K": 20,
+  "date_range": "56 months (2015-05 to 2019-12)",
+  "population_size": 30,
+  "num_generations": 20,
+  "elapsed_seconds": 0.6941218376159668,
+  "num_pareto_solutions": 29,
+  "objectives": {
+    "f1_neg_sharpe": {
+      "min": -180.9724884033203,
+      "max": -39.35915756225586,
+      "mean": -117.34939706736597,
+      "std": 45.140797201402144
+    },
+    "f2_mdd": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "f3_turnover": {
+      "min": 0.0,
+      "max": 0.9629725813865662,
+      "mean": 0.34538000143646935,
+      "std": 0.34006242573478074
+    },
+    "f4_pricing_error": {
+      "min": 1.0907843716267962e-05,
+      "max": 1.1588246707106009e-05,
+      "mean": 1.1097112260829128e-05,
+      "std": 1.6515866270966617e-07
+    }
+  },
+  "best_sharpe": {
+    "sharpe": 180.9724884033203,
+    "mdd": 0.0,
+    "turnover": 0.7021790146827698,
+    "pe": 1.1120513590867631e-05,
+    "weights_sparsity": 0.8
+  },
+  "best_mdd": {
+    "sharpe": 40.26408767700195,
+    "mdd": 0.0,
+    "pe": 1.1571567483770195e-05
+  },
+  "best_pe": {
+    "sharpe": 76.55701446533203,
+    "pe": 1.0907843716267962e-05
+  },
+  "weight_analysis": {
+    "mean_max_weight": 0.1527711626282416,
+    "mean_active_assets": 15.344827586206897,
+    "weight_sums_valid": true
+  }
+}

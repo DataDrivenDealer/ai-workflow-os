@@ -1,0 +1,10 @@
+{
+  "data_source": "REAL (P0-18 reconstructed, REAL)",
+  "pareto_front_size": 29,
+  "hypervolume": 2.086408123493569,
+  "consistent_count": 29,
+  "consistency_ratio": 1.0,
+  "strategy_drift": 1.0738055550589443,
+  "best_sharpe": 180.9724884033203,
+  "elapsed_seconds": 0.01706385612487793
+}

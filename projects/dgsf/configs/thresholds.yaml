@@ -1,0 +1,84 @@
+# DGSF Success Thresholds Configuration
+# Referenced by: .github/copilot-instructions.md
+# Version: 1.0.0
+#
+# 每个实验可以在其 config.yaml 中覆盖这些默认值。
+# 覆盖时需在 decision log 中记录理由。
+
+defaults:
+  oos_sharpe:
+    min: 1.5
+    description: "Out-of-sample Sharpe ratio minimum"
+  
+  oos_is_ratio:
+    min: 0.9
+    description: "OOS/IS performance ratio (robustness indicator)"
+  
+  max_drawdown:
+    max: 0.20
+    description: "Maximum drawdown tolerance (percentage)"
+  
+  turnover:
+    max: 2.0  # 200% annual expressed as ratio
+    description: "Annual turnover limit (ratio of AUM)"
+
+# =============================================================================
+# MULTIPLE TESTING CORRECTION
+# =============================================================================
+# When running parallel experiments (branching), adjust thresholds to control FDR
+multiple_testing:
+  enabled: true
+  method: "bonferroni"  # bonferroni | holm | bh (Benjamini-Hochberg)
+  
+  # Auto-detect parallel branches by naming pattern
+  branch_detection:
+    pattern: "t{NN}.{SS}_*"
+    grouping: "same_NN"  # Branches with same NN are a comparison group
+    
+  # Threshold adjustment formula
+  # Adjusted threshold = nominal_threshold / n_branches (Bonferroni)
+  # Example: 3 branches → OOS Sharpe threshold becomes 1.5/3 = 0.5... 
+  # This is too strict, so we use significance-based adjustment instead
+  adjustment_approach: "significance_based"
+  
+  # For significance-based approach:
+  # Instead of adjusting Sharpe threshold, we:
+  # 1. Compute p-value for each experiment's Sharpe (via bootstrap)
+  # 2. Apply Bonferroni correction to p-values
+  # 3. Report "adjusted significance" alongside raw metrics
+  significance_config:
+    bootstrap_samples: 1000
+    confidence_level: 0.95
+    
+  # Reporting requirement when n_branches > 1
+  required_in_results:
+    - n_comparisons
+    - raw_pvalue
+    - adjusted_pvalue
+    - significant_after_correction
+
+# =============================================================================
+# ASSET-CLASS SPECIFIC OVERRIDES
+# =============================================================================
+asset_class_overrides:
+  # Example: crypto may have different tolerance
+  # crypto:
+  #   oos_sharpe:
+  #     min: 2.0
+  #   max_drawdown:
+  #     max: 0.30
+
+# =============================================================================
+# EXPERIMENT-SPECIFIC OVERRIDE SCHEMA
+# =============================================================================
+# Each experiment's config.yaml can include:
+#
+# thresholds:
+#   inherit: defaults  # or asset_class_overrides.crypto
+#   override:
+#     oos_sharpe:
+#       min: 1.2
+#       reason: "Early-stage exploration, relaxed threshold"
+#   multiple_testing:
+#     n_comparisons: 3
+#     correction_applied: true

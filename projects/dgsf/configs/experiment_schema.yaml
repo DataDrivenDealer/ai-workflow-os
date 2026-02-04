@@ -1,0 +1,137 @@
+# DGSF Experiment Schema
+# 所有实验的 results.json 必须符合此 schema
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "DGSF Experiment Results"
+description: "Standard schema for DGSF experiment results"
+
+type: object
+
+required:
+  - experiment_id
+  - timestamp
+  - config_hash
+  - metrics
+  - status
+
+properties:
+  experiment_id:
+    type: string
+    pattern: "^t[1-6]_[a-z0-9_]+$"
+    description: "Experiment ID following t{stage}_{name} format"
+    examples:
+      - "t4_baseline"
+      - "t5_oos_validation"
+
+  timestamp:
+    type: string
+    format: date-time
+    description: "ISO 8601 timestamp of experiment completion"
+
+  config_hash:
+    type: string
+    description: "SHA256 hash of config.yaml for reproducibility"
+
+  duration_seconds:
+    type: number
+    minimum: 0
+    description: "Total experiment runtime in seconds"
+
+  metrics:
+    type: object
+    required:
+      - is_sharpe
+      - oos_sharpe
+    properties:
+      # In-Sample Metrics
+      is_sharpe:
+        type: number
+        description: "In-sample Sharpe ratio"
+      is_return:
+        type: number
+        description: "In-sample annualized return"
+      
+      # Out-of-Sample Metrics (Critical)
+      oos_sharpe:
+        type: number
+        description: "Out-of-sample Sharpe ratio"
+        minimum: -10
+        maximum: 10
+      oos_return:
+        type: number
+        description: "Out-of-sample annualized return"
+      
+      # Risk Metrics
+      max_drawdown:
+        type: number
+        description: "Maximum drawdown (as decimal, e.g., 0.15 = 15%)"
+        minimum: 0
+        maximum: 1
+      annual_turnover:
+        type: number
+        description: "Annual turnover (as decimal, e.g., 1.5 = 150%)"
+        minimum: 0
+      
+      # Overfitting Guard
+      oos_is_ratio:
+        type: number
+        description: "OOS Sharpe / IS Sharpe ratio (closer to 1.0 = less overfit)"
+
+  thresholds_met:
+    type: object
+    description: "Whether each SUCCESS METRIC threshold was met"
+    properties:
+      oos_sharpe:
+        type: boolean
+        description: "OOS Sharpe >= 1.5"
+      oos_is_ratio:
+        type: boolean
+        description: "OOS/IS ratio >= 0.9"
+      max_drawdown:
+        type: boolean
+        description: "Max drawdown <= 20%"
+      turnover:
+        type: boolean
+        description: "Annual turnover <= 200%"
+
+  status:
+    type: string
+    enum:
+      - "success"      # All thresholds met
+      - "partial"      # Some thresholds met
+      - "fail"         # Critical thresholds not met
+      - "error"        # Experiment failed to complete
+    description: "Overall experiment status"
+
+  notes:
+    type: string
+    description: "Free-form notes about the experiment"
+
+  parent_experiment:
+    type: string
+    description: "ID of experiment this builds upon"
+
+  data_version:
+    type: string
+    description: "Version/hash of data used"
+
+# Example valid results.json
+examples:
+  - experiment_id: "t4_final"
+    timestamp: "2026-02-04T14:32:00Z"
+    config_hash: "a1b2c3d4e5f6..."
+    duration_seconds: 3600
+    metrics:
+      is_sharpe: 1.78
+      oos_sharpe: 1.67
+      oos_is_ratio: 0.94
+      max_drawdown: 0.15
+      annual_turnover: 1.80
+    thresholds_met:
+      oos_sharpe: true
+      oos_is_ratio: true
+      max_drawdown: true
+      turnover: true
+    status: "success"
+    parent_experiment: "t4_regularization"
+    data_version: "v20260201"
