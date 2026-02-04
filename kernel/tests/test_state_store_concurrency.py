@@ -26,9 +26,10 @@ def test_concurrent_writes_no_corruption():
             futures = [executor.submit(write_worker, i) for i in range(5)]
             concurrent.futures.wait(futures)
         
-        # 验证：应有5*10=50个keys
+        # 验证：应有5*10=50个keys（不计入版本控制元数据字段）
         final_data = read_yaml(test_path)
-        assert len(final_data) == 50, f"Expected 50 keys, got {len(final_data)}"
+        user_keys = [k for k in final_data if not k.startswith("_")]
+        assert len(user_keys) == 50, f"Expected 50 keys, got {len(user_keys)}"
         
         # 验证数据完整性
         for worker_id in range(5):
@@ -83,7 +84,9 @@ def test_high_volume_concurrent_writes():
                 future.result()
 
         final_data = read_yaml(test_path)
-        assert len(final_data) == 1000, f"Expected 1000 keys, got {len(final_data)}"
+        # 不计入版本控制元数据字段（_version, _checksum, _last_modified_at）
+        user_keys = [k for k in final_data if not k.startswith("_")]
+        assert len(user_keys) == 1000, f"Expected 1000 keys, got {len(user_keys)}"
 
 
 def test_lock_timeout():

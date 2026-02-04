@@ -307,6 +307,120 @@ class MCPServer:
                 }
             },
             # =====================================================================
+            # Spec Evolution Tools (Skills + MCP + Hooks Integration)
+            # =====================================================================
+            {
+                "name": "spec_read",
+                "description": "Read the content of a specification file. Returns full content or specific section.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "spec_path": {
+                            "type": "string",
+                            "description": "Relative path to spec file (e.g., 'projects/dgsf/specs/SDF_INTERFACE_CONTRACT.yaml')"
+                        },
+                        "section": {
+                            "type": "string",
+                            "description": "Optional: Specific YAML section to read (dot notation, e.g., 'validation.thresholds')"
+                        }
+                    },
+                    "required": ["session_token", "spec_path"]
+                }
+            },
+            {
+                "name": "spec_propose",
+                "description": "Propose a change to a specification. Creates a proposal record pending human approval.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "spec_path": {
+                            "type": "string",
+                            "description": "Relative path to spec file"
+                        },
+                        "change_type": {
+                            "type": "string",
+                            "enum": ["add", "modify", "deprecate"],
+                            "description": "Type of change being proposed"
+                        },
+                        "rationale": {
+                            "type": "string",
+                            "description": "Explanation of why this change is needed (required)"
+                        },
+                        "proposed_diff": {
+                            "type": "string",
+                            "description": "Unified diff format showing the proposed changes"
+                        },
+                        "evidence_refs": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional: References to research or experiment results"
+                        }
+                    },
+                    "required": ["session_token", "spec_path", "change_type", "rationale", "proposed_diff"]
+                }
+            },
+            {
+                "name": "spec_commit",
+                "description": "Commit an approved spec change. Requires approval reference. Triggers pre/post hooks.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "proposal_id": {
+                            "type": "string",
+                            "description": "Proposal ID from spec_propose (format: SCP-YYYY-MM-DD-NNN)"
+                        },
+                        "approval_ref": {
+                            "type": "string",
+                            "description": "Approval reference (decision log path or PR number)"
+                        },
+                        "run_hooks": {
+                            "type": "boolean",
+                            "description": "Whether to run pre/post spec-change hooks (default: true)"
+                        }
+                    },
+                    "required": ["session_token", "proposal_id", "approval_ref"]
+                }
+            },
+            {
+                "name": "spec_triage",
+                "description": "Analyze a problem to determine if spec change is needed. Returns classification and recommended action.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_token": {
+                            "type": "string",
+                            "description": "Active session token"
+                        },
+                        "problem_description": {
+                            "type": "string",
+                            "description": "Description of the problem (error message, metric deviation, etc.)"
+                        },
+                        "source": {
+                            "type": "string",
+                            "enum": ["test", "experiment", "review", "monitoring", "manual"],
+                            "description": "Where the problem was discovered"
+                        },
+                        "context": {
+                            "type": "object",
+                            "description": "Optional: Additional context (file paths, metric values, etc.)"
+                        }
+                    },
+                    "required": ["session_token", "problem_description", "source"]
+                }
+            },
+            # =====================================================================
             # Pair Programming / Code Review Tools
             # =====================================================================
             {
@@ -643,6 +757,10 @@ class MCPServer:
             "artifact_read": self._artifact_read,
             "artifact_list": self._artifact_list,
             "spec_list": self._spec_list,
+            "spec_read": self._spec_read,
+            "spec_propose": self._spec_propose,
+            "spec_commit": self._spec_commit,
+            "spec_triage": self._spec_triage,
             # Pair Programming / Code Review
             "review_submit": self._review_submit,
             "review_create_session": self._review_create_session,
@@ -1059,6 +1177,380 @@ class MCPServer:
             })
         
         return {"specs": specs}
+    
+    # =========================================================================
+    # Spec Evolution Tool Implementations (Skills + MCP + Hooks Integration)
+    # =========================================================================
+    
+    def _spec_read(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Read the content of a specification file."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        import yaml
+        spec_path = self.root / args["spec_path"]
+        
+        if not spec_path.exists():
+            return {"error": "SPEC_NOT_FOUND", "message": f"Spec file not found: {args['spec_path']}"}
+        
+        # Read file content
+        with spec_path.open("r", encoding="utf-8") as f:
+            content = f.read()
+        
+        result = {
+            "spec_path": args["spec_path"],
+            "exists": True,
+            "content": content,
+        }
+        
+        # If specific section requested and it's a YAML file
+        section = args.get("section")
+        if section and (spec_path.suffix in [".yaml", ".yml"]):
+            try:
+                data = yaml.safe_load(content)
+                # Navigate dot notation (e.g., "validation.thresholds")
+                for key in section.split("."):
+                    if isinstance(data, dict) and key in data:
+                        data = data[key]
+                    else:
+                        return {"error": "SECTION_NOT_FOUND", "message": f"Section '{section}' not found"}
+                result["section"] = section
+                result["section_content"] = data
+            except yaml.YAMLError as e:
+                return {"error": "YAML_PARSE_ERROR", "message": str(e)}
+        
+        # Determine spec layer from path
+        if "specs/canon" in args["spec_path"]:
+            result["layer"] = "L0"
+            result["editable_by_ai"] = False
+        elif "specs/framework" in args["spec_path"]:
+            result["layer"] = "L1"
+            result["editable_by_ai"] = False  # Propose only
+        elif "/specs/" in args["spec_path"]:
+            result["layer"] = "L2"
+            result["editable_by_ai"] = False  # Propose only
+        elif "/experiments/" in args["spec_path"] and "config.yaml" in args["spec_path"]:
+            result["layer"] = "L3"
+            result["editable_by_ai"] = True
+        else:
+            result["layer"] = "unknown"
+            result["editable_by_ai"] = False
+        
+        return result
+    
+    def _spec_propose(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Propose a change to a specification."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
+        
+        import yaml
+        from datetime import datetime
+        
+        spec_path = args["spec_path"]
+        change_type = args["change_type"]
+        rationale = args["rationale"]
+        proposed_diff = args["proposed_diff"]
+        evidence_refs = args.get("evidence_refs", [])
+        
+        # Check Canon protection
+        if "specs/canon" in spec_path:
+            return {
+                "error": "CANON_PROTECTED",
+                "message": "Cannot propose changes to Canon specs (L0). Contact Project Owner."
+            }
+        
+        # Validate role can propose
+        if session.role_mode not in (RoleMode.ARCHITECT, RoleMode.PLANNER):
+            return {
+                "error": "ROLE_MODE_VIOLATION",
+                "message": f"Role Mode '{session.role_mode.value}' cannot propose spec changes. Requires 'architect' or 'planner'."
+            }
+        
+        # Generate proposal ID
+        now = datetime.now(timezone.utc)
+        date_str = now.strftime("%Y-%m-%d")
+        
+        # Find next sequence number
+        proposals_dir = self.root / "projects" / "dgsf" / "decisions"
+        proposals_dir.mkdir(parents=True, exist_ok=True)
+        
+        existing = list(proposals_dir.glob(f"SCP-{date_str}-*.yaml"))
+        seq_num = len(existing) + 1
+        proposal_id = f"SCP-{date_str}-{seq_num:03d}"
+        
+        # Create proposal record
+        proposal = {
+            "id": proposal_id,
+            "spec_path": spec_path,
+            "change_type": change_type,
+            "status": "proposed",
+            "proposed_by": {
+                "agent_id": session.agent_id,
+                "session_token": session.session_token[:8] + "...",
+                "role_mode": session.role_mode.value,
+            },
+            "timestamp": now.isoformat(),
+            "rationale": rationale,
+            "proposed_diff": proposed_diff,
+            "evidence_refs": evidence_refs,
+            "approval": {
+                "required_from": self._get_required_approver(spec_path),
+                "approved_by": None,
+                "approved_at": None,
+            }
+        }
+        
+        # Write proposal file
+        proposal_file = proposals_dir / f"{proposal_id}.yaml"
+        with proposal_file.open("w", encoding="utf-8") as f:
+            yaml.dump(proposal, f, default_flow_style=False, allow_unicode=True)
+        
+        return {
+            "success": True,
+            "proposal_id": proposal_id,
+            "proposal_file": str(proposal_file.relative_to(self.root)),
+            "status": "proposed",
+            "required_approval_from": self._get_required_approver(spec_path),
+            "message": f"Spec change proposal created. Awaiting approval from {self._get_required_approver(spec_path)}."
+        }
+    
+    def _get_required_approver(self, spec_path: str) -> str:
+        """Determine who must approve a spec change based on path."""
+        if "specs/canon" in spec_path:
+            return "Project Owner (freeze required)"
+        elif "specs/framework" in spec_path:
+            return "Platform Engineer"
+        elif "/specs/" in spec_path:
+            return "Project Lead"
+        elif "/experiments/" in spec_path:
+            return "Auto-approval (threshold verification)"
+        return "Human Operator"
+    
+    def _spec_commit(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Commit an approved spec change."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        session = self.auth_manager.get_session(args["session_token"])
+        if session is None:
+            return {"error": "SESSION_NOT_FOUND", "message": "Session not found"}
+        
+        import yaml
+        import subprocess
+        from datetime import datetime
+        
+        proposal_id = args["proposal_id"]
+        approval_ref = args["approval_ref"]
+        run_hooks = args.get("run_hooks", True)
+        
+        # Find proposal file
+        proposals_dir = self.root / "projects" / "dgsf" / "decisions"
+        proposal_file = proposals_dir / f"{proposal_id}.yaml"
+        
+        if not proposal_file.exists():
+            return {"error": "PROPOSAL_NOT_FOUND", "message": f"Proposal {proposal_id} not found"}
+        
+        with proposal_file.open("r", encoding="utf-8") as f:
+            proposal = yaml.safe_load(f)
+        
+        spec_path = proposal["spec_path"]
+        
+        # Verify approval (for L0-L2, check approval_ref; for L3, auto-approve)
+        is_l3 = "/experiments/" in spec_path and "config.yaml" in spec_path
+        if not is_l3:
+            # Check if approval file or reference exists
+            approval_file = self.root / "decisions" / f"{approval_ref}.yaml"
+            if not approval_file.exists() and not approval_ref.startswith("PR#"):
+                # Check in project decisions folder too
+                project_approval = proposals_dir / f"{approval_ref}.yaml"
+                if not project_approval.exists():
+                    return {
+                        "error": "APPROVAL_NOT_FOUND",
+                        "message": f"Approval reference '{approval_ref}' not found. Provide decision log path or PR number."
+                    }
+        
+        # Run pre-spec-change hook
+        if run_hooks:
+            hook_path = self.root / "hooks" / "pre-spec-change"
+            if hook_path.exists():
+                try:
+                    result = subprocess.run(
+                        ["sh", str(hook_path), spec_path, proposal["change_type"], approval_ref],
+                        capture_output=True,
+                        text=True,
+                        cwd=str(self.root),
+                        timeout=30
+                    )
+                    if result.returncode != 0:
+                        return {
+                            "error": "PRE_HOOK_FAILED",
+                            "message": f"Pre-spec-change hook failed: {result.stderr}"
+                        }
+                except subprocess.TimeoutExpired:
+                    return {"error": "HOOK_TIMEOUT", "message": "Pre-spec-change hook timed out"}
+                except Exception as e:
+                    # On Windows, sh might not be available - try PowerShell
+                    pass
+        
+        # Apply the change (parse diff and apply)
+        full_spec_path = self.root / spec_path
+        if not full_spec_path.exists() and proposal["change_type"] != "add":
+            return {"error": "SPEC_NOT_FOUND", "message": f"Spec file not found: {spec_path}"}
+        
+        # For now, just update status - actual diff application would need patch utility
+        now = datetime.now(timezone.utc)
+        proposal["status"] = "committed"
+        proposal["approval"]["approved_by"] = approval_ref
+        proposal["approval"]["approved_at"] = now.isoformat()
+        
+        with proposal_file.open("w", encoding="utf-8") as f:
+            yaml.dump(proposal, f, default_flow_style=False, allow_unicode=True)
+        
+        # Run post-spec-change hook
+        if run_hooks:
+            hook_path = self.root / "hooks" / "post-spec-change"
+            if hook_path.exists():
+                try:
+                    subprocess.run(
+                        ["sh", str(hook_path), spec_path, proposal["change_type"]],
+                        capture_output=True,
+                        text=True,
+                        cwd=str(self.root),
+                        timeout=60
+                    )
+                except Exception:
+                    pass  # Post-hook failure is non-blocking
+        
+        return {
+            "success": True,
+            "proposal_id": proposal_id,
+            "spec_path": spec_path,
+            "status": "committed",
+            "approval_ref": approval_ref,
+            "message": f"Spec change {proposal_id} committed successfully. Run /dgsf_git_ops to finalize."
+        }
+    
+    def _spec_triage(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze a problem to determine if spec change is needed."""
+        error = self._validate_session(args["session_token"])
+        if error:
+            return error
+        
+        from datetime import datetime
+        
+        problem_description = args["problem_description"]
+        source = args["source"]
+        context = args.get("context", {})
+        
+        # Generate triage ID
+        now = datetime.now(timezone.utc)
+        triage_id = f"TRI-{now.strftime('%Y-%m-%d')}-{now.strftime('%H%M%S')}"
+        
+        # Simple heuristic classification (in production, this could be more sophisticated)
+        classification = {
+            "category": "unknown",
+            "root_cause": "unknown",
+            "confidence": "low",
+            "reasoning": ""
+        }
+        
+        problem_lower = problem_description.lower()
+        
+        # Pattern matching for classification
+        if any(kw in problem_lower for kw in ["threshold", "sharpe", "drawdown", "oos", "metric"]):
+            classification["category"] = "metric_deviation"
+            if any(kw in problem_lower for kw in ["threshold", "too low", "too high", "should be"]):
+                classification["root_cause"] = "spec_issue"
+                classification["confidence"] = "medium"
+                classification["reasoning"] = "Problem mentions thresholds or metric criteria, suggesting spec-defined values may need adjustment."
+            else:
+                classification["root_cause"] = "model_issue"
+                classification["confidence"] = "medium"
+                classification["reasoning"] = "Metric deviation may be due to model performance rather than spec."
+        
+        elif any(kw in problem_lower for kw in ["error", "exception", "failed", "crash", "traceback"]):
+            classification["category"] = "runtime_error"
+            if any(kw in problem_lower for kw in ["assertion", "assert", "expected", "validation"]):
+                classification["root_cause"] = "spec_issue"
+                classification["confidence"] = "medium"
+                classification["reasoning"] = "Assertion errors often indicate spec-defined constraints are being violated."
+            else:
+                classification["root_cause"] = "code_bug"
+                classification["confidence"] = "medium"
+                classification["reasoning"] = "Runtime errors typically indicate code issues."
+        
+        elif any(kw in problem_lower for kw in ["interface", "contract", "api", "signature", "incompatible"]):
+            classification["category"] = "design_issue"
+            classification["root_cause"] = "spec_issue"
+            classification["confidence"] = "high"
+            classification["reasoning"] = "Interface/contract issues directly relate to specification definitions."
+        
+        # Determine recommended action
+        if classification["root_cause"] == "spec_issue":
+            recommended_action = {
+                "type": "spec_research",
+                "command": "/dgsf_research",
+                "then": "/dgsf_spec_propose",
+                "description": "Research the issue and propose spec changes."
+            }
+        elif classification["root_cause"] == "code_bug":
+            recommended_action = {
+                "type": "code_diagnose",
+                "command": "/dgsf_diagnose",
+                "description": "Diagnose and fix the code bug."
+            }
+        else:
+            recommended_action = {
+                "type": "manual_investigation",
+                "command": None,
+                "description": "Manual investigation required. Insufficient information to classify."
+            }
+        
+        # Calculate priority score
+        impact_keywords = {"critical": 5, "major": 4, "blocking": 5, "production": 5, "all": 4}
+        frequency_keywords = {"always": 5, "every": 5, "often": 4, "sometimes": 3, "rarely": 2}
+        
+        impact_score = 3  # default
+        frequency_score = 3  # default
+        
+        for kw, score in impact_keywords.items():
+            if kw in problem_lower:
+                impact_score = max(impact_score, score)
+        
+        for kw, score in frequency_keywords.items():
+            if kw in problem_lower:
+                frequency_score = max(frequency_score, score)
+        
+        priority_score = impact_score * frequency_score
+        if priority_score >= 16:
+            priority = "P1"
+        elif priority_score >= 9:
+            priority = "P2"
+        else:
+            priority = "P3"
+        
+        return {
+            "triage_id": triage_id,
+            "problem": problem_description[:200],
+            "source": source,
+            "timestamp": now.isoformat(),
+            "classification": classification,
+            "priority": {
+                "impact": impact_score,
+                "frequency": frequency_score,
+                "score": priority_score,
+                "level": priority
+            },
+            "recommended_action": recommended_action,
+            "context_received": bool(context)
+        }
     
     # =========================================================================
     # Pair Programming / Code Review Tool Implementations

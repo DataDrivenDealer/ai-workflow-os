@@ -1,6 +1,142 @@
 # AI Workflow OS State Machine Configuration
-# Version: 0.3.0
+# Version: 0.4.0
 # Derived From: GOVERNANCE_INVARIANTS, ROLE_MODE_CANON, MULTI_AGENT_CANON, PAIR_PROGRAMMING_STANDARD
+# 
+# Changelog:
+#   v0.4.0 (2026-02-04): Added formal concurrency semantics (AEP-6/Phase 1)
+#   v0.3.0: Added Pair Programming support
+
+# =============================================================================
+# CONCURRENCY MODEL (AEP-6 Phase 1)
+# =============================================================================
+# Formal concurrency semantics for multi-agent operation (5-20 concurrent agents)
+# Addresses Tension A1/A2: Explicit locking and conflict resolution
+
+concurrency:
+  version: "1.0.0"
+  max_concurrent_agents: 20
+  
+  # Locking model
+  locking:
+    model: "optimistic_with_fallback"  # optimistic | pessimistic | optimistic_with_fallback
+    description: |
+      Primary: Optimistic concurrency with version vectors
+      Fallback: File-based pessimistic locking when conflicts detected
+    
+    # Optimistic concurrency control
+    optimistic:
+      enabled: true
+      version_field: "_version"
+      conflict_detection: "version_mismatch"
+      retry_on_conflict: 3
+      retry_delay_ms: 100
+      
+    # Pessimistic fallback
+    pessimistic:
+      enabled: true
+      lock_timeout_seconds: 30
+      lock_granularity: "per_resource"  # per_resource | per_project | global
+      stale_lock_threshold_seconds: 300  # Auto-release locks older than this
+      
+  # Conflict resolution strategies
+  conflict_resolution:
+    default_strategy: "last_writer_wins_with_audit"
+    
+    strategies:
+      last_writer_wins_with_audit:
+        description: "Accept last write but log conflict for audit"
+        audit: true
+        notification: "conflict_detected"
+        
+      merge_if_compatible:
+        description: "Attempt JSON merge if changes don't overlap"
+        fallback: "last_writer_wins_with_audit"
+        
+      reject_and_retry:
+        description: "Reject conflicting write, force re-read"
+        max_retries: 3
+        
+      human_resolution:
+        description: "Queue for human resolution"
+        queue: "governance"
+        priority: "P2"
+    
+    # Per-resource strategy overrides
+    resource_overrides:
+      "state/tasks.yaml":
+        strategy: "merge_if_compatible"
+        merge_rules:
+          - field: "tasks.*"
+            rule: "per_task_merge"
+          - field: "queues.*"
+            rule: "append_only"
+            
+      "state/project.yaml":
+        strategy: "reject_and_retry"
+        rationale: "Project-level changes should be coordinated"
+        
+      "projects/*/adapter.yaml":
+        strategy: "reject_and_retry"
+        rationale: "Adapter changes require explicit coordination"
+
+  # State transition atomicity
+  transitions:
+    atomicity: "per_task"  # per_task | per_agent | global
+    isolation_level: "read_committed"
+    
+    # Concurrent transition handling
+    concurrent_transition_rules:
+      same_task:
+        policy: "serialize"
+        description: "Transitions on same task are serialized"
+        
+      wip_check:
+        policy: "atomic_increment"
+        description: "WIP limit check is atomic with transition"
+        
+      cross_task:
+        policy: "independent"
+        description: "Different tasks can transition concurrently"
+
+  # Agent session management for concurrency
+  session_isolation:
+    enabled: true
+    
+    # Each agent session has isolated view until commit
+    isolation:
+      read: "snapshot"  # snapshot | latest
+      write: "buffered"  # buffered | immediate
+      commit: "atomic"
+      
+    # Session-level locks
+    session_locks:
+      max_locks_per_session: 10
+      lock_timeout_seconds: 60
+      deadlock_detection: true
+      deadlock_resolution: "youngest_victim"
+
+  # Health monitoring for concurrency
+  monitoring:
+    enabled: true
+    metrics:
+      - name: "lock_contention_rate"
+        description: "Percentage of lock acquisitions that had to wait"
+        alert_threshold: 0.3  # >30% contention = problem
+        
+      - name: "conflict_rate"
+        description: "Percentage of writes that detected conflicts"
+        alert_threshold: 0.1  # >10% conflicts = problem
+        
+      - name: "avg_lock_wait_ms"
+        description: "Average time waiting for locks"
+        alert_threshold: 500  # >500ms = problem
+        
+      - name: "deadlock_count"
+        description: "Number of deadlocks detected"
+        alert_threshold: 1  # Any deadlock = investigate
+        
+    dashboard: "reports/concurrency_health.md"
+    refresh_interval: "1h"
 
 # =============================================================================
 # TASK STATES
@@ -77,6 +213,9 @@ transitions:
 # =============================================================================
 # ROLE MODES (from ROLE_MODE_CANON)
 # =============================================================================
+# AEP-4: Enhanced with Tiered Authority Levels
+# Authority levels enable progressive trust escalation based on agent performance
+
 role_modes:
   architect:
     description: "Constitutional and structural design"
@@ -91,7 +230,8 @@ role_modes:
       - freeze_artifacts
       - grant_authority
       - modify_authoritative_artifacts
-    authority_level: none  # All outputs speculative
+    authority_level: 0  # Speculative only
+    promotable_to: null  # Cannot be promoted
 
   planner:
     description: "Planning, decomposition, and specification"
@@ -110,7 +250,8 @@ role_modes:
       - accept_artifacts
       - freeze_artifacts
       - validate_own_outputs
-    authority_level: none
+    authority_level: 0
+    promotable_to: null
 
   executor:
     description: "Execution and implementation"
@@ -131,7 +272,8 @@ role_modes:
       - accept_artifacts
       - freeze_artifacts
       - switch_to_higher_role
-    authority_level: none
+    authority_level: 0
+    promotable_to: 1  # Can be promoted to assisted
 
   builder:
     description: "Constrained composite - execution with limited planning"
@@ -159,7 +301,8 @@ role_modes:
       - create_l1_proposals
       - self_validate
       - self_accept
-    authority_level: none
+    authority_level: 0
+    promotable_to: 2  # Can be promoted up to delegated
 
   reviewer:
     description: "Code review and quality assurance - Pair Programming partner"
@@ -185,7 +328,119 @@ role_modes:
       - modify_l0_artifacts
       - modify_l1_artifacts
       - create_tasks
-    authority_level: none  # All review outputs are speculative
+    authority_level: 0
+    promotable_to: null
+
+# =============================================================================
+# AEP-4: TIERED AUTHORITY LEVELS
+# =============================================================================
+# Progressive trust model for agent authority escalation
+# Each level unlocks additional permissions while maintaining safety boundaries
+
+authority_levels:
+  level_0:
+    name: "speculative"
+    value: 0
+    description: "All outputs require human approval before taking effect"
+    permissions:
+      - propose_changes
+      - request_review
+      - generate_drafts
+    restrictions:
+      - no_direct_commits
+      - no_file_modifications
+      - no_state_changes
+    default: true  # All new sessions start here
+
+  level_1:
+    name: "assisted"
+    value: 1
+    description: "Can execute in isolated sandbox environment"
+    permissions:
+      - all_level_0_permissions
+      - execute_in_sandbox
+      - run_tests_in_sandbox
+      - create_draft_branches
+    restrictions:
+      - no_merge_to_any_branch
+      - sandbox_only_execution
+      - no_production_data_access
+    promotion_criteria:
+      session_task_success_rate:
+        operator: ">="
+        value: 0.9
+        window: "30d"
+      no_rule_violations:
+        rules: ["R3", "R4", "R5"]
+        window: "30d"
+      minimum_task_count:
+        value: 10
+    demotion_triggers:
+      - rule_id: "R4"
+        action: "immediate_demotion_to_0"
+      - consecutive_failures: 3
+        action: "demotion_to_0"
+
+  level_2:
+    name: "delegated"
+    value: 2
+    description: "Can merge to non-protected branches with audit"
+    permissions:
+      - all_level_1_permissions
+      - merge_to_feature_branches
+      - create_pull_requests
+      - auto_apply_formatting
+    restrictions:
+      - no_merge_to_main
+      - no_merge_to_release
+      - requires_ci_pass
+      - requires_audit_log
+    promotion_criteria:
+      level_1_duration:
+        operator: ">="
+        value: "7d"
+      human_approval:
+        type: "explicit"
+        approver: "project_lead"
+      continued_success_rate:
+        operator: ">="
+        value: 0.95
+    demotion_triggers:
+      - rule_id: "R4"
+        action: "immediate_demotion_to_0"
+      - merge_caused_ci_failure: 2
+        action: "demotion_to_1"
+
+  level_3:
+    name: "trusted"
+    value: 3
+    description: "Reserved for future - potential merge to protected branches"
+    permissions:
+      - all_level_2_permissions
+      - placeholder_for_future
+    restrictions:
+      - requires_explicit_human_co_sign
+    status: "not_implemented"
+    note: "Level 3+ requires significant additional safety mechanisms"
+
+# Authority level management
+authority_management:
+  evaluation_frequency: "daily"
+  max_level_per_role:
+    executor: 1
+    builder: 2
+    reviewer: 1
+    planner: 0
+    architect: 0
+  
+  audit_requirements:
+    promotion: "logged_with_rationale"
+    demotion: "logged_with_evidence"
+    
+  override:
+    enabled: true
+    requires: "project_owner"
+    use_case: "emergency_demotion"
 
 # =============================================================================
 # ROLE MODE TRANSITIONS

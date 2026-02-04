@@ -90,9 +90,9 @@ class TestMCPServerTools:
             assert "properties" in tool["inputSchema"]
 
     def test_tool_count(self, mcp_server: MCPServer):
-        """get_tools should return 22 tools (12 original + 8 code review + 2 artifact locking)."""
+        """get_tools should return 26 tools (12 original + 8 code review + 2 artifact locking + 4 spec evolution)."""
         tools = mcp_server.get_tools()
-        assert len(tools) == 22
+        assert len(tools) == 26
 
 
 class TestMCPServerCallTool:
