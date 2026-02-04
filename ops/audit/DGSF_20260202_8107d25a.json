@@ -1,0 +1,26 @@
+[
+  {
+    "event_id": "859aae61-058",
+    "timestamp": "2026-02-02T21:28:12.309616",
+    "session_id": "8107d25a",
+    "event_type": "test_event",
+    "category": "general",
+    "severity": "INFO",
+    "source": "dgsf_adapter",
+    "data": {
+      "key": "value"
+    }
+  },
+  {
+    "event_id": "170936d5-3a5",
+    "timestamp": "2026-02-02T21:28:12.309616",
+    "session_id": "8107d25a",
+    "event_type": "pipeline_start",
+    "category": "pipeline",
+    "severity": "INFO",
+    "source": "dgsf_adapter",
+    "data": {
+      "pipeline_id": "test_123"
+    }
+  }
+]

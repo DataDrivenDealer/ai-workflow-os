@@ -1,0 +1,282 @@
+#!/usr/bin/env sh
+# Post-spec-change hook: Actions after spec change is applied
+# Created: 2026-02-04 by AI Workflow OS
+# Purpose: Update lineage, trigger tests, notify stakeholders
+
+echo "========================================"
+echo "Running post-spec-change actions..."
+echo "========================================"
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+LINEAGE_FILE="projects/dgsf/lineage/spec_changes.yaml"
+AUDIT_FILE="ops/audit/spec_commits.yaml"
+
+# ============================================================================
+# PYTHON DETECTION
+# ============================================================================
+if [ -f ".venv/Scripts/python.exe" ]; then
+    PYTHON=".venv/Scripts/python.exe"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON=".venv/bin/python"
+elif command -v python3 &> /dev/null; then
+    PYTHON="python3"
+else
+    PYTHON="python"
+fi
+
+echo "[INFO] Using Python: $PYTHON"
+
+# ============================================================================
+# ARGUMENT PARSING
+# ============================================================================
+SPEC_PATH="${1:-}"
+CHANGE_TYPE="${2:-modify}"
+CHANGE_ID="${SPEC_CHANGE_ID:-SCH-$(date +%Y%m%d%H%M%S)}"
+TIMESTAMP="${SPEC_CHANGE_TIMESTAMP:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}"
+
+if [ -z "$SPEC_PATH" ]; then
+    echo "[ERROR] Usage: post-spec-change <spec_path> [change_type]"
+    exit 1
+fi
+
+echo "[INFO] Spec path: $SPEC_PATH"
+echo "[INFO] Change ID: $CHANGE_ID"
+
+# ============================================================================
+# ACTION 1: Update Lineage Tracking
+# ============================================================================
+echo ""
+echo "[ACTION 1] Updating Lineage..."
+
+# Ensure lineage directory exists
+mkdir -p "$(dirname "$LINEAGE_FILE")"
+
+# Append to lineage file
+$PYTHON -c "
+import yaml
+from pathlib import Path
+from datetime import datetime
+
+lineage_file = Path('$LINEAGE_FILE')
+entry = {
+    'id': '$CHANGE_ID',
+    'spec_path': '$SPEC_PATH',
+    'change_type': '$CHANGE_TYPE',
+    'timestamp': '$TIMESTAMP',
+    'git_commit': None,  # Will be filled by git hook
+    'affected_experiments': []
+}
+
+# Load existing or create new
+if lineage_file.exists():
+    with open(lineage_file) as f:
+        data = yaml.safe_load(f) or {'changes': []}
+else:
+    data = {'changes': []}
+
+data['changes'].append(entry)
+
+with open(lineage_file, 'w') as f:
+    yaml.dump(data, f, default_flow_style=False)
+
+print(f'[OK] Lineage updated: {lineage_file}')
+" 2>/dev/null
+
+if [ $? -ne 0 ]; then
+    echo "[WARN] Failed to update lineage. Continuing..."
+fi
+
+# ============================================================================
+# ACTION 2: Audit Log Entry
+# ============================================================================
+echo ""
+echo "[ACTION 2] Writing Audit Log..."
+
+mkdir -p "$(dirname "$AUDIT_FILE")"
+
+$PYTHON -c "
+import yaml
+from pathlib import Path
+from datetime import datetime
+import os
+
+audit_file = Path('$AUDIT_FILE')
+entry = {
+    'id': '$CHANGE_ID',
+    'spec': '$SPEC_PATH',
+    'change_type': '$CHANGE_TYPE',
+    'timestamp': '$TIMESTAMP',
+    'actor': os.environ.get('USER', 'AI Agent'),
+    'session': os.environ.get('MCP_SESSION_TOKEN', 'direct'),
+}
+
+if audit_file.exists():
+    with open(audit_file) as f:
+        data = yaml.safe_load(f) or {'entries': []}
+else:
+    data = {'entries': []}
+
+data['entries'].append(entry)
+
+with open(audit_file, 'w') as f:
+    yaml.dump(data, f, default_flow_style=False)
+
+print(f'[OK] Audit log updated: {audit_file}')
+" 2>/dev/null
+
+if [ $? -ne 0 ]; then
+    echo "[WARN] Failed to update audit log. Continuing..."
+fi
+
+# ============================================================================
+# ACTION 3: Identify Affected Experiments
+# ============================================================================
+echo ""
+echo "[ACTION 3] Identifying Affected Experiments..."
+
+$PYTHON -c "
+import os
+from pathlib import Path
+import yaml
+
+spec_path = '$SPEC_PATH'
+experiments_dir = Path('projects/dgsf/experiments')
+
+if not experiments_dir.exists():
+    print('[INFO] No experiments directory found.')
+    exit(0)
+
+affected = []
+for exp_dir in experiments_dir.iterdir():
+    if not exp_dir.is_dir():
+        continue
+    config_file = exp_dir / 'config.yaml'
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                config = yaml.safe_load(f) or {}
+            # Check if this experiment references the changed spec
+            spec_refs = config.get('spec_refs', [])
+            if spec_path in str(spec_refs) or spec_path.split('/')[-1] in str(spec_refs):
+                affected.append(exp_dir.name)
+        except:
+            pass
+
+if affected:
+    print(f'[WARN] Affected experiments: {affected}')
+    print('       These may need to be re-run.')
+else:
+    print('[OK] No experiments directly reference this spec.')
+" 2>/dev/null
+
+# ============================================================================
+# ACTION 4: Trigger Regression Tests
+# ============================================================================
+echo ""
+echo "[ACTION 4] Triggering Regression Tests..."
+
+# Determine which tests to run based on spec path
+case "$SPEC_PATH" in
+    */SDF_*|*sdf*)
+        TEST_PATTERN="test_sdf*.py"
+        ;;
+    */PANELTREE*|*paneltree*)
+        TEST_PATTERN="test_paneltree*.py"
+        ;;
+    */DATAENG*|*dataeng*)
+        TEST_PATTERN="test_dataeng*.py"
+        ;;
+    *)
+        TEST_PATTERN=""
+        ;;
+esac
+
+if [ -n "$TEST_PATTERN" ]; then
+    echo "[INFO] Running tests matching: $TEST_PATTERN"
+    
+    # Check if pytest is available
+    $PYTHON -m pytest --version >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        # Run tests in background, non-blocking
+        echo "[INFO] Starting regression tests (background)..."
+        $PYTHON -m pytest "projects/dgsf/tests/" -k "${TEST_PATTERN%.*}" --tb=short -q 2>/dev/null &
+        TEST_PID=$!
+        echo "[INFO] Tests running in background (PID: $TEST_PID)"
+    else
+        echo "[WARN] pytest not available. Manual test run required."
+    fi
+else
+    echo "[INFO] No specific test pattern for this spec. Run full test suite manually."
+fi
+
+# ============================================================================
+# ACTION 5: Update spec_registry.yaml (if applicable)
+# ============================================================================
+echo ""
+echo "[ACTION 5] Checking Spec Registry..."
+
+REGISTRY_FILE="spec_registry.yaml"
+if [ -f "$REGISTRY_FILE" ]; then
+    $PYTHON -c "
+import yaml
+from datetime import datetime
+
+with open('$REGISTRY_FILE') as f:
+    registry = yaml.safe_load(f) or {}
+
+# Update last_modified for the changed spec
+specs = registry.get('specs', [])
+for spec in specs:
+    if spec.get('path') == '$SPEC_PATH':
+        spec['last_modified'] = '$TIMESTAMP'
+        spec['last_change_id'] = '$CHANGE_ID'
+        break
+
+with open('$REGISTRY_FILE', 'w') as f:
+    yaml.dump(registry, f, default_flow_style=False)
+
+print('[OK] Spec registry updated.')
+" 2>/dev/null
+    
+    if [ $? -ne 0 ]; then
+        echo "[WARN] Failed to update spec registry. Manual update may be needed."
+    fi
+else
+    echo "[INFO] No spec_registry.yaml found. Skipping."
+fi
+
+# ============================================================================
+# ACTION 6: Notification (Optional)
+# ============================================================================
+echo ""
+echo "[ACTION 6] Notifications..."
+
+# Check for notification config
+if [ -f "configs/notifications.yaml" ]; then
+    echo "[INFO] Notification config found. Sending notifications..."
+    # In a real implementation, this would send Slack/Email notifications
+    echo "[SKIP] Notification sending not implemented in this hook."
+else
+    echo "[INFO] No notification config. Skipping notifications."
+fi
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+echo ""
+echo "========================================"
+echo "[COMPLETE] Post-spec-change actions finished"
+echo "========================================"
+echo "Change ID: $CHANGE_ID"
+echo "Lineage:   $LINEAGE_FILE"
+echo "Audit:     $AUDIT_FILE"
+echo ""
+echo "Next steps:"
+echo "  1. Review affected experiments (if any)"
+echo "  2. Verify regression tests pass"
+echo "  3. Run /dgsf_git_ops to commit changes"
+echo ""
+
+exit 0

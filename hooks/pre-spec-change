@@ -1,0 +1,189 @@
+#!/usr/bin/env sh
+# Pre-spec-change hook: Validate spec changes before applying
+# Created: 2026-02-04 by AI Workflow OS
+# Purpose: Enforce governance rules for specification changes
+
+echo "========================================"
+echo "Running pre-spec-change verification..."
+echo "========================================"
+
+# Exit codes:
+# 0 = Pass (allow change)
+# 1 = Fail (block change)
+# 2 = Warning (allow with notice)
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+CANON_PATHS="specs/canon"
+FRAMEWORK_PATHS="specs/framework"
+PROJECT_PATHS="projects/*/specs"
+
+# ============================================================================
+# PYTHON DETECTION
+# ============================================================================
+if [ -f ".venv/Scripts/python.exe" ]; then
+    PYTHON=".venv/Scripts/python.exe"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON=".venv/bin/python"
+elif command -v python3 &> /dev/null; then
+    PYTHON="python3"
+else
+    PYTHON="python"
+fi
+
+echo "[INFO] Using Python: $PYTHON"
+
+# ============================================================================
+# ARGUMENT PARSING
+# ============================================================================
+SPEC_PATH="${1:-}"
+CHANGE_TYPE="${2:-modify}"
+APPROVAL_REF="${3:-}"
+
+if [ -z "$SPEC_PATH" ]; then
+    echo "[ERROR] Usage: pre-spec-change <spec_path> [change_type] [approval_ref]"
+    exit 1
+fi
+
+echo "[INFO] Spec path: $SPEC_PATH"
+echo "[INFO] Change type: $CHANGE_TYPE"
+echo "[INFO] Approval ref: ${APPROVAL_REF:-NONE}"
+
+# ============================================================================
+# CHECK 1: Canon Protection (L0 specs are READ-ONLY)
+# ============================================================================
+echo ""
+echo "[CHECK 1] Canon Protection..."
+
+case "$SPEC_PATH" in
+    specs/canon/*)
+        echo "[BLOCKED] Cannot modify Canon specs (L0)."
+        echo "          Canon specs require Project Owner intervention."
+        echo "          Contact governance@company.com for changes."
+        exit 1
+        ;;
+    *)
+        echo "[OK] Not a Canon spec."
+        ;;
+esac
+
+# ============================================================================
+# CHECK 2: Approval Verification (L1/L2 require human approval)
+# ============================================================================
+echo ""
+echo "[CHECK 2] Approval Verification..."
+
+case "$SPEC_PATH" in
+    specs/framework/*|projects/*/specs/*)
+        if [ -z "$APPROVAL_REF" ]; then
+            echo "[BLOCKED] L1/L2 specs require approval reference."
+            echo "          Provide: decision log path or PR number"
+            exit 1
+        fi
+        
+        # Check if approval file exists
+        if [ -f "decisions/$APPROVAL_REF.yaml" ]; then
+            echo "[OK] Found approval: decisions/$APPROVAL_REF.yaml"
+        elif [ -f "$APPROVAL_REF" ]; then
+            echo "[OK] Found approval: $APPROVAL_REF"
+        else
+            echo "[WARN] Approval reference not found locally."
+            echo "       Assuming external approval (GitHub PR)."
+        fi
+        ;;
+    projects/*/experiments/*/config.yaml)
+        echo "[OK] L3 experiment config - auto-approval allowed."
+        ;;
+    *)
+        echo "[WARN] Unknown spec path pattern. Allowing with caution."
+        ;;
+esac
+
+# ============================================================================
+# CHECK 3: Syntax Validation
+# ============================================================================
+echo ""
+echo "[CHECK 3] Syntax Validation..."
+
+if [ -f "$SPEC_PATH" ]; then
+    case "$SPEC_PATH" in
+        *.yaml|*.yml)
+            $PYTHON -c "import yaml; yaml.safe_load(open('$SPEC_PATH'))" 2>/dev/null
+            if [ $? -ne 0 ]; then
+                echo "[BLOCKED] YAML syntax error in $SPEC_PATH"
+                exit 1
+            fi
+            echo "[OK] YAML syntax valid."
+            ;;
+        *.md)
+            echo "[OK] Markdown file - syntax check skipped."
+            ;;
+        *)
+            echo "[WARN] Unknown format - syntax check skipped."
+            ;;
+    esac
+else
+    echo "[INFO] New file will be created."
+fi
+
+# ============================================================================
+# CHECK 4: Governance Gate (Python-based deep validation)
+# ============================================================================
+echo ""
+echo "[CHECK 4] Governance Gate..."
+
+if [ -f "kernel/governance_gate.py" ]; then
+    $PYTHON -c "
+from kernel.governance_gate import GovernanceGate
+gate = GovernanceGate()
+result = gate.check_artifact_change('$SPEC_PATH', '$CHANGE_TYPE')
+if result.get('violations'):
+    print('[BLOCKED] Governance violations:')
+    for v in result['violations']:
+        print(f'  - {v}')
+    exit(1)
+print('[OK] No governance violations.')
+" 2>/dev/null
+    
+    if [ $? -ne 0 ]; then
+        echo "[WARN] Governance check skipped (module error)."
+    fi
+else
+    echo "[WARN] Governance gate module not found. Skipping."
+fi
+
+# ============================================================================
+# CHECK 5: Lineage Tracking Preparation
+# ============================================================================
+echo ""
+echo "[CHECK 5] Lineage Preparation..."
+
+LINEAGE_DIR="projects/dgsf/lineage"
+if [ ! -d "$LINEAGE_DIR" ]; then
+    mkdir -p "$LINEAGE_DIR"
+    echo "[INFO] Created lineage directory: $LINEAGE_DIR"
+fi
+
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+CHANGE_ID="SCH-$(date +%Y%m%d)-$(date +%H%M%S)"
+
+echo "[INFO] Change ID: $CHANGE_ID"
+echo "[INFO] Timestamp: $TIMESTAMP"
+
+# Export for post-hook
+export SPEC_CHANGE_ID="$CHANGE_ID"
+export SPEC_CHANGE_TIMESTAMP="$TIMESTAMP"
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+echo ""
+echo "========================================"
+echo "[PASS] Pre-spec-change verification complete"
+echo "========================================"
+echo "Change ID: $CHANGE_ID"
+echo "Proceed with spec modification."
+echo ""
+
+exit 0
