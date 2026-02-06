@@ -1,0 +1,164 @@
+# Review Artifact Schema
+# Version: 1.0.0
+# Purpose: Define the structure for Pair Programming review artifacts
+# Used by: Gate-E4.5, pre-commit hook, CI review_gate_check
+
+version: "1.0.0"
+namespace: "pair_programming"
+
+# =============================================================================
+# REVIEW Artifact Schema
+# =============================================================================
+review:
+  description: "Reviewer feedback artifact"
+  filename_pattern: "REVIEW_{round}.md"
+  
+  frontmatter:
+    required:
+      - task_id
+      - reviewer_id
+      - review_round
+      - timestamp
+      - verdict
+    
+    fields:
+      task_id:
+        type: string
+        description: "Task identifier (e.g., TASK-001, SDF_FEATURE_ENG_001)"
+        pattern: "^[A-Z][A-Z0-9_-]+$"
+        
+      reviewer_id:
+        type: string
+        description: "Reviewer agent or human identifier"
+        
+      review_round:
+        type: integer
+        minimum: 1
+        description: "Review iteration number"
+        
+      timestamp:
+        type: string
+        format: iso8601
+        description: "Review completion timestamp"
+        
+      verdict:
+        type: string
+        enum:
+          - NEEDS_CHANGES   # Issues found, coder must address
+          - APPROVED        # All checks pass, ready for test/run
+          - BLOCKED         # Critical issues, cannot proceed
+        description: "Review outcome"
+  
+  sections:
+    required:
+      - summary
+      - issues_found
+      - evidence
+    optional:
+      - blockers          # Required if verdict = BLOCKED
+      - recommendations
+      - risk_assessment
+  
+  issue_severity:
+    levels:
+      - CRITICAL    # Must fix before any test
+      - HIGH        # Should fix, may cause test failures
+      - MEDIUM      # Recommended fix
+      - LOW         # Suggestion / style
+
+# =============================================================================
+# PATCH Artifact Schema
+# =============================================================================
+patch:
+  description: "Coder response and patch summary"
+  filename_pattern: "PATCH_{round}.md"
+  
+  frontmatter:
+    required:
+      - task_id
+      - coder_id
+      - patch_round
+      - timestamp
+      - addresses_review
+    
+    fields:
+      task_id:
+        type: string
+        pattern: "^[A-Z][A-Z0-9_-]+$"
+        
+      coder_id:
+        type: string
+        description: "Coder agent or human identifier"
+        
+      patch_round:
+        type: integer
+        minimum: 1
+        
+      timestamp:
+        type: string
+        format: iso8601
+        
+      addresses_review:
+        type: integer
+        description: "Which review round this patch addresses"
+  
+  sections:
+    required:
+      - changes_made
+      - files_modified
+    optional:
+      - notes_for_reviewer
+      - remaining_issues
+
+# =============================================================================
+# Gate-E4.5 Validation Rules
+# =============================================================================
+gate_e4_5:
+  name: "Pair Programming Review Gate"
+  
+  validation:
+    # Must have REVIEW_2.md (or higher) with APPROVED
+    required_artifact: "REVIEW_2.md"
+    required_verdict: "APPROVED"
+    
+    # Alternative: If REVIEW_N.md exists, check that one
+    check_latest: true
+    
+  on_missing:
+    action: STOP
+    message: "Gate-E4.5: Missing approved review artifact"
+    
+  on_not_approved:
+    action: STOP
+    message: "Gate-E4.5: Review verdict is not APPROVED"
+
+# =============================================================================
+# CI Integration
+# =============================================================================
+ci:
+  workflow: ".github/workflows/review_gate_check.yaml"
+  
+  checks:
+    - name: "review_artifact_exists"
+      description: "Check if review artifact exists for code changes"
+      severity: error
+      
+    - name: "review_approved"
+      description: "Check if review verdict is APPROVED"
+      severity: error
+      
+    - name: "review_format_valid"
+      description: "Validate review artifact against schema"
+      severity: warning
+
+# =============================================================================
+# Bypass & Audit
+# =============================================================================
+bypass:
+  allowed: true
+  method: "--no-verify"
+  requires_audit: true
+  audit_file: "docs/audits/bypasses.log"
+  
+  audit_format: |
+    {timestamp} | BYPASS | {hook_name} | {commit_sha} | {user} | {reason}

@@ -19,6 +19,28 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from kernel.paths import ROOT
 
+# Late imports to avoid circular dependencies — see _check_branch_and_hooks()
+_branch_validator = None
+_setup_check = None
+
+
+def _lazy_import_validator():
+    """Lazy-import git_branch_validator to avoid import cycles."""
+    global _branch_validator
+    if _branch_validator is None:
+        from kernel import git_branch_validator as _bv
+        _branch_validator = _bv
+    return _branch_validator
+
+
+def _lazy_import_setup_check():
+    """Lazy-import git_setup_check to avoid import cycles."""
+    global _setup_check
+    if _setup_check is None:
+        from kernel import git_setup_check as _sc
+        _setup_check = _sc
+    return _setup_check
+
 
 class ConfirmLevel(Enum):
     """Confirmation level for Git operations.
@@ -585,6 +607,7 @@ def run_git_ops_workflow(
     experiment_metrics: Optional[Dict[str, Any]] = None,
     dry_run: bool = True,
     repo_path: Optional[Path] = None,
+    skip_setup_check: bool = False,
 ) -> Tuple[CommitPlan, ExecutionResult, str]:
     """Run the complete Git ops workflow.
     
@@ -598,14 +621,44 @@ def run_git_ops_workflow(
         experiment_metrics: Metrics for tag message
         dry_run: If True, simulate only
         repo_path: Repository path
+        skip_setup_check: If True, skip hooks / branch validation
         
     Returns:
         Tuple of (plan, result, formatted_output)
     """
     path = repo_path or ROOT
     
+    # ── Pre-flight: hooks installation check ───────────────────────────
+    if not skip_setup_check:
+        try:
+            sc = _lazy_import_setup_check()
+            setup_status = sc.check_git_hooks()
+            if not setup_status.hooks_installed:
+                sc.prompt_and_install_hooks(setup_status, interactive=True)
+        except Exception:
+            pass  # graceful degradation
+    
     # Phase 1: Status check
     status = get_git_status(path)
+    
+    # ── Pre-flight: branch name validation ─────────────────────────────
+    if not skip_setup_check:
+        try:
+            bv = _lazy_import_validator()
+            vr = bv.validate_branch_name(status.branch)
+            if not vr.valid:
+                from kernel.git_branch_validator import EnforcementLevel
+                if vr.enforcement == EnforcementLevel.BLOCK:
+                    error_msg = bv.format_validation_error(vr)
+                    blocked_result = ExecutionResult(
+                        success=False,
+                        actions_taken=["Blocked: branch name violates policy"],
+                        errors=[error_msg],
+                    )
+                    return CommitPlan(message="", confirm_level=ConfirmLevel.BLOCK), blocked_result, error_msg
+                # WARN / NOTIFY — continue but note it
+        except Exception:
+            pass  # graceful degradation
     
     # Phase 2: Generate plan
     plan = generate_commit_plan(

@@ -26,8 +26,45 @@ Git 运维作为 Copilot Runtime OS 的内建子流程，在关键工件生成�
 - **R1**: Verify before asserting — 先 `git status` 再生成 plan
 - **R3**: Stop on failure — commit 失败立即停止并报告
 - **R6**: Long-run handoff — push 操作需人工确认
+- **R7**: Branch naming — 分支命名必须符合 `configs/git_branch_policy.yaml` 规范
+- **R8**: Hooks check — 每次 git 操作前检测 hooks 安装状态
 
 ## 执行协议
+
+### Phase 0: 预检 (PRE-FLIGHT)
+
+**0a. Hooks 安装检查** (R8)
+```python
+from kernel.git_setup_check import check_git_hooks, prompt_and_install_hooks
+status = check_git_hooks()
+if not status.hooks_installed:
+    prompt_and_install_hooks(status)
+```
+
+如果 hooks 未安装，显示：
+```markdown
+## ⚠️ Git Hooks 未安装
+
+缺失: pre-commit, pre-push, ...
+
+是否立即安装? [Y/n]
+```
+
+**0b. 分支命名验证** (R7)
+```python
+from kernel.git_branch_validator import validate_branch_name
+result = validate_branch_name(current_branch)
+if not result.valid:
+    # BLOCK: 拒绝操作，显示正确格式
+```
+
+分支命名规范（GitHub Flow）：
+| 类型 | 格式 | 示例 |
+|------|------|------|
+| 功能 | `feature/{TASK_ID}-{description}` | `feature/GIT_001-branch-policy` |
+| 实验 | `experiment/t{NN}_{name}` | `experiment/t05_sharpe_validation` |
+| 修复 | `hotfix/{TASK_ID}-{description}` | `hotfix/URGENT_001-fix-crash` |
+| 发布 | `release/v{semver}` | `release/v1.0.0` |
 
 ### Phase 1: 状态检查 (STATUS CHECK)
 

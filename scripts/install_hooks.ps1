@@ -1,4 +1,6 @@
-param()
+param(
+  [switch]$Force
+)
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $gitDir = Join-Path $repoRoot ".git"
@@ -19,14 +21,47 @@ if (-not (Test-Path $hooksTarget)) {
   New-Item -ItemType Directory -Path $hooksTarget | Out-Null
 }
 
-$preCommitSource = Join-Path $hooksSource "pre-commit"
-$prePushSource = Join-Path $hooksSource "pre-push"
-$preCommitTarget = Join-Path $hooksTarget "pre-commit"
-$prePushTarget = Join-Path $hooksTarget "pre-push"
+# All hooks to install (exhaustive list)
+$hookNames = @(
+  "pre-commit",
+  "pre-push",
+  "pre-spec-change",
+  "post-spec-change",
+  "post-tag",
+  "pre-destructive-op"
+)
 
-Copy-Item -Force $preCommitSource $preCommitTarget
-Copy-Item -Force $prePushSource $prePushTarget
+$installedCount = 0
+$skippedCount = 0
 
-Write-Host "Installed hooks:"
-Write-Host "- $preCommitTarget"
-Write-Host "- $prePushTarget"
+foreach ($hookName in $hookNames) {
+  $src = Join-Path $hooksSource $hookName
+  $dst = Join-Path $hooksTarget $hookName
+
+  if (-not (Test-Path $src)) {
+    Write-Host "  [SKIP] $hookName (source not found)"
+    $skippedCount++
+    continue
+  }
+
+  if ((Test-Path $dst) -and -not $Force) {
+    Write-Host "  [EXISTS] $hookName (use -Force to overwrite)"
+    $skippedCount++
+    continue
+  }
+
+  Copy-Item -Force $src $dst
+  Write-Host "  [OK] $hookName"
+  $installedCount++
+}
+
+Write-Host ""
+Write-Host "Installed: $installedCount hook(s), Skipped: $skippedCount"
+Write-Host "Hooks target: $hooksTarget"
+
+# Remove decline state file if it exists (user explicitly ran install)
+$declineFile = Join-Path $repoRoot "state\.git_hooks_check"
+if (Test-Path $declineFile) {
+  Remove-Item $declineFile -Force
+  Write-Host "Cleared hooks-check decline state."
+}

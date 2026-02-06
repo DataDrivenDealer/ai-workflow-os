@@ -1,0 +1,152 @@
+# PLAN MODE State
+# Auto-managed by Copilot during PLAN MODE sessions
+# Location: state/plan_mode_state.yaml
+
+plan_mode:
+  active: false
+  started_at: "2026-02-06T10:00:00Z"
+  last_updated: "2026-02-06T10:30:00Z"
+  current_phase: "P9"
+  ended_at: "2026-02-06T10:30:00Z"
+  exit_trigger: "Switch to EXECUTE MODE - DE Fullwindow Upgrade"
+  
+  # Owner Steering from P0
+  owner_steering: "继续完善包括DE7在内的全套数据工程模块，对齐已升级到全量A股数据201501-202601的raw data"
+  steering_mode: "guided"  # autonomous | guided
+  
+  # Phase Status Tracking
+  phases:
+    P0_steering:
+      status: completed
+      completed_at: "2026-02-05T10:02:00Z"
+      parsed_steering: "<EMPTY> - Autonomous Diagnostic Planning mode"
+      
+    P1_scan:
+      status: completed
+      completed_at: "2026-02-05T10:10:00Z"
+      task_pool:
+        - source: "tasks/active/SDF_FEATURE_ENG_001.md"
+          description: "T3 Feature Engineering Pipeline - P0, IN_PROGRESS"
+          type: "running"
+        - source: "tasks/active/SDF_TEST_FIX_001.md"
+          description: "SDF Test Fix - Phase 1 done, Phase 2 pending"
+          type: "blocked"
+        - source: "experiments/t5_oos_validation"
+          description: "OOS Sharpe = -6.31, threshold >= 1.5"
+          type: "needs_diagnosis"
+        - source: "experiments/t5_oos_validation"
+          description: "positive_sharpe_pct: 0.0 - All 7 windows negative"
+          type: "critical"
+      
+    P2_transition:
+      status: completed
+      completed_at: "2026-02-05T10:15:00Z"
+      specs_loaded: true
+      loaded_specs:
+        - spec_registry: true
+        - quant_knowledge_base: true
+        - code_practice_registry: true
+        
+    P3_phase_gate:
+      status: completed
+      completed_at: "2026-02-05T10:18:00Z"
+      gates_checked:
+        - "G3: oos_sharpe"
+        - "G3: subperiod_stability"
+      blocking_gates:
+        - gate: "G3"
+          reason: "OOS Sharpe = -6.31 (threshold >= 0.5)"
+      
+    P4_diagnostic:
+      status: completed
+      completed_at: "2026-02-05T10:22:00Z"
+      checks:
+        spec_consistency: "pass"
+        task_state_valid: "warning - WIP=3 at limit"
+        experiment_completeness: "fail - T5.2 OOS severely anomalous"
+        debt_backlog: "warning - SDL framework ready, items pending"
+        
+    P5_qualification:
+      status: completed
+      completed_at: "2026-02-05T10:25:00Z"
+      qualified_problems:
+        - problem: "OOS Sharpe = -6.31 in T5.2"
+          priority: "P0-CRITICAL"
+          rationale: "Blocks G3 Gate, DGSF critical path"
+        - problem: "SDF_TEST_FIX_001 Phase 2"
+          priority: "P0"
+          rationale: "Need to validate test pass rate"
+        - problem: "SDF_FEATURE_ENG_001 (T3)"
+          priority: "P0"
+          rationale: "Active task, continue progress"
+      
+    P6_drs:
+      status: completed
+      completed_at: "2026-02-05T10:26:00Z"
+      conflicts_resolved: []
+      notes: "No conflicts identified, priorities clear"
+      
+    P7_research:
+      status: completed
+      completed_at: "2026-02-05T10:45:00Z"
+      research_items:
+        - question: "Root cause of OOS Sharpe = -6.31"
+          method: "code_review + experiment_analysis"
+          expected_output: "Root cause report + fix proposal"
+          time_budget: "2-4h"
+          result: |
+            DIAGNOSED - Multiple root causes identified:
+            1. Sample size too small (36 train / 11521 params = 320:1 ratio)
+            2. Synthetic data quality issue (real data shows +0.25, synthetic -6.31)
+            3. IS Sharpe itself is negative (7/7 windows) - model not learning
+            4. Model over-parameterized for available samples
+        - question: "Is T5.2 model overfitting?"
+          method: "IS vs OOS metric comparison"
+          expected_output: "Overfitting diagnosis"
+          time_budget: "1h"
+          result: |
+            NOT OVERFITTING - IS Sharpe is also negative
+            This is UNDERFITTING or data quality issue, not overfitting
+        - question: "Any data leakage in features?"
+          method: "Feature timestamp audit"
+          expected_output: "Leakage audit report"
+          time_budget: "2h"
+          result: "PENDING - Need to execute in EXECUTE MODE"
+      
+    P8_writeback:
+      status: completed
+      completed_at: "2026-02-05T10:50:00Z"
+      specs_updated: []
+      tasks_updated: []
+      decisions_logged:
+        - decision: "T5.2 failure is sample size + synthetic data issue"
+          rationale: "320:1 param/sample ratio, real data shows +0.25 Sharpe"
+          implications:
+            - "Increase train_window from 36 to 72+"
+            - "Simplify model architecture"
+            - "Re-run with real data"
+      
+    P9_exit:
+      status: completed
+      completed_at: "2026-02-05T11:15:00Z"
+      exit_trigger: "Switch to EXECUTE MODE"
+      
+  # Exit Checklist
+  exit_checklist:
+    specs_updated_and_consistent: true
+    artifacts_aligned_with_specs: false  # state_engine gap documented
+    first_p0_task_has_ac_verification_spec: true
+    explicit_mode_switch_declared: true
+    
+  # Session History (for audit)
+  session_history:
+    - session_id: null
+      started_at: null
+      ended_at: null
+      phases_completed: []
+      outcome: null  # completed | interrupted | reset
+
+# Instructions:
+# - This file is automatically managed by Copilot in PLAN MODE
+# - Do not manually edit unless debugging
+# - To reset PLAN MODE, set active: false and clear all phase statuses

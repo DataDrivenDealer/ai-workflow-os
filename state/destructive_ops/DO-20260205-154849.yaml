@@ -1,0 +1,16 @@
+affected_count: 3
+affected_files:
+- file1.py
+- file2.py
+- file3.py
+approved_at: null
+approved_by: null
+backup_branch: null
+created_at: '2026-02-05T15:48:49.433940+00:00'
+operation_type: delete
+reason: Test cleanup
+request_id: DO-20260205-154849
+risk_level: medium
+rollback_plan: "1. Restore from backup branch: TBD\n2. Or restore from git reflog:\n\
+  \   git reflog\n   git checkout <commit-before-delete> -- <files>"
+status: pending

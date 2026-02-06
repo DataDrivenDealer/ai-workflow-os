@@ -1,0 +1,15 @@
+input:
+  focus_areas:
+  - reproducibility
+  review_type: focused
+  scope: .
+  target_files:
+  - kernel/state_store.py
+result:
+  issues_count: 0
+  output_dir: E:\AI Tools\AI Workflow OS\docs\subagents\runs\20260205_093834_quant_risk_review
+  risk_score: 0
+  status: success
+  verdict: pass
+subagent_id: quant_risk_review
+timestamp: '2026-02-05T09:38:34.329722'

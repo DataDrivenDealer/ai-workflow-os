@@ -1,0 +1,17 @@
+input:
+  compare_to: projects/dgsf/repo/src/
+  focus_areas:
+  - lookahead
+  - reproducibility
+  review_type: focused
+  scope: .
+  target_files:
+  - kernel/subagent_runner.py
+result:
+  issues_count: 1
+  output_dir: E:\AI Tools\AI Workflow OS\docs\subagents\runs\20260205_101227_quant_risk_review
+  risk_score: 3
+  status: success
+  verdict: warn
+subagent_id: quant_risk_review
+timestamp: '2026-02-05T10:12:27.774812'

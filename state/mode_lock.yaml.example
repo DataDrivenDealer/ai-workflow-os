@@ -1,0 +1,17 @@
+# Example mode lock file
+# This file is created when PLAN MODE is activated
+# and deleted when switching to EXECUTE MODE
+
+mode: PLAN
+locked_at: "2026-02-05T10:00:00+00:00"
+session_id: "plan-session-001"
+prohibitions:
+  - write_code
+  - run_terminal
+  - run_python
+  - run_pytest
+  - create_file
+  - edit_file
+  - run_data
+  - execute_task
+expires_at: null  # null means no expiration

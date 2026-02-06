@@ -1,0 +1,106 @@
+name: Spec change request
+description: Request a change to specifications or contracts
+title: "[Spec] "
+labels: ["spec:proposal", "governance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose changes to specifications (Specs).
+        All Spec changes require approval per the governance model.
+        
+  - type: dropdown
+    id: spec_layer
+    attributes:
+      label: Spec Layer
+      description: Which layer does this affect?
+      options:
+        - L0 (Canon - System invariants)
+        - L1 (Kernel - Cross-module contracts)
+        - L2 (Module - Domain-specific)
+        - L3 (Experiment - Instance parameters)
+    validations:
+      required: true
+      
+  - type: input
+    id: spec_file
+    attributes:
+      label: Spec File(s)
+      description: Path to the spec file(s) affected
+      placeholder: "specs/interfaces/factor_spec.yaml"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: change_type
+    attributes:
+      label: Change Type
+      options:
+        - create (new spec)
+        - modify (change existing)
+        - deprecate (mark for removal)
+        - delete (remove spec)
+    validations:
+      required: true
+      
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is this change needed?
+      placeholder: "This change is needed because..."
+    validations:
+      required: true
+      
+  - type: textarea
+    id: proposed_change
+    attributes:
+      label: Proposed Change
+      description: What exactly should change?
+      placeholder: |
+        Current:
+        ```yaml
+        threshold: 1.0
+        ```
+        
+        Proposed:
+        ```yaml
+        threshold: 1.5
+        ```
+    validations:
+      required: true
+      
+  - type: textarea
+    id: impact_analysis
+    attributes:
+      label: Impact Analysis
+      description: What downstream effects will this have?
+      placeholder: |
+        - Affects: factor_pipeline.py, backtest_runner.py
+        - Breaking: No
+        - Migration needed: No
+    validations:
+      required: true
+      
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Plan
+      description: How will we verify this change is correct?
+      placeholder: |
+        - [ ] Unit tests updated
+        - [ ] Integration tests pass
+        - [ ] Spec drift check passes
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      options:
+        - Normal (can wait for next sprint)
+        - High (blocking current work)
+        - Critical (system broken)
+    validations:
+      required: true

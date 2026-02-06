@@ -1,0 +1,145 @@
+# Robustness Test Protocol Template
+# Use this template for validating existing factors
+
+protocol:
+  name: "Robustness Test"
+  template: "robustness_test"
+  version: "1.0.0"
+  description: "Protocol for stress-testing and validating existing factors"
+  
+  metadata:
+    author: ""
+    created: ""
+    target_factor: ""  # Factor being tested
+    baseline_experiment: ""  # Original experiment ID
+    
+  # Test configurations
+  robustness_tests:
+    
+    # Time stability
+    temporal_stability:
+      enabled: true
+      description: "Test factor performance across different time periods"
+      params:
+        window_sizes: [126, 252, 504]  # Trading days
+        overlap: 0.5
+        min_windows: 5
+      metrics:
+        - mean_sharpe
+        - sharpe_std
+        - positive_window_pct
+      thresholds:
+        positive_window_pct: 0.7
+        sharpe_std: 0.5
+        
+    # Market regime
+    regime_analysis:
+      enabled: true
+      description: "Test factor in different market regimes"
+      params:
+        regimes:
+          - name: "bull"
+            definition: "rolling_return_252d > 0.1"
+          - name: "bear"
+            definition: "rolling_return_252d < -0.1"
+          - name: "sideways"
+            definition: "abs(rolling_return_252d) <= 0.1"
+      metrics:
+        - regime_sharpe
+        - regime_consistency
+      thresholds:
+        min_regime_sharpe: 0.5
+        
+    # Universe subsets
+    universe_subsets:
+      enabled: true
+      description: "Test factor on different market segments"
+      params:
+        subsets:
+          - name: "large_cap"
+            filter: "market_cap >= quantile_80"
+          - name: "mid_cap"
+            filter: "quantile_40 <= market_cap < quantile_80"
+          - name: "small_cap"
+            filter: "market_cap < quantile_40"
+          - name: "high_volume"
+            filter: "volume >= quantile_75"
+      thresholds:
+        subset_sharpe_min: 0.8
+        
+    # Parameter sensitivity
+    parameter_sensitivity:
+      enabled: true
+      description: "Test sensitivity to key parameters"
+      params:
+        parameters:
+          - name: "lookback_window"
+            base_value: 20
+            test_values: [10, 15, 25, 30]
+          - name: "holding_period"
+            base_value: 5
+            test_values: [1, 3, 10, 20]
+      metrics:
+        - performance_range
+        - stability_score
+      thresholds:
+        max_performance_range: 0.3
+        
+    # Transaction costs
+    cost_sensitivity:
+      enabled: true
+      description: "Test sensitivity to transaction costs"
+      params:
+        cost_levels:
+          - name: "optimistic"
+            value: 0.0005  # 5 bps
+          - name: "realistic"
+            value: 0.001   # 10 bps
+          - name: "conservative"
+            value: 0.002   # 20 bps
+          - name: "stress"
+            value: 0.003   # 30 bps
+      thresholds:
+        break_even_cost: 0.001
+        
+    # Data perturbation
+    data_perturbation:
+      enabled: false  # Optional
+      description: "Test robustness to data noise"
+      params:
+        perturbation_methods:
+          - type: "gaussian_noise"
+            std: 0.01
+          - type: "outlier_injection"
+            rate: 0.01
+          - type: "missing_data"
+            rate: 0.05
+            
+  # Aggregation
+  aggregation:
+    method: "weighted_score"
+    weights:
+      temporal_stability: 0.25
+      regime_analysis: 0.20
+      universe_subsets: 0.20
+      parameter_sensitivity: 0.20
+      cost_sensitivity: 0.15
+    
+  # Overall decision
+  decision_rules:
+    pass:
+      - "aggregate_score >= 0.75"
+      - "no_critical_failures"
+    warn:
+      - "aggregate_score >= 0.50"
+      - "critical_failures <= 1"
+    fail:
+      - "aggregate_score < 0.50"
+      - "critical_failures > 2"
+      
+  outputs:
+    directory: "experiments/{experiment_id}/robustness/"
+    files:
+      - robustness_report.json
+      - robustness_summary.md
+      - stability_plots/

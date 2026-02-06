@@ -1,0 +1,100 @@
+# Model Comparison Protocol Template
+# Use this template for comparing multiple models/strategies
+
+protocol:
+  name: "Model Comparison"
+  template: "model_comparison"
+  version: "1.0.0"
+  description: "Protocol for fair comparison of multiple models"
+  
+  metadata:
+    author: ""
+    created: ""
+    experiment_id: ""
+    comparison_objective: ""  # e.g., "Select best SDF estimator"
+    
+  # Models to compare
+  models:
+    - id: "model_a"
+      name: "Model A"
+      config_path: ""  # Path to model config
+      
+    - id: "model_b"
+      name: "Model B"
+      config_path: ""
+      
+    # Add more models as needed
+    
+  # Comparison methodology
+  methodology:
+    # Cross-validation setup
+    cv_method: "purged_walk_forward"
+    cv_params:
+      n_splits: 5
+      test_size: 126  # Trading days
+      purge_days: 5
+      embargo_days: 2
+      
+    # Ensure fair comparison
+    fairness_controls:
+      same_training_data: true
+      same_features: true
+      same_universe: true
+      same_date_alignment: true
+      
+  # Primary metrics for comparison
+  comparison_metrics:
+    primary:
+      - name: "oos_sharpe"
+        higher_better: true
+        weight: 0.35
+        
+      - name: "information_ratio"
+        higher_better: true
+        weight: 0.25
+        
+      - name: "max_drawdown"
+        higher_better: false
+        weight: 0.20
+        
+      - name: "turnover"
+        higher_better: false
+        weight: 0.10
+        
+      - name: "stability"
+        higher_better: true
+        weight: 0.10
+        
+  # Statistical tests
+  statistical_tests:
+    pairwise_comparison:
+      method: "paired_t_test"  # paired_t_test | wilcoxon | bootstrap
+      correction: "holm"
+      alpha: 0.05
+      
+    overall_comparison:
+      method: "friedman_test"
+      post_hoc: "nemenyi"
+      
+  # Ranking methodology
+  ranking:
+    method: "weighted_score"
+    tie_breaker: "sharpe_ratio"
+    
+  # Decision rules
+  decision_rules:
+    select_winner:
+      - "statistically_significant_improvement"
+      - "passes_all_thresholds"
+      
+    no_clear_winner:
+      - "no_significant_difference"
+      - "select_simpler_model"
+      
+  outputs:
+    directory: "experiments/{experiment_id}/"
+    files:
+      - comparison_report.json
+      - comparison_summary.md
+      - statistical_tests.json
+      - ranking_table.md

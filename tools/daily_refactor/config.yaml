@@ -1,0 +1,148 @@
+# Daily Refactor Configuration
+# Version: 1.0.0
+# Purpose: Configure the daily refactor script behavior
+
+version: "1.0.0"
+
+# =============================================================================
+# Scope Configuration
+# =============================================================================
+scope:
+  # Base comparison for detecting changes
+  base_ref: "HEAD~1"  # Default: compare with previous commit
+  
+  # Alternative bases
+  alternatives:
+    last_refactor: ".refactor_marker"  # File-based marker
+    main_branch: "origin/main"
+    
+  # File patterns to include
+  include_patterns:
+    - "kernel/**/*.py"
+    - "scripts/**/*.py"
+    - "projects/dgsf/repo/src/**/*.py"
+    
+  # File patterns to exclude
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/__pycache__/**"
+    - "**/migrations/**"
+    - "**/*.generated.py"
+    - "legacy/**"
+
+# =============================================================================
+# Safety Levels
+# =============================================================================
+safety:
+  # Transformations by safety level
+  levels:
+    safe:
+      # Automatically applied, no confirmation needed
+      - format_black
+      - sort_imports
+      - remove_trailing_whitespace
+      - fix_line_endings
+      
+    moderate:
+      # Applied with summary, can skip with --safe-only
+      - remove_unused_imports
+      - simplify_boolean_returns
+      - use_f_strings
+      
+    risky:
+      # Requires explicit --include-risky flag
+      - remove_unused_variables
+      - inline_single_use_variables
+      - simplify_conditionals
+
+  # Default level
+  default_level: "moderate"
+
+# =============================================================================
+# Tool Configuration
+# =============================================================================
+tools:
+  # Formatter
+  black:
+    enabled: true
+    config: "pyproject.toml"
+    line_length: 88
+    
+  # Import sorter
+  isort:
+    enabled: true
+    profile: "black"
+    
+  # Linter with auto-fix
+  ruff:
+    enabled: true
+    fix: true
+    # Only safe fixes
+    select:
+      - "F401"   # unused-import
+      - "F841"   # unused-variable (moderate)
+      - "W291"   # trailing-whitespace
+      - "W292"   # no-newline-at-end-of-file
+      - "W293"   # blank-line-with-whitespace
+      - "I"      # isort
+    ignore:
+      - "E501"   # line-too-long (handled by black)
+      
+  # Type checker (read-only, for reporting)
+  pyright:
+    enabled: true
+    report_only: true  # Don't fail, just report
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+output:
+  # Directory for reports
+  base_dir: "docs/refactor"
+  
+  # Date-based subdirectory
+  use_date_subdir: true
+  date_format: "%Y-%m-%d"
+  
+  # Generated files
+  files:
+    report: "REPORT.md"
+    diffstat: "DIFFSTAT.txt"
+    risks: "RISKS.md"
+    
+  # Keep history
+  keep_last_n: 30  # Keep last 30 reports
+
+# =============================================================================
+# Git Integration
+# =============================================================================
+git:
+  # Auto-commit after refactor
+  auto_commit: false
+  
+  # Commit message template
+  commit_template: "refactor(daily): {date} auto-cleanup ({file_count} files)"
+  
+  # Create marker file after successful refactor
+  create_marker: true
+  marker_file: ".refactor_marker"
+
+# =============================================================================
+# Behavioral Flags
+# =============================================================================
+behavior:
+  # Dry run by default (no actual changes)
+  dry_run_default: true
+  
+  # Require explicit --apply to make changes
+  require_apply_flag: true
+  
+  # Skip if no changes detected
+  skip_if_no_changes: true
+  
+  # Run tests after refactor (if not dry-run)
+  run_tests_after: false  # Disabled: tests are expensive
+  test_command: "pytest kernel/tests -x -q"
+  
+  # Fail on any error
+  fail_fast: true

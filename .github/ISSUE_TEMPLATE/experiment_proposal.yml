@@ -1,0 +1,100 @@
+name: Experiment proposal
+description: Propose a new quantitative experiment
+title: "[Exp] "
+labels: ["experiment", "research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose a new quantitative research experiment.
+        Experiments follow the Research Protocol Algebra (RPA) framework.
+        
+  - type: input
+    id: exp_id
+    attributes:
+      label: Experiment ID
+      description: Format t{NN}_{short_name}
+      placeholder: "t05_momentum_factor"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis
+      description: What are you testing?
+      placeholder: "We hypothesize that..."
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Research Protocol
+      description: Which RPA protocol applies?
+      options:
+        - ALPHA_DISCOVERY (Factor development)
+        - ALPHA_VALIDATION (Factor testing)
+        - PORTFOLIO_CONSTRUCTION (Portfolio optimization)
+        - PERFORMANCE_ATTRIBUTION (Return decomposition)
+        - REGIME_ANALYSIS (Market conditions)
+        - CUSTOM (Describe below)
+    validations:
+      required: true
+      
+  - type: textarea
+    id: methodology
+    attributes:
+      label: Methodology
+      description: Describe the experimental approach
+      placeholder: |
+        1. Data preparation: ...
+        2. Feature engineering: ...
+        3. Model training: ...
+        4. Validation: ...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: success_criteria
+    attributes:
+      label: Success Criteria
+      description: Quantitative thresholds for success
+      placeholder: |
+        - OOS Sharpe >= 1.5
+        - OOS/IS Ratio >= 0.9
+        - Max Drawdown <= 20%
+    validations:
+      required: true
+      
+  - type: textarea
+    id: data_requirements
+    attributes:
+      label: Data Requirements
+      description: What data is needed?
+      placeholder: |
+        - Universe: ...
+        - Date range: ...
+        - Frequency: ...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks & Mitigations
+      description: Potential issues and how to address them
+      placeholder: |
+        - Overfitting: Use purged cross-validation
+        - Lookahead bias: Strict point-in-time data
+    validations:
+      required: false
+      
+  - type: textarea
+    id: related_work
+    attributes:
+      label: Related Work
+      description: Prior experiments, papers, or references
+      placeholder: "See t03_baseline, Fama-French (1993)"
+    validations:
+      required: false

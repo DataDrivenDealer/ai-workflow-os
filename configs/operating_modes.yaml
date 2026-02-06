@@ -1,0 +1,325 @@
+# Operating Modes Configuration
+# Version: 1.0.0
+# Purpose: Define agent operating modes and their trigger conditions
+
+version: "1.0.0"
+updated_at: "2026-02-05"
+
+# =============================================================================
+# MODE DEFINITIONS
+# =============================================================================
+
+modes:
+  # ---------------------------------------------------------------------------
+  # PLAN MODE (规划模式)
+  # ---------------------------------------------------------------------------
+  plan:
+    id: "PLAN"
+    display_name: "PLAN MODE"
+    display_name_zh: "规划模式"
+    description: "Planning, review, and research control only. No code execution."
+    
+    # Semantic triggers (case-insensitive, fuzzy match)
+    triggers:
+      exact:
+        - "PLAN MODE"
+        - "planning mode"
+      patterns:
+        - "开启.*PLAN.*MODE"
+        - "开启.*规划.*模式"
+        - "启动规划"
+        - "进入规划"
+        - "只规划不执行"
+        - "规划模式"
+        - "enter plan"
+        - "start planning"
+        
+    # Associated skill
+    skill: "/dgsf_plan_mode"
+    skill_path: ".github/prompts/dgsf_plan_mode.prompt.md"
+    
+    # State persistence
+    state_file: "state/plan_mode_state.yaml"
+    
+    # Hard prohibitions in this mode
+    prohibitions:
+      - action: "write_code"
+        description: "不写代码"
+        file_patterns: ["*.py", "*.ts", "*.js", "*.jsx", "*.tsx"]
+      - action: "run_data"
+        description: "不跑数据"
+        commands: ["python", "pytest", "jupyter"]
+      - action: "execute_task"
+        description: "不执行任务"
+      - action: "override_specs"
+        description: "TODO/PLAN 不可覆盖 Specs"
+        
+    # Allowed actions
+    allowed:
+      - "read_file"
+      - "list_dir"
+      - "grep_search"
+      - "semantic_search"
+      - "analyze"
+      - "plan"
+      - "review"
+      - "propose_spec_change"
+      
+    # Phase flow
+    phases:
+      - id: "P0"
+        name: "Owner Steering Parse"
+        name_zh: "Owner 导向解析"
+      - id: "P1"
+        name: "Task & Problem Universe Scan"
+        name_zh: "任务/问题全域扫描"
+      - id: "P2"
+        name: "Transition to Canonical"
+        name_zh: "过渡到规范模式"
+      - id: "P3"
+        name: "Phase Gate"
+        name_zh: "阶段门控"
+      - id: "P4"
+        name: "System Diagnostic"
+        name_zh: "系统诊断"
+      - id: "P5"
+        name: "Problem Qualification"
+        name_zh: "问题资格认定"
+      - id: "P6"
+        name: "DRS Resolution Engine"
+        name_zh: "争议解决"
+      - id: "P7"
+        name: "Research Governance"
+        name_zh: "研究治理"
+      - id: "P8"
+        name: "Write-back Pipeline"
+        name_zh: "写回流水线"
+      - id: "P9"
+        name: "Exit Contract"
+        name_zh: "退出契约"
+        
+    # Exit conditions (all must be true)
+    exit_conditions:
+      - condition: "specs_updated_and_consistent"
+        description: "Specs 已更新且自洽"
+      - condition: "artifacts_aligned_with_specs"
+        description: "下游 artifacts 与 Specs 对齐"
+      - condition: "first_p0_task_ready"
+        description: "第一个 P0 任务具备 AC + Verification + Spec Pointer"
+      - condition: "explicit_declaration"
+        description: "明确声明 'Switch to EXECUTE MODE'"
+
+  # ---------------------------------------------------------------------------
+  # EXECUTE MODE (执行模式)
+  # ---------------------------------------------------------------------------
+  execute:
+    id: "EXECUTE"
+    display_name: "EXECUTE MODE"
+    display_name_zh: "执行模式"
+    description: "Queue-driven task execution with full capabilities."
+    
+    triggers:
+      exact:
+        - "EXECUTE MODE"
+        - "execution mode"
+      patterns:
+        - "开启.*执行.*模式"
+        - "Switch to EXECUTE"
+        - "进入执行"
+        - "开始执行"
+        - "继续执行"
+        - "执行模式"
+        
+    # This is the default mode
+    is_default: true
+    
+    # Associated skill
+    skill: "/dgsf_execute_mode"
+    skill_path: ".github/prompts/dgsf_execute_mode.prompt.md"
+    
+    # State file for queue-driven execution
+    state_file: "state/execution_queue.yaml"
+    
+    # Entry protocol
+    entry_protocol:
+      - step: "load_queue"
+        description: "加载执行队列"
+        action: "READ state/execution_queue.yaml"
+      - step: "check_pending"
+        description: "检查待执行任务"
+        condition: "queue.stats.pending > 0"
+        action: "SHOW queue summary, ASK to continue"
+      - step: "check_interrupted"
+        description: "检查中断的任务"
+        condition: "queue.stats.in_progress > 0"
+        action: "WARN about interrupted task, ASK to resume/reset"
+      - step: "fallback"
+        description: "无队列时的后备"
+        condition: "queue empty or not exists"
+        action: "Normal execute mode, SUGGEST running PLAN MODE"
+    
+    # No prohibitions in execute mode (subject to normal rules)
+    prohibitions: []
+    
+    # All actions allowed (subject to normal governance)
+    allowed: ["*"]
+
+  # ---------------------------------------------------------------------------
+  # REVIEW MODE (审查模式) - Future Extension
+  # ---------------------------------------------------------------------------
+  review:
+    id: "REVIEW"
+    display_name: "REVIEW MODE"
+    display_name_zh: "审查模式"
+    description: "Code review and verification only. No new implementation."
+    status: "planned"  # active | planned | deprecated
+    
+    triggers:
+      patterns:
+        - "审查模式"
+        - "review mode"
+        - "code review"
+
+# =============================================================================
+# MODE DETECTION PRIORITY
+# =============================================================================
+
+detection:
+  priority:
+    - source: "explicit_trigger"
+      description: "Explicit mode trigger in user message"
+      weight: 100
+    - source: "active_state"
+      description: "Active mode in state file (e.g., plan_mode_state.yaml)"
+      weight: 50
+    - source: "default"
+      description: "Default to EXECUTE mode"
+      weight: 0
+      
+  # How to handle ambiguous triggers
+  ambiguity_resolution: "ask_user"  # ask_user | prefer_current | prefer_explicit
+
+# =============================================================================
+# GLOBAL PRIORITY RULES
+# =============================================================================
+
+global_priority:
+  # When objectives conflict, this is the resolution order
+  priority_chain:
+    - id: "P0"
+      name: "DGSF Progress"
+      description: "DGSF 量化交易系统推进"
+      overrides_all: true
+    - id: "P1"
+      name: "System Stability"
+      description: "系统稳定性"
+    - id: "P2"
+      name: "OS/Process Optimization"
+      description: "OS/流程/规范优化"
+      note: "Can be deferred if conflicts with P0"
+
+# =============================================================================
+# CONTEXT HYGIENE CONFIGURATION (PP-020 Enforcement)
+# =============================================================================
+
+context_hygiene:
+  enabled: true
+  version: "1.0.0"
+  
+  # Thresholds for context health assessment
+  thresholds:
+    # Token-based thresholds
+    token_warning: 50000       # Warn when approaching limit
+    token_critical: 80000      # Force delegation when exceeded
+    
+    # File-based thresholds
+    file_count_warning: 10     # Warn with many files in context
+    file_count_critical: 20    # Force delegation with too many files
+    
+    # Depth-based thresholds
+    depth_warning: 5           # Call stack depth warning
+    depth_critical: 10         # Force checkpoint at this depth
+    
+  # Automatic actions when thresholds are exceeded
+  auto_actions:
+    on_warning:
+      - action: "suggest_delegation"
+        description: "Suggest delegating to subagent"
+      - action: "log_assessment"
+        description: "Log context assessment to state"
+        
+    on_critical:
+      - action: "force_checkpoint"
+        description: "Create automatic checkpoint"
+      - action: "recommend_subagents"
+        description: "Recommend specific subagents"
+      - action: "block_new_files"
+        description: "Block loading new files until delegation"
+        
+  # Checkpoint configuration
+  checkpoints:
+    directory: "state/context_checkpoints"
+    max_checkpoints_per_session: 10
+    auto_cleanup_after_days: 7
+    
+  # Subagent delegation rules
+  delegation_rules:
+    spec_heavy:
+      triggers: ["spec", "specification", "contract"]
+      subagents: ["repo_specs_retrieval"]
+    research_heavy:
+      triggers: ["research", "paper", "literature", "frontier"]
+      subagents: ["external_research", "repo_specs_retrieval"]
+    code_review:
+      triggers: ["review", "audit", "check"]
+      subagents: ["quant_risk_review"]
+    cross_layer:
+      triggers: ["data", "factor", "sdf", "evaluation"]
+      subagents: ["repo_specs_retrieval", "spec_drift"]
+    general_overload:
+      triggers: ["*"]
+      subagents: ["repo_specs_retrieval"]
+
+# =============================================================================
+# WORKTREE PARALLELISM CONFIGURATION (PP-018 Enforcement)
+# =============================================================================
+
+worktree_parallelism:
+  enabled: true
+  version: "1.0.0"
+  
+  # Base directory for worktrees
+  base_path: ".worktrees"
+  
+  # Limits
+  max_worktrees: 5
+  
+  # Purposes with default branches
+  purposes:
+    subagent:
+      branch_prefix: "worktree/subagent-"
+      auto_cleanup_hours: 24
+    experiment:
+      branch_prefix: "worktree/exp-"
+      auto_cleanup_hours: 48
+    hotfix:
+      branch_prefix: "worktree/hotfix-"
+      auto_cleanup_hours: 4
+    review:
+      branch_prefix: "worktree/review-"
+      auto_cleanup_hours: 12
+    backup:
+      branch_prefix: "worktree/backup-"
+      auto_cleanup_hours: 72
+      
+  # State tracking
+  state_files:
+    worktree_state: "state/worktrees.yaml"
+    worktree_map: "docs/state/WORKTREE_MAP.md"
+    
+  # Subagent worktree allocation
+  subagent_allocation:
+    enabled: true
+    reuse_idle: true          # Reuse idle worktrees for same subagent
+    auto_create: true         # Auto-create if none available
+    auto_cleanup_on_complete: false  # Keep for debugging

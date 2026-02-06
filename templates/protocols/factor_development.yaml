@@ -1,0 +1,168 @@
+# Factor Development Protocol Template
+# Use this template for new factor research experiments
+
+protocol:
+  name: "Factor Development"
+  template: "factor_development"
+  version: "1.0.0"
+  description: "Standard protocol for developing and validating new trading factors"
+  
+  # ============================================
+  # CONFIGURATION - Customize these values
+  # ============================================
+  
+  metadata:
+    author: ""  # Fill in
+    created: ""  # Fill in: YYYY-MM-DD
+    experiment_id: ""  # e.g., t01_momentum_factor
+    hypothesis: ""  # Brief hypothesis statement
+    
+  # Data configuration
+  data:
+    source: "qlib"  # qlib | local | vendor
+    date_range:
+      train_start: "2015-01-01"
+      train_end: "2020-12-31"
+      test_start: "2021-01-01"
+      test_end: "2023-12-31"
+    universe: "csi300"  # Market universe
+    frequency: "daily"  # daily | intraday
+    
+  # Train/Validation/Test split
+  splits:
+    is_ratio: 0.6       # In-sample ratio
+    validation_ratio: 0.2  # Cross-validation within IS
+    oos_ratio: 0.2      # Out-of-sample ratio
+    purge_days: 5       # Days to purge between splits (no overlap)
+    embargo_days: 2     # Days to embargo after test periods
+    
+  # Metrics configuration
+  metrics:
+    primary:
+      - name: "sharpe_ratio"
+        threshold_pass: 1.5
+        threshold_warn: 1.0
+      - name: "oos_is_ratio"
+        threshold_pass: 0.9
+        threshold_warn: 0.7
+    secondary:
+      - name: "max_drawdown"
+        threshold_warn: 0.20
+      - name: "turnover"
+        threshold_warn: 2.0
+      - name: "hit_ratio"
+        threshold_pass: 0.52
+        
+  # Multiple Testing Correction
+  mtc:
+    method: "bonferroni"  # bonferroni | holm | fdr
+    family_size: null      # Auto-detect from factor count
+    alpha: 0.05           # Significance level
+    
+  # ============================================
+  # PROTOCOL STEPS - Standard workflow
+  # ============================================
+  
+  steps:
+    - name: "1. Data Validation"
+      action: "validate_data"
+      description: "Verify data quality and coverage"
+      checks:
+        - schema_compliance
+        - missing_rate <= 0.05
+        - no_lookahead_bias
+      artifacts:
+        - data_quality_report.json
+        
+    - name: "2. Feature Engineering"
+      action: "compute_features"
+      description: "Calculate factor values for universe"
+      params:
+        normalize: true
+        winsorize: true
+        winsorize_bounds: [0.01, 0.99]
+      artifacts:
+        - feature_matrix.parquet
+        
+    - name: "3. In-Sample Analysis"
+      action: "is_analysis"
+      description: "Analyze factor in training period"
+      params:
+        analysis_type: "cross_sectional"
+        grouping: "quantile"
+        n_groups: 5
+      artifacts:
+        - is_analysis.json
+        - factor_returns.parquet
+        
+    - name: "4. Walk-Forward Validation"
+      action: "walk_forward_cv"
+      description: "Cross-validate with purged walk-forward"
+      params:
+        n_splits: 5
+        window_type: "expanding"
+        min_train_days: 252
+      artifacts:
+        - cv_results.json
+        
+    - name: "5. Out-of-Sample Test"
+      action: "oos_evaluation"
+      description: "Final evaluation on hold-out period"
+      params:
+        evaluation_mode: "once"  # No peeking
+        compute_all_metrics: true
+      artifacts:
+        - oos_results.json
+        - performance_summary.md
+        
+    - name: "6. Robustness Checks"
+      action: "robustness_tests"
+      description: "Sensitivity and stability analysis"
+      params:
+        tests:
+          - universe_subsets
+          - time_period_stability
+          - parameter_sensitivity
+      artifacts:
+        - robustness_report.json
+        
+    - name: "7. Documentation"
+      action: "generate_report"
+      description: "Compile final research report"
+      artifacts:
+        - EXPERIMENT_REPORT.md
+        - results.json
+        
+  # ============================================
+  # DECISION RULES
+  # ============================================
+  
+  decision_rules:
+    pass_criteria:
+      - "oos_sharpe >= 1.5"
+      - "oos_is_ratio >= 0.9"
+      - "max_drawdown <= 0.20"
+      - "mtc_adjusted_pvalue <= 0.05"
+    
+    warn_criteria:
+      - "oos_sharpe >= 1.0"
+      - "oos_is_ratio >= 0.7"
+    
+    fail_criteria:
+      - "oos_sharpe < 1.0"
+      - "oos_is_ratio < 0.5"
+      - "max_drawdown > 0.30"
+      
+  # ============================================
+  # OUTPUT STRUCTURE
+  # ============================================
+  
+  outputs:
+    directory: "experiments/{experiment_id}/"
+    required_files:
+      - config.yaml     # This file, filled in
+      - results.json    # Metrics output
+      - lineage.yaml    # Data provenance
+    optional_files:
+      - run.log         # Execution log
+      - plots/          # Visualizations

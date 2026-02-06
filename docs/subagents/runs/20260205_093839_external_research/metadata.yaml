@@ -1,0 +1,12 @@
+input:
+  context: Quantitative backtesting
+  question: Best practices for purged walk-forward CV
+  research_question: Best practices for purged walk-forward CV
+  review_type: full
+  scope: .
+result:
+  note: External research requires web API configuration
+  output_dir: E:\AI Tools\AI Workflow OS\docs\subagents\runs\20260205_093839_external_research
+  status: placeholder
+subagent_id: external_research
+timestamp: '2026-02-05T09:38:39.026008'

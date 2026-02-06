@@ -1,0 +1,29 @@
+# Subagent Runs Directory
+
+此目录存储 Subagent 的运行输出。
+
+## 目录结构
+
+每次 Subagent 运行会创建一个时间戳命名的子目录：
+
+```
+docs/subagents/runs/
+├── 20260205_143000_repo_specs_retrieval/
+│   ├── SUMMARY.md       # 简短摘要
+│   ├── EVIDENCE.md      # 详细证据
+│   └── metadata.yaml    # 运行元数据
+├── 20260205_144500_quant_risk_review/
+│   ├── SUMMARY.md
+│   ├── EVIDENCE.md
+│   ├── CHECKLIST.md     # 检查清单（仅 quant_risk_review）
+│   └── metadata.yaml
+└── ...
+```
+
+## 清理
+
+默认保留 30 天。手动清理：
+
+```powershell
+Remove-Item -Recurse docs/subagents/runs/* -Exclude ".gitkeep"
+```

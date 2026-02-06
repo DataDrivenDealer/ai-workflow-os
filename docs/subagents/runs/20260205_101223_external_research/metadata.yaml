@@ -1,0 +1,13 @@
+input:
+  compare_to: projects/dgsf/repo/src/
+  context: quantitative backtesting
+  question: Best practices for purged walk-forward CV
+  research_question: Best practices for purged walk-forward CV
+  review_type: full
+  scope: .
+result:
+  note: External research requires web API configuration
+  output_dir: E:\AI Tools\AI Workflow OS\docs\subagents\runs\20260205_101223_external_research
+  status: placeholder
+subagent_id: external_research
+timestamp: '2026-02-05T10:12:23.236504'

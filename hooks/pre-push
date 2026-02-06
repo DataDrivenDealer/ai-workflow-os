@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-# Pre-push hook: Run gate checks before pushing
-# Updated: 2026-02-01 by 张平台 - Added venv detection
+# Pre-push hook: Run gate checks and branch validation before pushing
+# Updated: 2026-02-06 by Copilot OS — Added branch naming enforcement
 
 echo "Running pre-push gate checks..."
 
@@ -16,6 +16,37 @@ else
 fi
 
 echo "Using Python: $PYTHON"
+
+# ======================================================================
+# PHASE 0: Branch naming policy check (BLOCK enforcement)
+# ======================================================================
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ -n "$CURRENT_BRANCH" ]; then
+    if [ -f "kernel/git_branch_validator.py" ]; then
+        $PYTHON -m kernel.git_branch_validator 2>&1
+        BRANCH_EXIT=$?
+        if [ $BRANCH_EXIT -ne 0 ]; then
+            echo ""
+            echo "[BLOCK] Push rejected: branch '${CURRENT_BRANCH}' violates naming policy."
+            echo "        Rename your branch first:"
+            echo "          git branch -m feature/TASK_ID-description"
+            echo ""
+            exit 1
+        fi
+    fi
+fi
+
+# ======================================================================
+# PHASE 0.5: Hooks installation check (informational on push)
+# ======================================================================
+if [ -f "kernel/git_setup_check.py" ]; then
+    $PYTHON -c "
+from kernel.git_setup_check import check_git_hooks, format_setup_status
+status = check_git_hooks()
+if not status.hooks_installed:
+    print(format_setup_status(status))
+" 2>/dev/null
+fi
 
 # Run policy check (graceful degradation)
 if [ -f "scripts/policy_check.py" ]; then

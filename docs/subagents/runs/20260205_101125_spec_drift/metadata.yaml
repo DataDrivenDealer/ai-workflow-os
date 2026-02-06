@@ -1,0 +1,14 @@
+input:
+  compare_to: kernel/
+  review_type: full
+  scope: specs/
+result:
+  by_category:
+    CODE_DRIFT: 0
+    MUTUAL_INCONSISTENCY: 0
+    SPEC_LAG: 0
+  drift_count: 0
+  output_dir: E:\AI Tools\AI Workflow OS\docs\subagents\runs\20260205_101125_spec_drift
+  status: success
+subagent_id: spec_drift
+timestamp: '2026-02-05T10:11:25.914345'

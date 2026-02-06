@@ -159,6 +159,10 @@ behavior:
   long_run_threshold_seconds: 180
   auto_git_ops: true
   
+  # Git branch policy enforcement
+  git_branch_policy: "configs/git_branch_policy.yaml"
+  git_hooks_auto_check: true  # Check hooks on git operations
+  
   # DGSF-specific behaviors
   domain_specific:
     protect_raw_data: true

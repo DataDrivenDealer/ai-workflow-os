@@ -1,0 +1,124 @@
+# =============================================================================
+# Git Branch Policy — AI Workflow OS
+# =============================================================================
+# Strategy: GitHub Flow (main + short-lived feature branches)
+# Enforcement: BLOCK (non-conforming branch names are rejected)
+# Version: 1.0.0
+# Created: 2026-02-06
+# =============================================================================
+
+version: "1.0.0"
+strategy: "github_flow"
+
+# =============================================================================
+# BRANCH STRUCTURE
+# =============================================================================
+branches:
+  # The single long-lived branch
+  main_branch: "main"
+
+  # Allowed branch type prefixes and their naming patterns
+  # Regex patterns use Python re syntax
+  types:
+    feature:
+      pattern: "^feature/[A-Z][A-Z0-9_]+-[a-z0-9][a-z0-9_-]+$"
+      description: "Feature development branches"
+      example: "feature/GIT_001-branch-policy"
+      merge_target: "main"
+      require_task_id: true
+      max_lifetime_days: 30
+
+    experiment:
+      pattern: "^experiment/t\\d{2,3}_[a-z0-9][a-z0-9_-]+$"
+      description: "Quantitative experiment branches"
+      example: "experiment/t05_sharpe_validation"
+      merge_target: "main"
+      require_task_id: false
+      max_lifetime_days: 60
+
+    hotfix:
+      pattern: "^hotfix/[A-Z][A-Z0-9_]+-[a-z0-9][a-z0-9_-]+$"
+      description: "Urgent fix branches"
+      example: "hotfix/URGENT_001-fix-crash"
+      merge_target: "main"
+      require_task_id: true
+      max_lifetime_days: 7
+
+    release:
+      pattern: "^release/v\\d+\\.\\d+\\.\\d+$"
+      description: "Release preparation branches"
+      example: "release/v1.0.0"
+      merge_target: "main"
+      require_task_id: false
+      max_lifetime_days: 14
+
+    worktree:
+      pattern: "^worktree/(subagent|exp|hotfix|review|backup)-[a-z0-9_-]+$"
+      description: "Git worktree isolation branches (auto-managed)"
+      example: "worktree/subagent-research-001"
+      merge_target: null
+      require_task_id: false
+      max_lifetime_days: 3
+
+# =============================================================================
+# ENFORCEMENT
+# =============================================================================
+enforcement:
+  # BLOCK = reject non-conforming names | WARN = warn but allow | NOTIFY = info only
+  level: "BLOCK"
+
+  # Branches that cannot be directly committed to or deleted
+  protected_branches:
+    - "main"
+
+  # Allow overriding BLOCK with explicit confirmation (emergency escape hatch)
+  allow_override: true
+  override_requires: "CONFIRM"  # User must type branch name to confirm
+
+  # Exempt patterns (always allowed, e.g. for CI or tooling)
+  exempt_patterns:
+    - "^HEAD$"
+    - "^(no branch)$"
+
+# =============================================================================
+# NAMING CONVENTIONS (Human-Readable Reference)
+# =============================================================================
+naming_conventions:
+  task_id_format: "[A-Z][A-Z0-9_]+"
+  description_format: "[a-z0-9][a-z0-9_-]+"
+  separator: "-"
+
+  # Quick reference
+  formats:
+    feature: "feature/{TASK_ID}-{description}"
+    experiment: "experiment/t{NN}_{name}"
+    hotfix: "hotfix/{TASK_ID}-{description}"
+    release: "release/v{major}.{minor}.{patch}"
+    worktree: "worktree/{purpose}-{detail}"
+
+# =============================================================================
+# TAG POLICY (aligned with existing post-tag hook)
+# =============================================================================
+tags:
+  patterns:
+    experiment: "exp/t{NN}_{name}"
+    release: "v{major}.{minor}.{patch}"
+    spec: "spec/{name}/v{n}"
+    milestone: "milestone/{name}"
+
+# =============================================================================
+# COMMIT MESSAGE POLICY (Conventional Commits)
+# =============================================================================
+commit_message:
+  format: "conventional_commits"
+  types:
+    - feat
+    - fix
+    - docs
+    - test
+    - chore
+    - experiment
+    - refactor
+    - perf
+  require_scope: false
+  max_subject_length: 72

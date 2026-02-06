@@ -1,0 +1,268 @@
+# Subagent Activation Policy
+# 
+# 定义何时必须调用 Subagent 的强制触发策略
+# 版本: 1.0.0
+# 创建日期: 2026-02-05
+# 
+# 本配置与 copilot-instructions.md 中的 SUBAGENT ENFORCEMENT MECHANISMS 配合使用
+
+schema_version: "1.0"
+
+# =============================================================================
+# ACTIVATION TRIGGERS（激活触发器）
+# =============================================================================
+# 
+# 当检测到以下条件时，必须调用对应的 Subagent。
+# 如果不调用，必须提供 skip_justification。
+
+activation_triggers:
+
+  # ---------------------------------------------------------------------------
+  # AUTO TRIGGERS — 自动触发条件（无需用户指示）
+  # ---------------------------------------------------------------------------
+  auto:
+    # 跨层变更检测
+    cross_layer_change:
+      description: "检测到涉及多个架构层的变更"
+      detection_patterns:
+        - "data/ AND (factor/ OR sdf/)"       # 数据层 + 因子层
+        - "factor/ AND (sdf/ OR evaluation/)" # 因子层 + SDF层
+        - "sdf/ AND (evaluation/ OR rolling/)"# SDF层 + 评估层
+        - "rolling/ AND evaluation/"          # 滚动层 + 评估层
+      required_subagents:
+        - repo_specs_retrieval
+        - spec_drift
+      mode: [PLAN]
+      
+    # Spec 歧义或冲突检测
+    spec_ambiguity:
+      description: "Spec 内容不清晰或存在冲突"
+      detection_patterns:
+        - "Spec 中是否定义了"
+        - "规范不一致"
+        - "契约冲突"
+        - "版本不匹配"
+      required_subagents:
+        - repo_specs_retrieval
+        - spec_drift
+      mode: [PLAN]
+      
+    # 新评估指标或回测协议
+    evaluation_change:
+      description: "涉及评估指标或回测协议的变更"
+      detection_patterns:
+        - "evaluation/"
+        - "backtest"
+        - "OOS Sharpe"
+        - "performance metric"
+        - "cross-validation"
+      required_subagents:
+        - quant_risk_review
+      mode: [PLAN, EXECUTE]
+      
+    # DRS 需求（决策需要多方论证）
+    drs_required:
+      description: "决策存在多个可行选项，需要深入研究"
+      detection_patterns:
+        - "两种方案"
+        - "多个选择"
+        - "trade-off"
+        - "权衡"
+        - "比较"
+        - "vs"
+      required_subagents:
+        - external_research
+      mode: [PLAN]
+      
+    # 上下文过载
+    context_overload:
+      description: "涉及过多文件或文档，超出安全处理范围"
+      detection_conditions:
+        - "referenced_files > 10"
+        - "total_context_tokens > 50000"
+      required_subagents:
+        - repo_specs_retrieval
+      mode: [PLAN, EXECUTE]
+
+  # ---------------------------------------------------------------------------
+  # GATE TRIGGERS — Gate 强制触发条件
+  # ---------------------------------------------------------------------------
+  gates:
+    # Plan Mode Gates
+    Gate-P1:
+      name: "Specs Scan Gate"
+      description: "规划阶段必须先扫描 Specs"
+      trigger_condition: "任何规划开始时"
+      required_check: |
+        IF ambiguity OR cross_layer_dependency OR suspected_drift:
+          INVOKE repo_specs_retrieval
+          INVOKE spec_drift (if drift suspected)
+      required_subagents:
+        - repo_specs_retrieval
+      skip_allowed: false
+      skip_requires: "N/A - 不允许跳过"
+      
+    Gate-P6:
+      name: "DRS Gate"
+      description: "多选项决策必须进行研究"
+      trigger_condition: "决策存在 ≥2 个可行选项"
+      required_check: |
+        IF decision.viable_options >= 2:
+          INVOKE external_research
+          OR document skip_reason with justification
+      required_subagents:
+        - external_research
+      skip_allowed: true
+      skip_requires: |
+        skip_justification:
+          reason: "..."  # 必须填写
+          owner_approved: true  # 必须有 Owner 确认
+          alternatives_considered: ["..."]  # 列出考虑过的替代方案
+      
+    Gate-P8:
+      name: "Write-back Attachment Gate"
+      description: "写回执行队列时必须附加 Subagent 输出"
+      trigger_condition: "Plan Mode 退出前的写回阶段"
+      required_check: |
+        IF subagents_were_invoked:
+          ATTACH output_paths to execution_queue.tasks[].subagent_artifacts
+      required_subagents: []  # 依赖之前的调用
+      skip_allowed: false
+      skip_requires: "N/A - 不允许跳过"
+    
+    # Execute Mode Gates
+    Gate-E0:
+      name: "Pre-execution Check Gate"
+      description: "执行前检查任务是否有 RequiredSubagents"
+      trigger_condition: "开始执行任何队列任务前"
+      required_check: |
+        READ task.required_subagents
+        IF required_subagents NOT empty:
+          FOR subagent IN required_subagents:
+            IF NOT subagent.output_exists:
+              INVOKE subagent
+              WAIT for output
+      required_subagents: []  # 由任务定义决定
+      skip_allowed: false
+      skip_requires: "N/A - 不允许跳过"
+      
+    Gate-E5:
+      name: "Review Gate"
+      description: "涉及回测/数据/指标的任务必须风险审查"
+      trigger_condition: "任务涉及 backtest/data/metrics/evaluation"
+      required_check: |
+        IF task.touches ANY OF [backtest, data, metrics, evaluation]:
+          INVOKE quant_risk_review
+          IF result.verdict == "fail":
+            ESCALATE to PLAN MODE
+      required_subagents:
+        - quant_risk_review
+      skip_allowed: false
+      skip_requires: "N/A - 不允许跳过"
+
+# =============================================================================
+# TASK-LEVEL BINDING SCHEMA（任务级绑定架构）
+# =============================================================================
+# 
+# 定义 TODO_NEXT / execution_queue 中任务的 Subagent 相关字段
+
+task_binding_schema:
+  required_fields:
+    required_subagents:
+      type: "list"
+      items: 
+        type: "string"
+        enum: ["repo_specs_retrieval", "external_research", "quant_risk_review", "spec_drift"]
+      description: "该任务执行前必须调用的 Subagent 列表"
+      default: []
+      
+    subagent_artifacts:
+      type: "list"
+      items:
+        type: "object"
+        properties:
+          subagent_id: "string"
+          output_path: "string"  # e.g., docs/subagents/runs/20260205_143000_repo_specs_retrieval/
+          summary_path: "string" # SUMMARY.md 的完整路径
+          invoked_at: "datetime"
+      description: "已调用的 Subagent 输出路径"
+      default: []
+      
+    skip_justification:
+      type: "object"
+      nullable: true
+      properties:
+        reason: "string"
+        owner_approved: "boolean"
+        timestamp: "datetime"
+      description: "如果跳过 RequiredSubagents，必须填写此字段"
+      
+  example:
+    task_id: "SDF_FEATURE_ENG_001"
+    subtask_id: "T3.1"
+    title: "现有特征盘点"
+    priority: "P0"
+    required_subagents:
+      - repo_specs_retrieval
+    subagent_artifacts:
+      - subagent_id: "repo_specs_retrieval"
+        output_path: "docs/subagents/runs/20260205_143000_repo_specs_retrieval/"
+        summary_path: "docs/subagents/runs/20260205_143000_repo_specs_retrieval/SUMMARY.md"
+        invoked_at: "2026-02-05T14:30:00Z"
+    skip_justification: null
+
+# =============================================================================
+# AUDIT REQUIREMENTS（审计要求）
+# =============================================================================
+
+audit:
+  # 每次 Plan/Execute 循环后必须更新
+  per_loop_update:
+    target_file: "docs/state/SUBAGENT_USAGE.md"
+    required_fields:
+      - timestamp
+      - mode  # PLAN or EXECUTE
+      - subagents_invoked  # list or "none"
+      - skip_reasons  # if any
+      - evidence_paths  # list of output paths
+      
+  # 使用率统计
+  usage_metrics:
+    rolling_window: 20  # 最近 20 个任务
+    alert_threshold: 0.40  # 40% 使用率以下触发警报
+    metrics:
+      - total_tasks
+      - tasks_with_subagent_invocation
+      - usage_rate_percent
+      - breakdown_by_subagent
+      - top_skip_reasons
+
+# =============================================================================
+# ENFORCEMENT ACTIONS（强制执行动作）
+# =============================================================================
+
+enforcement:
+  # Gate 未满足时的行为
+  gate_not_satisfied:
+    action: "STOP"
+    message: |
+      ⛔ Gate {gate_id} 未满足
+      
+      **原因**: {reason}
+      **要求**: {requirement}
+      
+      请先满足 Gate 条件，或提供有效的 skip_justification。
+    fallback: "返回 PLAN MODE"
+    
+  # 低使用率警报
+  low_usage_alert:
+    threshold: 0.40
+    action: "WARN"
+    message: |
+      ⚠️ Subagent 使用率过低 ({usage_rate}%)
+      
+      **最近 {window} 个任务中**: 仅 {invoked_count} 个调用了 Subagent
+      **触发条件存在但被跳过的次数**: {skip_count}
+      **主要跳过原因**: {top_reasons}
+      
+      这可能表示系统配置问题。请检查 activation_policy 是否正确。

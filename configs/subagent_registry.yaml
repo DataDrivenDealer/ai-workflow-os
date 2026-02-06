@@ -1,0 +1,305 @@
+# Subagent Registry
+# 
+# 定义可被 PLAN MODE 和 EXECUTE MODE 调用的 Subagent
+# 版本: 1.0.0
+# 创建日期: 2026-02-05
+
+schema_version: "1.0"
+
+# =============================================================================
+# SUBAGENT DEFINITIONS
+# =============================================================================
+
+subagents:
+
+  # ---------------------------------------------------------------------------
+  # REPO SPECS RETRIEVAL — 本地仓库与规范检索
+  # ---------------------------------------------------------------------------
+  repo_specs_retrieval:
+    id: "repo_specs_retrieval"
+    version: "1.0.0"
+    purpose: |
+      在本地工作区搜索代码、配置和规范文件，提供精确的文件路径和行号引用。
+      用于证据收集和规范一致性验证。
+    
+    allowed_modes:
+      - PLAN
+      - EXECUTE  # 仅限 review gate
+    
+    allowed_tools:
+      - ripgrep (rg)
+      - file_tree (ls, find)
+      - read_file
+      - grep_search
+    
+    prohibited_tools:
+      - web_fetch
+      - external_api
+      - code_execution
+      - file_write
+    
+    input_contract:
+      required:
+        - question: string      # 要回答的问题
+        - scope: string         # 搜索范围 (e.g., "specs/", "kernel/", "full_repo")
+      optional:
+        - file_patterns: list   # 文件模式 (e.g., ["*.yaml", "*.py"])
+        - keywords: list        # 关键词列表
+        - context_pointers: list # 起始参考文件
+    
+    output_contract:
+      summary_file: "SUMMARY.md"   # 简短摘要，供主 Agent 快速消费
+      evidence_file: "EVIDENCE.md" # 完整证据，包含路径、行号、引用片段
+      max_summary_tokens: 500
+      max_evidence_items: 20
+      format:
+        summary:
+          - answer: string         # 直接回答问题
+          - confidence: high|medium|low
+          - key_findings: list     # 3-5 个要点
+        evidence:
+          - items:                 # 证据列表
+              - file_path: string
+                line_range: string
+                quote: string      # 最多 10 行
+                relevance: string  # 为什么这个证据相关
+    
+    timeout_seconds: 60
+    retry_limit: 1
+
+  # ---------------------------------------------------------------------------
+  # EXTERNAL RESEARCH — 外部网络研究
+  # ---------------------------------------------------------------------------
+  external_research:
+    id: "external_research"
+    version: "1.0.0"
+    purpose: |
+      执行网络搜索和文献研究，返回带引用链接的决策导向摘要。
+      用于获取最佳实践、论文参考、API 文档等外部知识。
+    
+    allowed_modes:
+      - PLAN  # 仅限 PLAN MODE
+    
+    allowed_tools:
+      - web_search
+      - fetch_webpage
+      - academic_search
+    
+    prohibited_tools:
+      - code_execution
+      - file_write
+      - repo_modification
+    
+    input_contract:
+      required:
+        - research_question: string  # 研究问题
+        - context: string            # 背景上下文
+      optional:
+        - source_types: list         # 来源类型 (e.g., ["papers", "docs", "blogs"])
+        - time_range: string         # 时间范围 (e.g., "last_2_years")
+        - domain_focus: string       # 领域聚焦 (e.g., "quant_finance", "ml_ops")
+    
+    output_contract:
+      summary_file: "SUMMARY.md"
+      evidence_file: "EVIDENCE.md"
+      max_summary_tokens: 800
+      format:
+        summary:
+          - answer: string           # 决策导向的回答
+          - confidence: high|medium|low
+          - recommendations: list    # 可操作的建议
+          - limitations: list        # 研究局限性
+        evidence:
+          - citations:               # 引用列表
+              - title: string
+                url: string
+                type: paper|doc|blog|forum
+                key_quote: string    # 关键引用
+                relevance: string
+    
+    timeout_seconds: 120
+    retry_limit: 2
+
+  # ---------------------------------------------------------------------------
+  # QUANT RISK REVIEW — 量化风险审查
+  # ---------------------------------------------------------------------------
+  quant_risk_review:
+    id: "quant_risk_review"
+    version: "1.0.0"
+    purpose: |
+      检查量化策略代码和实验的常见风险：
+      - Lookahead bias（前瞻偏差）
+      - Data leakage（数据泄露）
+      - Evaluation protocol errors（评估协议错误）
+      - Reproducibility issues（可复现性问题）
+    
+    allowed_modes:
+      - PLAN
+      - EXECUTE  # 仅限 review gate
+    
+    allowed_tools:
+      - ripgrep (rg)
+      - read_file
+      - grep_search
+      - static_analysis
+    
+    prohibited_tools:
+      - web_fetch
+      - code_execution  # 只做静态分析
+      - file_write
+    
+    input_contract:
+      required:
+        - target_files: list      # 要审查的文件列表
+        - review_type: string     # "full" | "incremental" | "focused"
+      optional:
+        - focus_areas: list       # ["lookahead", "leakage", "protocol", "reproducibility"]
+        - baseline_commit: string # 增量审查的基线
+        - experiment_id: string   # 关联的实验 ID
+    
+    output_contract:
+      summary_file: "SUMMARY.md"
+      evidence_file: "EVIDENCE.md"
+      checklist_file: "CHECKLIST.md"  # 额外的检查清单输出
+      format:
+        summary:
+          - verdict: pass|warn|fail
+          - risk_score: 0-10
+          - critical_issues: list   # 必须修复的问题
+          - warnings: list          # 建议改进的问题
+        checklist:
+          - lookahead_bias:
+              - status: pass|warn|fail
+              - issues: list
+          - data_leakage:
+              - status: pass|warn|fail
+              - issues: list
+          - evaluation_protocol:
+              - status: pass|warn|fail
+              - issues: list
+          - reproducibility:
+              - status: pass|warn|fail
+              - issues: list
+        evidence:
+          - items:
+              - issue_id: string
+                file_path: string
+                line_range: string
+                code_snippet: string
+                problem_description: string
+                suggested_fix: string
+    
+    timeout_seconds: 180
+    retry_limit: 1
+
+  # ---------------------------------------------------------------------------
+  # SPEC DRIFT — Spec 漂移检测
+  # ---------------------------------------------------------------------------
+  spec_drift:
+    id: "spec_drift"
+    version: "1.0.0"
+    purpose: |
+      检测 Spec 与实现之间的漂移，分类问题并提供建议。
+      分类: SPEC_LAG / CODE_DRIFT / MUTUAL_INCONSISTENCY
+    
+    allowed_modes:
+      - PLAN  # 仅限 PLAN MODE
+    
+    allowed_tools:
+      - ripgrep (rg)
+      - read_file
+      - grep_search
+      - file_tree
+    
+    prohibited_tools:
+      - web_fetch
+      - code_execution
+      - file_write
+    
+    input_contract:
+      required: []  # 均有默认值
+      optional:
+        - scope: string           # Spec 文件范围 (默认: "specs/")
+        - compare_to: string      # 实现代码范围 (默认: "projects/dgsf/repo/src/")
+        - spec_files: list        # 指定的 Spec 文件列表
+        - check_cross_refs: bool  # 是否检查交叉引用 (默认: true)
+    
+    output_contract:
+      summary_file: "SUMMARY.md"
+      evidence_file: "EVIDENCE.md"
+      format:
+        summary:
+          - total_drift_items: number
+          - by_category:
+              - SPEC_LAG: number
+              - CODE_DRIFT: number
+              - MUTUAL_INCONSISTENCY: number
+          - recommendations: list
+        evidence:
+          - items:
+              - category: string
+              - spec_file: string
+              - impl_file: string
+              - identifier: string
+              - description: string
+    
+    timeout_seconds: 120
+    retry_limit: 1
+
+# =============================================================================
+# GLOBAL POLICIES
+# =============================================================================
+
+policies:
+  # 默认策略（可被 mode 配置覆盖）
+  default_output_dir: "docs/subagents/runs"
+  timestamp_format: "%Y%m%d_%H%M%S"
+  archive_after_days: 30
+  
+  # 权限矩阵
+  mode_permissions:
+    PLAN:
+      allowed_subagents: ["repo_specs_retrieval", "external_research", "quant_risk_review", "spec_drift"]
+      policy: "FULL"  # 可调用所有定义的 subagent
+    
+    EXECUTE:
+      allowed_subagents: ["repo_specs_retrieval", "quant_risk_review"]
+      policy: "REVIEW_ONLY"  # 仅限 review gate 内使用
+      prohibited_actions:
+        - planning
+        - reprioritization
+        - spec_modification
+
+# =============================================================================
+# INVOCATION EXAMPLES
+# =============================================================================
+
+examples:
+  repo_specs_retrieval:
+    input:
+      question: "SDF_SPEC v3.1 中定义了哪些特征？"
+      scope: "specs/"
+      file_patterns: ["*.yaml", "*.md"]
+    expected_output:
+      summary: "发现 12 个特征定义于 specs/sdf_spec_v3.1.yaml..."
+      evidence_count: 12
+  
+  external_research:
+    input:
+      research_question: "purged walk-forward cross-validation 的最佳实践是什么？"
+      context: "量化策略回测"
+      source_types: ["papers", "docs"]
+    expected_output:
+      summary: "López de Prado (2018) 推荐使用 purged k-fold..."
+      citations_count: 3
+  
+  quant_risk_review:
+    input:
+      target_files: ["projects/dgsf/repo/src/dgsf/backtest/engine.py"]
+      review_type: "full"
+      focus_areas: ["lookahead", "leakage"]
+    expected_output:
+      verdict: "warn"
+      risk_score: 4
+      critical_issues: 0
+      warnings: 2

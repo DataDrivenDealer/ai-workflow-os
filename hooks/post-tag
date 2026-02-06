@@ -1,0 +1,110 @@
+#!/usr/bin/env sh
+# Post-tag hook: Validate experiment tag format
+# PP-022: Enforces tag naming conventions for experiments
+#
+# Valid tag formats:
+#   exp/{experiment_id}         - Experiment tag (e.g., exp/t01_baseline)
+#   v{semver}                   - Release version (e.g., v1.2.3)
+#   spec/{spec_name}/{version}  - Spec version (e.g., spec/sdf_interface/v1)
+#
+# This hook is called AFTER a tag is created but BEFORE it's pushed.
+# Invalid tags are deleted automatically with a warning.
+
+TAG_NAME="$1"
+TAG_TYPE="$2"  # 'lightweight' or 'annotated'
+
+echo "[Hook] Validating tag: $TAG_NAME (type: $TAG_TYPE)"
+
+# Define valid patterns
+VALID_PATTERNS=(
+    "^exp/t[0-9]{2}_[a-z0-9_]+$"       # Experiment: exp/t01_baseline
+    "^exp/[a-z][a-z0-9_-]+$"            # Experiment: exp/feature-test
+    "^v[0-9]+\.[0-9]+\.[0-9]+.*$"       # Semver: v1.2.3, v1.2.3-beta
+    "^spec/[a-z_]+/v[0-9]+$"            # Spec version: spec/sdf_interface/v1
+    "^release/[0-9]{4}\.[0-9]{2}.*$"    # Release: release/2025.02
+)
+
+# Check if tag matches any valid pattern
+VALID=0
+MATCHED_PATTERN=""
+
+for pattern in "${VALID_PATTERNS[@]}"; do
+    if echo "$TAG_NAME" | grep -qE "$pattern"; then
+        VALID=1
+        MATCHED_PATTERN="$pattern"
+        break
+    fi
+done
+
+if [ "$VALID" = "1" ]; then
+    echo "[OK] Tag format valid: $TAG_NAME"
+    echo "     Pattern matched: $MATCHED_PATTERN"
+    
+    # For experiment tags, verify experiment exists
+    if echo "$TAG_NAME" | grep -qE "^exp/"; then
+        EXP_NAME=$(echo "$TAG_NAME" | sed 's|^exp/||')
+        EXP_DIR=""
+        
+        # Search for experiment directory
+        for dir in "projects/dgsf/experiments" "experiments"; do
+            if [ -d "${dir}/${EXP_NAME}" ]; then
+                EXP_DIR="${dir}/${EXP_NAME}"
+                break
+            fi
+            # Also try without t01_ prefix
+            if [ -d "${dir}/${EXP_NAME}" ] || ls -d "${dir}/${EXP_NAME}"* 2>/dev/null | head -1 | grep -q .; then
+                EXP_DIR=$(ls -d "${dir}/${EXP_NAME}"* 2>/dev/null | head -1)
+                break
+            fi
+        done
+        
+        if [ -n "$EXP_DIR" ] && [ -d "$EXP_DIR" ]; then
+            echo "[OK] Experiment directory found: $EXP_DIR"
+            
+            # Check for required files
+            if [ -f "${EXP_DIR}/config.yaml" ]; then
+                echo "[OK] Experiment config found"
+            else
+                echo "[WARN] Missing config.yaml in $EXP_DIR"
+            fi
+            
+            if [ -f "${EXP_DIR}/results.json" ]; then
+                echo "[OK] Experiment results found"
+            else
+                echo "[WARN] Missing results.json - experiment may not be complete"
+            fi
+        else
+            echo "[WARN] Experiment directory not found for: $EXP_NAME"
+            echo "       Expected: projects/dgsf/experiments/$EXP_NAME"
+            echo "       Tag created but experiment may be missing."
+        fi
+    fi
+    
+    # Log successful tag creation
+    mkdir -p docs/audits
+    echo "$(date -Iseconds) | TAG_CREATED | $TAG_NAME | $TAG_TYPE" >> docs/audits/tags.log
+    
+    exit 0
+else
+    echo "[FAIL] Invalid tag format: $TAG_NAME"
+    echo ""
+    echo "Valid tag formats:"
+    echo "  exp/{experiment_id}         - e.g., exp/t01_baseline"
+    echo "  v{major}.{minor}.{patch}    - e.g., v1.2.3"
+    echo "  spec/{name}/v{n}            - e.g., spec/sdf_interface/v1"
+    echo "  release/{year}.{month}      - e.g., release/2025.02"
+    echo ""
+    echo "Deleting invalid tag..."
+    git tag -d "$TAG_NAME" 2>/dev/null || true
+    
+    # Log the rejection
+    mkdir -p docs/audits
+    echo "$(date -Iseconds) | TAG_REJECTED | $TAG_NAME | invalid format" >> docs/audits/tags.log
+    
+    echo ""
+    echo "Tag deleted. Create with valid format:"
+    echo "  git tag exp/t01_baseline"
+    echo "  git tag -a v1.2.3 -m 'Release 1.2.3'"
+    
+    exit 1
+fi

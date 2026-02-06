@@ -1,0 +1,187 @@
+#!/usr/bin/env sh
+# Pre-destructive-op hook: Validate destructive operations before execution
+# Created: 2026-02-05 by AI Workflow OS
+# Purpose: Enforce safety guardrails for bulk delete, large refactor, etc.
+
+echo "========================================"
+echo "Running pre-destructive-op verification..."
+echo "========================================"
+
+# Exit codes:
+# 0 = Pass (allow operation)
+# 1 = Fail (block operation)
+# 2 = Warning (allow with notice)
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+MIN_FILES_THRESHOLD=5      # Operations affecting 5+ files need approval
+STATE_DIR="state/destructive_ops"
+BACKUP_BRANCH_PREFIX="backup"
+
+# ============================================================================
+# PYTHON DETECTION
+# ============================================================================
+if [ -f ".venv/Scripts/python.exe" ]; then
+    PYTHON=".venv/Scripts/python.exe"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON=".venv/bin/python"
+elif command -v python3 &> /dev/null; then
+    PYTHON="python3"
+else
+    PYTHON="python"
+fi
+
+# ============================================================================
+# ARGUMENT PARSING
+# ============================================================================
+OPERATION_TYPE="${1:-unknown}"   # delete, refactor, move, rename
+AFFECTED_FILES="${2:-}"          # comma-separated list or count
+APPROVAL_REF="${3:-}"            # approval artifact reference
+
+echo "[INFO] Operation type: $OPERATION_TYPE"
+echo "[INFO] Affected files: $AFFECTED_FILES"
+echo "[INFO] Approval ref: ${APPROVAL_REF:-NONE}"
+
+# ============================================================================
+# CHECK 1: Operation Classification
+# ============================================================================
+echo ""
+echo "[CHECK 1] Operation Classification..."
+
+case "$OPERATION_TYPE" in
+    delete|bulk_delete)
+        echo "[WARN] Destructive operation: DELETE"
+        RISK_LEVEL="high"
+        ;;
+    refactor|large_refactor)
+        echo "[WARN] Destructive operation: REFACTOR"
+        RISK_LEVEL="medium"
+        ;;
+    move|rename)
+        echo "[INFO] File operation: MOVE/RENAME"
+        RISK_LEVEL="low"
+        ;;
+    *)
+        echo "[INFO] Unknown operation type: $OPERATION_TYPE"
+        RISK_LEVEL="low"
+        ;;
+esac
+
+# ============================================================================
+# CHECK 2: Scale Assessment
+# ============================================================================
+echo ""
+echo "[CHECK 2] Scale Assessment..."
+
+# Count affected files
+if [ -n "$AFFECTED_FILES" ]; then
+    # If it's a number, use directly; otherwise count comma-separated items
+    if echo "$AFFECTED_FILES" | grep -qE '^[0-9]+$'; then
+        FILE_COUNT=$AFFECTED_FILES
+    else
+        FILE_COUNT=$(echo "$AFFECTED_FILES" | tr ',' '\n' | wc -l)
+    fi
+else
+    FILE_COUNT=0
+fi
+
+echo "[INFO] Affected file count: $FILE_COUNT"
+
+if [ "$FILE_COUNT" -ge "$MIN_FILES_THRESHOLD" ]; then
+    echo "[WARN] Large-scale operation (>= $MIN_FILES_THRESHOLD files)"
+    NEEDS_APPROVAL=true
+else
+    NEEDS_APPROVAL=false
+fi
+
+# High-risk operations always need approval
+if [ "$RISK_LEVEL" = "high" ]; then
+    NEEDS_APPROVAL=true
+fi
+
+# ============================================================================
+# CHECK 3: Approval Verification
+# ============================================================================
+echo ""
+echo "[CHECK 3] Approval Verification..."
+
+if [ "$NEEDS_APPROVAL" = true ]; then
+    if [ -z "$APPROVAL_REF" ]; then
+        echo "[BLOCKED] This operation requires approval."
+        echo ""
+        echo "Resolution:"
+        echo "  1. Create approval artifact:"
+        echo "     python kernel/destructive_ops.py request \\"
+        echo "       --type $OPERATION_TYPE \\"
+        echo "       --files \"$AFFECTED_FILES\" \\"
+        echo "       --reason \"<explain why>\""
+        echo ""
+        echo "  2. Review and approve:"
+        echo "     python kernel/destructive_ops.py approve <request_id>"
+        echo ""
+        echo "  3. Re-run with approval reference:"
+        echo "     hooks/pre-destructive-op $OPERATION_TYPE \"$AFFECTED_FILES\" <request_id>"
+        exit 1
+    fi
+    
+    # Verify approval exists
+    APPROVAL_FILE="$STATE_DIR/$APPROVAL_REF.yaml"
+    if [ ! -f "$APPROVAL_FILE" ]; then
+        echo "[BLOCKED] Approval artifact not found: $APPROVAL_FILE"
+        exit 1
+    fi
+    
+    # Check approval status (simplified - full check in Python)
+    if grep -q "status: approved" "$APPROVAL_FILE" 2>/dev/null; then
+        echo "[OK] Approval verified: $APPROVAL_REF"
+    else
+        echo "[BLOCKED] Approval not yet approved"
+        echo "   Run: python kernel/destructive_ops.py approve $APPROVAL_REF"
+        exit 1
+    fi
+else
+    echo "[OK] No approval required for this operation"
+fi
+
+# ============================================================================
+# CHECK 4: Backup Verification (for high-risk)
+# ============================================================================
+echo ""
+echo "[CHECK 4] Backup Verification..."
+
+if [ "$RISK_LEVEL" = "high" ]; then
+    # Create backup branch
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_BRANCH="${BACKUP_BRANCH_PREFIX}/${OPERATION_TYPE}/${TIMESTAMP}"
+    
+    echo "[INFO] Creating backup branch: $BACKUP_BRANCH"
+    
+    if git branch "$BACKUP_BRANCH" 2>/dev/null; then
+        echo "[OK] Backup branch created"
+        
+        # Record in state
+        mkdir -p "$STATE_DIR"
+        echo "backup_branch: $BACKUP_BRANCH" >> "$STATE_DIR/${APPROVAL_REF:-manual}.yaml"
+        echo "backup_created: $(date -Iseconds)" >> "$STATE_DIR/${APPROVAL_REF:-manual}.yaml"
+    else
+        echo "[WARN] Could not create backup branch (may already exist)"
+    fi
+else
+    echo "[OK] Backup not required for this risk level"
+fi
+
+# ============================================================================
+# FINAL RESULT
+# ============================================================================
+echo ""
+echo "========================================"
+echo "[OK] Pre-destructive-op checks passed"
+echo "========================================"
+echo ""
+echo "Rollback information:"
+echo "  Backup branch: ${BACKUP_BRANCH:-none}"
+echo "  Approval: ${APPROVAL_REF:-none}"
+echo ""
+
+exit 0

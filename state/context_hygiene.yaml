@@ -1,0 +1,20 @@
+action: force
+assessed_at: '2026-02-05T10:57:13.883076'
+checkpoint_suggested: true
+metrics:
+  call_depth: 0
+  estimated_tokens: 85000
+  file_count: 25
+  files_accessed: []
+  session_duration_minutes: 0
+  topics:
+  - spec
+  - data
+  - factor
+  unique_directories: 0
+reasons:
+- Token count (85000) exceeds critical threshold (80000)
+- File count (25) exceeds critical threshold (20)
+recommended_subagents:
+- repo_specs_retrieval
+status: critical

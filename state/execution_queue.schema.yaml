@@ -1,0 +1,231 @@
+# Execution Queue Schema
+# Version: 2.0.0 (Phase D - GitHub Integration)
+# Purpose: Define the structure of execution_queue.yaml with GitHub binding support
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "ExecutionQueue"
+description: "Queue of tasks for Execute Mode with GitHub integration"
+
+type: object
+
+properties:
+  version:
+    type: string
+    description: "Schema version"
+    default: "2.0.0"
+    
+  metadata:
+    type: object
+    description: "Queue metadata"
+    properties:
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+      plan_summary:
+        type: string
+        description: "Summary from Plan Mode that generated this queue"
+      paused:
+        type: boolean
+        default: false
+      paused_reason:
+        type: string
+    required: [created_at]
+    
+  stats:
+    type: object
+    description: "Queue statistics"
+    properties:
+      total:
+        type: integer
+      pending:
+        type: integer
+      in_progress:
+        type: integer
+      completed:
+        type: integer
+      blocked:
+        type: integer
+    required: [total, pending, in_progress, completed]
+    
+  queue:
+    type: array
+    description: "List of tasks"
+    items:
+      $ref: "#/definitions/Task"
+
+definitions:
+  Task:
+    type: object
+    description: "A single task in the queue"
+    properties:
+      # Core task properties
+      id:
+        type: string
+        description: "Task ID (e.g., T3.1)"
+        pattern: "^T\\d+(\\.\\d+)?$"
+      title:
+        type: string
+        description: "Short task title"
+      description:
+        type: string
+        description: "Detailed task description"
+      status:
+        type: string
+        enum: [pending, in-progress, completed, blocked, skipped]
+        default: pending
+      priority:
+        type: string
+        enum: [P0, P1, P2, P3]
+        default: P1
+        
+      # Acceptance criteria
+      acceptance_criteria:
+        type: array
+        items:
+          type: string
+        description: "List of criteria that must be met"
+        
+      # Verification
+      verification:
+        type: object
+        properties:
+          command:
+            type: string
+            description: "Command to verify task completion"
+          expected:
+            type: string
+            description: "Expected outcome"
+          actual:
+            type: string
+            description: "Actual outcome (filled after execution)"
+            
+      # Spec pointers
+      spec_pointers:
+        type: array
+        items:
+          type: string
+        description: "Paths to relevant spec files"
+        
+      # Subagent requirements (Phase B)
+      required_subagents:
+        type: array
+        items:
+          type: string
+          enum: [repo_specs_retrieval, external_research, quant_risk_review, spec_drift]
+        description: "Subagents that must be invoked for this task"
+        
+      subagent_artifacts:
+        type: array
+        items:
+          type: object
+          properties:
+            subagent_id:
+              type: string
+            output_path:
+              type: string
+          required: [subagent_id, output_path]
+          
+      skip_justification:
+        type: string
+        description: "If subagents were skipped, why?"
+        
+      # ========== NEW: GitHub Integration (Phase D) ==========
+      github:
+        type: object
+        description: "GitHub binding information"
+        properties:
+          issue_number:
+            type: integer
+            description: "Linked GitHub Issue number"
+          issue_url:
+            type: string
+            format: uri
+            description: "Full URL to the GitHub Issue"
+          issue_state:
+            type: string
+            enum: [open, closed]
+          pr_number:
+            type: integer
+            description: "Linked GitHub PR number"
+          pr_url:
+            type: string
+            format: uri
+            description: "Full URL to the GitHub PR"
+          pr_state:
+            type: string
+            enum: [open, closed, merged, draft]
+          pr_branch:
+            type: string
+            description: "Branch name for the PR"
+          status:
+            type: string
+            enum: [unbound, issue_created, pr_created, pr_ready, pr_approved, merged, closed]
+            default: unbound
+            description: "Overall GitHub integration status"
+        additionalProperties: false
+        
+      # ========================================================
+        
+      # Timestamps
+      created_at:
+        type: string
+        format: date-time
+      started_at:
+        type: string
+        format: date-time
+      completed_at:
+        type: string
+        format: date-time
+        
+      # Dependencies
+      depends_on:
+        type: array
+        items:
+          type: string
+        description: "Task IDs that must complete first"
+        
+      # Execution metadata
+      execution:
+        type: object
+        properties:
+          attempts:
+            type: integer
+            default: 0
+          last_error:
+            type: string
+          escalation_id:
+            type: string
+            description: "Reference to escalation_queue entry if blocked"
+            
+    required: [id, title, status]
+
+# Example task with GitHub binding
+examples:
+  - id: "T3.1"
+    title: "Implement factor calculation"
+    description: "Create momentum factor calculation module"
+    status: "pending"
+    priority: "P0"
+    acceptance_criteria:
+      - "Factor calculation passes unit tests"
+      - "Performance benchmarks met"
+    verification:
+      command: "pytest tests/test_factor.py -v"
+      expected: "All tests pass"
+    spec_pointers:
+      - "specs/interfaces/factor_spec.yaml"
+    required_subagents:
+      - "repo_specs_retrieval"
+    github:
+      issue_number: 42
+      issue_url: "https://github.com/owner/repo/issues/42"
+      issue_state: "open"
+      pr_number: null
+      pr_url: null
+      pr_state: null
+      pr_branch: null
+      status: "issue_created"
+    created_at: "2026-02-05T10:00:00Z"

@@ -1,0 +1,164 @@
+# Nightly Refactor Automation
+#
+# Runs daily code cleanup and creates a PR if changes are found.
+# Schedule: Every day at 02:00 UTC
+#
+# Created: 2026-02-05
+
+name: Nightly Refactor
+
+on:
+  schedule:
+    # Run at 02:00 UTC every day
+    - cron: '0 2 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply changes (vs dry-run)'
+        required: false
+        default: 'true'
+        type: boolean
+      safe_only:
+        description: 'Only safe transformations'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  refactor:
+    name: Daily Refactor
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml black isort ruff
+          
+          # Install pyright if available
+          npm install -g pyright || echo "Pyright not installed, skipping type checks"
+      
+      - name: Run daily refactor
+        id: refactor
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          
+          # Determine flags
+          APPLY_FLAG=""
+          SAFE_FLAG=""
+          
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.apply }}" = "true" ]; then
+              APPLY_FLAG="--apply"
+            fi
+            if [ "${{ inputs.safe_only }}" = "true" ]; then
+              SAFE_FLAG="--safe-only"
+            fi
+          else
+            # Scheduled run: apply changes
+            APPLY_FLAG="--apply"
+            SAFE_FLAG="--safe-only"
+          fi
+          
+          # Run refactor
+          python tools/daily_refactor/run.py \
+            --since "HEAD~10" \
+            --output-dir "docs/refactor/$DATE" \
+            $APPLY_FLAG $SAFE_FLAG \
+            || echo "Refactor completed with warnings"
+          
+          # Check if any files changed
+          CHANGED=$(git status --porcelain | grep -E '^\s*M' | wc -l || echo "0")
+          echo "changed_count=$CHANGED" >> $GITHUB_OUTPUT
+          
+          if [ "$CHANGED" -gt "0" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit changes
+        if: steps.refactor.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Add all changed files
+          git add -A
+          
+          # Create commit
+          DATE="${{ steps.refactor.outputs.date }}"
+          COUNT="${{ steps.refactor.outputs.changed_count }}"
+          git commit -m "refactor(daily): $DATE auto-cleanup ($COUNT files)" \
+                     -m "Automated refactoring by nightly workflow" \
+                     -m "Report: docs/refactor/$DATE/REPORT.md"
+      
+      - name: Create Pull Request
+        if: steps.refactor.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: refactor/nightly-${{ steps.refactor.outputs.date }}
+          title: "[Refactor] Daily cleanup ${{ steps.refactor.outputs.date }}"
+          body: |
+            ## 🧹 Nightly Refactor
+            
+            Automated code cleanup for ${{ steps.refactor.outputs.date }}.
+            
+            ### Changes
+            - Files modified: ${{ steps.refactor.outputs.changed_count }}
+            - Report: [docs/refactor/${{ steps.refactor.outputs.date }}/REPORT.md](docs/refactor/${{ steps.refactor.outputs.date }}/REPORT.md)
+            
+            ### Transformations Applied
+            - ✅ Black formatting
+            - ✅ isort import sorting
+            - ✅ Ruff safe fixes (unused imports, whitespace)
+            
+            ### Verification
+            - [ ] Review REPORT.md for unexpected changes
+            - [ ] CI tests pass
+            - [ ] No behavior changes introduced
+            
+            ---
+            *This PR was automatically created by the nightly refactor workflow.*
+          labels: |
+            refactor
+            automated
+          draft: false
+      
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: refactor-report-${{ steps.refactor.outputs.date }}
+          path: docs/refactor/${{ steps.refactor.outputs.date }}/
+          retention-days: 30
+      
+      - name: Summary
+        run: |
+          echo "## Nightly Refactor Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date**: ${{ steps.refactor.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Files Changed**: ${{ steps.refactor.outputs.changed_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Created**: ${{ steps.refactor.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "docs/refactor/${{ steps.refactor.outputs.date }}/REPORT.md" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Report Preview" >> $GITHUB_STEP_SUMMARY
+            head -50 "docs/refactor/${{ steps.refactor.outputs.date }}/REPORT.md" >> $GITHUB_STEP_SUMMARY
+          fi

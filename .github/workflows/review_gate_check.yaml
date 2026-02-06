@@ -1,0 +1,125 @@
+# Gate-E4.5: Pair Programming Review Gate Check
+# 
+# This workflow ensures that code changes have been reviewed before merging.
+# It checks for the presence of approved review artifacts in docs/reviews/
+#
+# Created: 2026-02-05
+
+name: Review Gate Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'kernel/**/*.py'
+      - 'scripts/**/*.py'
+      - 'projects/**/src/**/*.py'
+      - 'tools/**/*.py'
+
+jobs:
+  review-gate:
+    name: Gate-E4.5 Review Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for diff
+      
+      - name: Get changed code files
+        id: changed-files
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            code:
+              - 'kernel/**/*.py'
+              - 'scripts/**/*.py'
+              - 'projects/**/src/**/*.py'
+              - 'tools/**/*.py'
+      
+      - name: Extract Task ID from PR
+        id: task-id
+        if: steps.changed-files.outputs.code == 'true'
+        run: |
+          # Try to extract task ID from PR title or branch name
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          # Pattern: TASK-001, SDF_FEATURE_ENG_001, T3.1, etc.
+          TASK_ID=$(echo "$BRANCH_NAME" | grep -oE '[A-Z][A-Z0-9_-]+' | head -1 || echo "")
+          
+          if [ -z "$TASK_ID" ]; then
+            TASK_ID=$(echo "$PR_TITLE" | grep -oE '[A-Z][A-Z0-9_-]+' | head -1 || echo "")
+          fi
+          
+          if [ -z "$TASK_ID" ]; then
+            echo "::warning::Could not extract Task ID from branch or PR title"
+            echo "task_id=" >> $GITHUB_OUTPUT
+          else
+            echo "task_id=$TASK_ID" >> $GITHUB_OUTPUT
+            echo "Found Task ID: $TASK_ID"
+          fi
+      
+      - name: Check Review Artifact Exists
+        if: steps.changed-files.outputs.code == 'true' && steps.task-id.outputs.task_id != ''
+        run: |
+          TASK_ID="${{ steps.task-id.outputs.task_id }}"
+          REVIEW_DIR="docs/reviews/${TASK_ID}"
+          
+          echo "Checking for review artifacts in: $REVIEW_DIR"
+          
+          # Find latest review file
+          REVIEW_FILE=""
+          for n in 10 9 8 7 6 5 4 3 2; do
+            if [ -f "${REVIEW_DIR}/REVIEW_${n}.md" ]; then
+              REVIEW_FILE="${REVIEW_DIR}/REVIEW_${n}.md"
+              break
+            fi
+          done
+          
+          if [ -z "$REVIEW_FILE" ]; then
+            echo "::error::Gate-E4.5 FAILED: Missing review artifact"
+            echo ""
+            echo "Expected: ${REVIEW_DIR}/REVIEW_2.md (or higher round)"
+            echo ""
+            echo "To fix:"
+            echo "1. Complete pair programming review loop"
+            echo "2. Commit review artifacts to docs/reviews/${TASK_ID}/"
+            echo "3. Ensure REVIEW_2.md has verdict: APPROVED"
+            exit 1
+          fi
+          
+          echo "Found review file: $REVIEW_FILE"
+          
+          # Check verdict
+          VERDICT=$(grep -oP 'verdict:\s*"\K[^"]+' "$REVIEW_FILE" 2>/dev/null || \
+                    grep -oP 'verdict:\s*\K\w+' "$REVIEW_FILE" 2>/dev/null || \
+                    echo "UNKNOWN")
+          
+          echo "Verdict: $VERDICT"
+          
+          if [ "$VERDICT" != "APPROVED" ]; then
+            echo "::error::Gate-E4.5 FAILED: Review not approved"
+            echo ""
+            echo "File: $REVIEW_FILE"
+            echo "Current verdict: $VERDICT"
+            echo "Required verdict: APPROVED"
+            exit 1
+          fi
+          
+          echo "✅ Gate-E4.5 PASSED: Review approved"
+      
+      - name: Skip check (no task ID)
+        if: steps.changed-files.outputs.code == 'true' && steps.task-id.outputs.task_id == ''
+        run: |
+          echo "::warning::Gate-E4.5: Could not determine Task ID"
+          echo "Skipping review check - ensure task ID is in branch name or PR title"
+          echo ""
+          echo "Recommended formats:"
+          echo "  - Branch: feature/TASK-001-description"
+          echo "  - PR Title: [TASK-001] Description"
+      
+      - name: No code changes
+        if: steps.changed-files.outputs.code != 'true'
+        run: |
+          echo "No code files changed, Gate-E4.5 check not required"
