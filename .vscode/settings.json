@@ -1,25 +1,70 @@
 {
     // ===== Python 环境配置 =====
-    // 指定项目使用的 Python 解释器（虚拟环境）
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
-    
-    // 终端自动激活虚拟环境
     "python.terminal.activateEnvironment": true,
     "python.terminal.activateEnvInCurrentTerminal": true,
-    
-    // Python 分析设置 (typeCheckingMode controlled by pyrightconfig.json)
     "python.analysis.autoImportCompletions": true,
-    
-    // 测试配置
+
+    // ===== 测试配置 =====
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": ["kernel/tests"],
-    
+
+    // ===== 代码格式化 =====
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "editor.rulers": [120]
+    },
+    "[yaml]": {
+        "editor.tabSize": 2,
+        "editor.rulers": [120]
+    },
+    "[json]": {
+        "editor.tabSize": 2
+    },
+    "[jsonc]": {
+        "editor.tabSize": 2
+    },
+
+    // ===== 文件排除（隐藏构建产物和归档） =====
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "htmlcov": true,
+        ".coverage": true,
+        "**/*.pyc": true,
+        "projects/dgsf/archive/legacy_dgsf_v1/.venv": true,
+        "projects/dgsf/archive/legacy_dgsf_v1/.git": true,
+        "archive": true
+    },
+
+    // ===== 搜索排除 =====
+    "search.exclude": {
+        "htmlcov": true,
+        "**/__pycache__": true,
+        "projects/dgsf/archive": true,
+        "archive": true,
+        "**/node_modules": true
+    },
+
+    // ===== 文件关联 =====
+    "files.associations": {
+        "*.yaml": "yaml",
+        "*.prompt.md": "markdown"
+    },
+
+    // ===== YAML 验证 =====
+    "yaml.validate": true,
+
     // ===== 终端配置 =====
     "terminal.integrated.env.windows": {
         "VIRTUAL_ENV": "${workspaceFolder}/.venv",
         "PATH": "${workspaceFolder}/.venv/Scripts;${env:PATH}"
     },
-    
+
     // ===== 其他配置 =====
     "chat.tools.terminal.autoApprove": {
         "gh": true,

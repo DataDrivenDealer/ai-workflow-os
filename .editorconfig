@@ -1,0 +1,59 @@
+# EditorConfig — AI Workflow OS
+# https://editorconfig.org
+# Enforces consistent coding styles across editors and IDEs
+
+root = true
+
+# Default for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Python files — PEP 8 standard
+[*.py]
+indent_size = 4
+max_line_length = 120
+
+# YAML files — 2 space indent (industry standard)
+[*.yaml]
+indent_size = 2
+
+# JSON files — 2 space indent
+[*.json]
+indent_size = 2
+
+# Markdown — preserve trailing whitespace (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Mermaid diagram files
+[*.mmd]
+trim_trailing_whitespace = false
+
+# Shell scripts
+[*.sh]
+end_of_line = lf
+
+# PowerShell scripts
+[*.ps1]
+end_of_line = crlf
+
+# Batch scripts
+[*.bat]
+end_of_line = crlf
+
+# Git hooks (no extension)
+[pre-commit]
+end_of_line = lf
+[pre-push]
+end_of_line = lf
+[post-*]
+end_of_line = lf
+
+# TOML files
+[*.toml]
+indent_size = 4

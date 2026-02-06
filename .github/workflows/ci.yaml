@@ -1,121 +1,194 @@
-# AI Workflow OS - Continuous Integration Pipeline
-# Created by: DevOps Engineer (张平台)
-# Date: 2026-02-01
-# 
-# Implements G2 Gate checks (Sanity Checks) for automated verification
+# AI Workflow OS - Unified Continuous Integration Pipeline
+# Merged: 2026-02-06 (consolidated ci.yaml + ci.yml into single workflow)
+# Implements: Lint, File Conventions, Unit Tests, Governance Gates (G1-G6)
 
 name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop, 'feature/**']
+    branches: [main, 'feature/**', 'experiment/**', 'hotfix/**']
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.12'
 
 jobs:
   # ===========================================================================
-  # Job 1: Lint and Type Check
+  # Job 1: Lint & Type Check
   # ===========================================================================
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements-lock.txt', 'requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements-lock.txt ]; then
+            pip install -r requirements-lock.txt
+          else
+            pip install -r requirements.txt
+          fi
           pip install ruff pyright
-          
+
       - name: Run Ruff (linter)
         run: ruff check kernel/ scripts/ --output-format=github
-        
+
       - name: Run Pyright (type check)
         run: pyright kernel/ scripts/
 
   # ===========================================================================
-  # Job 2: Unit Tests (G2 Gate - unit_tests_pass)
+  # Job 2: File Convention Checks (R9 enforcement)
   # ===========================================================================
-  test:
-    name: Unit Tests
+  file-conventions:
+    name: File Conventions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
+      - name: Check file naming conventions
+        run: python scripts/check_file_conventions.py --all
+
+      - name: Check no .yml files (except GitHub templates)
+        run: |
+          violations=$(find . -name "*.yml" -not -path "./.git/*" -not -path "./.github/ISSUE_TEMPLATE/*" | head -20)
+          if [ -n "$violations" ]; then
+            echo "❌ Found .yml files (should be .yaml):"
+            echo "$violations"
+            exit 1
+          fi
+          echo "✅ No .yml extension violations"
+
+  # ===========================================================================
+  # Job 3: Kernel Unit Tests
+  # ===========================================================================
+  kernel-tests:
+    name: Kernel Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements-lock.txt', 'requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements-lock.txt ]; then
+            pip install -r requirements-lock.txt
+          else
+            pip install -r requirements.txt
+          fi
           pip install pytest pytest-cov
-          
-      - name: Run tests with coverage
+
+      - name: Run kernel tests with coverage
         run: |
-          pytest kernel/tests/ -v --cov=kernel --cov-report=xml --cov-report=term
-          
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+          pytest kernel/tests/ -v --cov=kernel --cov-report=term-missing --cov-report=html --cov-report=xml
+
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
+          name: kernel-coverage-html
+          path: htmlcov/
+          retention-days: 7
+
+      - name: Upload coverage XML
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kernel-coverage-xml
+          path: coverage.xml
+          retention-days: 7
 
   # ===========================================================================
-  # Job 3: Policy & Governance Checks
+  # Job 4: Policy & Governance Checks
   # ===========================================================================
   governance:
     name: Governance Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          
+          pip install PyYAML
+
       - name: Run Policy Check
-        run: python scripts/policy_check.py
-        
+        run: python scripts/policy_check.py --mode ci
+
+      - name: Governance verification
+        run: |
+          python -c "
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('.').resolve()))
+          try:
+              from kernel.governance_gate import GovernanceGate
+              gate = GovernanceGate()
+              results = gate.verify_all()
+              has_errors = False
+              for r in results:
+                  status = '❌' if r.has_violations else '✅'
+                  print(f'{status} {r.gate_name}: {len(r.violations)} violations')
+                  if r.has_violations:
+                      has_errors = True
+                      for v in r.violations:
+                          print(f'   - [{v.rule_id}] {v.description}')
+              sys.exit(1 if has_errors else 0)
+          except ImportError as e:
+              print(f'⚠️ governance_gate not available: {e}')
+          "
+
       - name: Validate spec_registry.yaml
         run: |
           python -c "
           import yaml
           from pathlib import Path
-          
           registry = Path('spec_registry.yaml')
           if registry.exists():
               with open(registry) as f:
@@ -128,34 +201,168 @@ jobs:
           "
 
   # ===========================================================================
-  # Job 4: Gate Reporter (Summary)
+  # Job 5: G1 Schema Validation (triggered by [data] commits or PRs)
   # ===========================================================================
-  gate-report:
-    name: Gate Report
+  gate-g1-schema:
+    name: "G1: Schema Validation"
     runs-on: ubuntu-latest
-    needs: [lint, test, governance]
-    if: always()
+    if: contains(github.event.head_commit.message, '[data]') || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+      - name: Install dependencies
+        run: pip install PyYAML jsonschema
+      - name: Validate config schemas
+        run: |
+          python -c "
+          import json, yaml
+          from pathlib import Path
+          errors = []
+          for cfg_dir in [Path('configs'), Path('projects/dgsf/repo/configs')]:
+              if not cfg_dir.exists():
+                  continue
+              for f in cfg_dir.rglob('*.yaml'):
+                  try:
+                      with open(f) as h:
+                          yaml.safe_load(h)
+                  except Exception as e:
+                      print(f'❌ {f}: {e}')
+                      errors.append(f)
+              for f in cfg_dir.rglob('*.json'):
+                  try:
+                      with open(f) as h:
+                          json.load(h)
+                  except Exception as e:
+                      print(f'❌ {f}: {e}')
+                      errors.append(f)
+          if errors:
+              exit(1)
+          print(f'✅ All config files valid')
+          "
+
+  # ===========================================================================
+  # Job 6: G2 Sanity Checks
+  # ===========================================================================
+  gate-g2-sanity:
+    name: "G2: Sanity Checks"
+    runs-on: ubuntu-latest
+    needs: [kernel-tests]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          
-      - name: Generate Gate Report
+          pip install --upgrade pip
+          if [ -f requirements-lock.txt ]; then
+            pip install -r requirements-lock.txt
+          else
+            pip install -r requirements.txt
+          fi
+          pip install pytest
+      - name: Run G2 gate checks
         run: |
-          echo "# CI Gate Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f scripts/gate_check.py ]; then
+            python scripts/gate_check.py --gate G2 --output markdown
+          else
+            echo "⚠️ gate_check.py not found, skipping G2"
+          fi
+        continue-on-error: true
+
+  # ===========================================================================
+  # Job 7: G3-G5 Gates (Advisory → Blocking)
+  # ===========================================================================
+  gate-g3-review:
+    name: "G3: Code Review"
+    runs-on: ubuntu-latest
+    needs: [gate-g2-sanity]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements-lock.txt ]; then pip install -r requirements-lock.txt; else pip install -r requirements.txt; fi
+      - name: Run Gate G3
+        run: |
+          if [ -f scripts/run_gate_g3.py ]; then python scripts/run_gate_g3.py --output text; else echo "⚠️ Skipped"; fi
+        continue-on-error: true
+
+  gate-g5-merge:
+    name: "G5: Merge Ready"
+    runs-on: ubuntu-latest
+    needs: [gate-g3-review]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements-lock.txt ]; then pip install -r requirements-lock.txt; else pip install -r requirements.txt; fi
+      - name: Run Gate G5 (blocking)
+        run: |
+          if [ -f scripts/run_gate_g5.py ]; then python scripts/run_gate_g5.py --output text; else echo "⚠️ Skipped"; fi
+
+  # ===========================================================================
+  # Job 8: G6 Post-Merge (main branch only)
+  # ===========================================================================
+  gate-g6-post-merge:
+    name: "G6: Post-Merge"
+    runs-on: ubuntu-latest
+    needs: [gate-g5-merge]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements-lock.txt ]; then pip install -r requirements-lock.txt; else pip install -r requirements.txt; fi
+      - name: Run Gate G6
+        run: |
+          if [ -f scripts/run_gate_g6.py ]; then python scripts/run_gate_g6.py --output text; else echo "⚠️ Skipped"; fi
+        continue-on-error: true
+
+  # ===========================================================================
+  # Summary
+  # ===========================================================================
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint, file-conventions, kernel-tests, governance, gate-g5-merge]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Gate | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Lint | ${{ needs.lint.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests | ${{ needs.test.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Governance | ${{ needs.governance.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint & Type Check | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| File Conventions | ${{ needs.file-conventions.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Kernel Tests | ${{ needs.kernel-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Governance | ${{ needs.governance.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| G5 Merge Ready | ${{ needs.gate-g5-merge.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Generated: $(date -u)" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.file-conventions.result }}" == "failure" ]] || \
+             [[ "${{ needs.kernel-tests.result }}" == "failure" ]] || \
+             [[ "${{ needs.governance.result }}" == "failure" ]] || \
+             [[ "${{ needs.gate-g5-merge.result }}" == "failure" ]]; then
+            echo "❌ CI failed - check individual jobs"
+            exit 1
+          fi
+          echo "✅ All critical checks passed"

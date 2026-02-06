@@ -1,0 +1,387 @@
+# ============================================================================
+# File System Governance — Single Source of Truth
+# ============================================================================
+# Version: 1.0.0 | Created: 2026-02-06
+# Scope: AI Workflow OS (parent) + DGSF submodule (projects/dgsf/repo/)
+# Enforcement: pre-commit hook, CI workflow, VS Code settings, Copilot Instructions
+# Referenced by: .github/copilot-instructions.md, hooks/pre-commit, .github/workflows/ci.yaml
+# ============================================================================
+
+metadata:
+  version: "1.0.0"
+  created: "2026-02-06"
+  updated: "2026-02-06"
+  owner: project_owner
+  enforcement_level: BLOCK   # BLOCK = reject violations, WARN = allow with warning
+
+# ============================================================================
+# A. FILE NAMING RULES
+# ============================================================================
+naming_rules:
+
+  python_source:
+    pattern: "^[a-z][a-z0-9_]*\\.py$"
+    convention: snake_case
+    examples: ["state_engine.py", "de7_factor_panel.py", "a0_sdf_trainer.py"]
+
+  python_test:
+    pattern: "^test_[a-z][a-z0-9_]*\\.py$"
+    convention: "test_ prefix + snake_case"
+    examples: ["test_state_engine.py", "test_de7_factor_panel.py"]
+    location_rule: "MUST be in a tests/ directory, NEVER in scripts/"
+
+  yaml_config:
+    pattern: "^[a-z][a-z0-9_]*\\.yaml$"
+    convention: snake_case
+    extension: ".yaml"        # NEVER .yml
+    examples: ["git_branch_policy.yaml", "de3_fina_loader.yaml"]
+
+  json_schema:
+    pattern: "^[a-z][a-z0-9_]*\\.schema\\.json$"
+    convention: snake_case + .schema.json suffix
+    examples: ["de3_fina_loader.schema.json"]
+
+  governance_doc:
+    pattern: "^[A-Z][A-Z0-9_]*\\.(md|mmd)$"
+    convention: UPPER_SNAKE_CASE
+    scope: "L0 canon specs, L1 framework specs, architecture docs"
+    examples: ["GOVERNANCE_INVARIANTS.md", "ARCH_BLUEPRINT_MASTER.mmd"]
+
+  technical_doc:
+    pattern: "^[a-z][a-z0-9_]*\\.md$"
+    convention: snake_case
+    scope: "project-level docs, experiment docs, how-to guides"
+    examples: ["data_inventory.md", "de7_upgrade_plan.md"]
+
+  shell_script:
+    pattern: "^[a-z][a-z0-9_]*\\.sh$"
+    convention: snake_case with extension
+    examples: ["install_hooks.sh"]
+
+  powershell_script:
+    pattern: "^[a-z][a-z0-9_]*\\.ps1$"
+    convention: snake_case
+    examples: ["install_hooks.ps1"]
+
+  batch_script:
+    pattern: "^[a-z][a-z0-9_]*\\.bat$"
+    convention: snake_case
+    note: "minimize use; prefer .ps1 or .sh"
+    examples: ["run_pipeline.bat"]
+
+  git_hook:
+    pattern: "^[a-z]+-[a-z-]+$"
+    convention: kebab-case (no extension)
+    examples: ["pre-commit", "post-spec-change"]
+
+  prompt_file:
+    pattern: "^[a-z]+_[a-z_]+\\.prompt\\.md$"
+    convention: "{prefix}_{name}.prompt.md"
+    examples: ["dgsf_execute.prompt.md"]
+
+  taskcard:
+    pattern: "^[A-Z]+_[A-Z]+_\\d{3}\\.md$"
+    convention: "{MODULE}_{TYPE}_{NNN}.md"
+    examples: ["SDF_DEV_001.md", "DE_BUG_042.md"]
+
+  report:
+    pattern: "^[a-z][a-z0-9_]*_\\d{8}\\.[a-z]+$"
+    convention: "{domain}_{type}_{YYYYMMDD}.{ext}"
+    note: "Reports MUST include date suffix"
+    examples: ["de7_qa_report_20260206.json", "sdf_test_results_20260206.md"]
+
+  experiment_dir:
+    pattern: "^t\\d{2}_[a-z][a-z0-9_]*$"
+    convention: "t{NN}_{name} (two-digit zero-padded number)"
+    examples: ["t01_baseline", "t04_augmentation", "t05_cs_pricing"]
+
+# ============================================================================
+# B. PROHIBITED PATTERNS
+# ============================================================================
+prohibited:
+  - rule: "no_spaces_in_filenames"
+    pattern: " "
+    message: "File names must not contain spaces. Use snake_case instead."
+    severity: BLOCK
+
+  - rule: "no_yml_extension"
+    pattern: "\\.yml$"
+    message: "Use .yaml extension, not .yml (yaml.org official recommendation)."
+    severity: BLOCK
+    exceptions:
+      - ".github/ISSUE_TEMPLATE/*.yml"   # GitHub requires .yml for issue templates
+
+  - rule: "no_mixed_case_directories"
+    pattern: "^.*[A-Z].*/$"
+    message: "Directory names must be snake_case (all lowercase)."
+    severity: BLOCK
+    exceptions:
+      - "archive/"                        # legacy content preserved as-is
+
+  - rule: "no_test_files_in_scripts"
+    pattern: "scripts/test_.*\\.py$"
+    message: "Test files must be in tests/ directories, not scripts/."
+    severity: BLOCK
+
+  - rule: "no_undated_reports"
+    check: "files in reports/ dirs without YYYYMMDD date pattern"
+    message: "Report files must include a date suffix (YYYYMMDD)."
+    severity: WARN
+
+# ============================================================================
+# C. DIRECTORY NAMING
+# ============================================================================
+directory_naming:
+  convention: snake_case
+  rule: "All directories must use lowercase snake_case"
+  exceptions:
+    - path: "archive/"
+      reason: "May contain legacy content with original naming"
+    - path: ".github/"
+      reason: "GitHub platform convention"
+
+# ============================================================================
+# D. FILE ROUTING RULES — Where new files MUST go
+# ============================================================================
+file_routing:
+
+  # Source code
+  - type: "Python source (DGSF)"
+    target: "projects/dgsf/repo/src/dgsf/{module}/"
+    rule: "All DGSF source code lives inside the submodule src package"
+
+  - type: "Python source (Kernel)"
+    target: "kernel/"
+    rule: "OS kernel code at top level"
+
+  # Tests
+  - type: "Unit test (DGSF)"
+    target: "projects/dgsf/repo/tests/{module}/test_{name}.py"
+    rule: "Tests mirror src/ structure inside submodule"
+
+  - type: "Integration test (DGSF project)"
+    target: "projects/dgsf/tests/test_{name}.py"
+    rule: "OS-level integration tests for DGSF pipeline"
+
+  - type: "Adapter test"
+    target: "projects/dgsf/adapter/tests/test_{name}.py"
+    rule: "Tests for kernel-project adapter"
+
+  - type: "Kernel test"
+    target: "kernel/tests/test_{name}.py"
+    rule: "Tests for kernel modules"
+
+  # Configs
+  - type: "Data engineering config"
+    target: "projects/dgsf/repo/configs/data_eng/{name}.yaml"
+
+  - type: "Data loader config"
+    target: "projects/dgsf/repo/configs/loaders/{name}.yaml"
+
+  - type: "Model config (SDF/EA)"
+    target: "projects/dgsf/repo/configs/models/{name}.yaml"
+
+  - type: "Experiment config"
+    target: "projects/dgsf/repo/configs/experiments/{name}.yaml"
+
+  - type: "Dev/test config"
+    target: "projects/dgsf/repo/configs/dev/{name}.yaml"
+
+  - type: "JSON schema"
+    target: "projects/dgsf/repo/configs/schemas/{name}.schema.json"
+
+  - type: "Pipeline config"
+    target: "projects/dgsf/repo/configs/pipeline/{name}.yaml"
+
+  - type: "OS-level config"
+    target: "configs/{name}.yaml"
+    rule: "Gates, policies, rules, registries"
+
+  - type: "Project-level config"
+    target: "projects/dgsf/configs/{name}.yaml"
+    rule: "Thresholds, experiment schema"
+
+  # Reports
+  - type: "QA report"
+    target: "projects/dgsf/reports/qa/{name}_{YYYYMMDD}.{ext}"
+
+  - type: "Experiment report"
+    target: "projects/dgsf/reports/experiment/{name}_{YYYYMMDD}.{ext}"
+
+  - type: "Compliance report"
+    target: "projects/dgsf/reports/compliance/{name}_{YYYYMMDD}.{ext}"
+
+  - type: "OS gate report"
+    target: "reports/{name}_{YYYYMMDD}.{ext}"
+
+  # Scripts
+  - type: "Data engineering script"
+    target: "projects/dgsf/repo/scripts/data_eng/{name}.py"
+
+  - type: "Training script"
+    target: "projects/dgsf/repo/scripts/training/{name}.py"
+
+  - type: "Analysis script"
+    target: "projects/dgsf/repo/scripts/analysis/{name}.py"
+
+  - type: "OS utility script"
+    target: "scripts/{name}.py"
+
+  # Experiments
+  - type: "New experiment"
+    target: "projects/dgsf/experiments/t{NN}_{name}/config.yaml"
+    rule: "NN must be zero-padded two digits"
+
+  # Decisions
+  - type: "Project decision"
+    target: "projects/dgsf/decisions/{YYYYMMDD}_{topic}.md"
+
+  - type: "OS decision"
+    target: "decisions/{YYYYMMDD}_{topic}.md"
+
+  # Docs
+  - type: "OS proposal"
+    target: "docs/proposals/{TITLE}_{YYYYMMDD}.md"
+
+  - type: "OS spec (canon)"
+    target: "specs/canon/{NAME}.md"
+
+  - type: "OS spec (framework)"
+    target: "specs/framework/{NAME}.md"
+
+  - type: "Project spec"
+    target: "projects/dgsf/specs/{name}.yaml"
+
+# ============================================================================
+# E. DIRECTORY HIERARCHY — Target structure
+# ============================================================================
+directory_hierarchy:
+
+  parent_repo:
+    description: "AI Workflow OS — governance and platform layer"
+    structure:
+      ".github/": "GitHub config, prompts, workflows, issue templates"
+      "kernel/": "Core OS runtime (Python modules + tests/)"
+      "configs/": "OS-level YAML configs, rules/"
+      "specs/": "L0 canon/ and L1 framework/ specs"
+      "projects/": "Project containers (projects/{id}/)"
+      "hooks/": "Git hook source files"
+      "scripts/": "OS-level utility scripts"
+      "templates/": "TaskCard and protocol templates"
+      "state/": "Runtime state YAML files"
+      "tasks/": "TaskCard lifecycle (inbox/, active/, running/, done/)"
+      "ops/": "Operational artifacts (audit/, decision_log/)"
+      "docs/": "OS-level docs (architecture/, plans/, playbooks/, proposals/, reviews/, state/)"
+      "reports/": "OS-level reports (gate reports)"
+      "agent_skills/": "Sub-agent skill definitions"
+      "data/": "OS-level data placeholder"
+      "decisions/": "OS-level decision records"
+      "archive/": "Archived legacy content"
+
+  dgsf_project:
+    description: "projects/dgsf/ — DGSF project container"
+    structure:
+      "repo/": "Git submodule → DGSF source code repository"
+      "experiments/": "Experiment dirs (t{NN}_{name}/)"
+      "data/": "Project data (raw/ [R4-protected], processed/, full/, checkpoints/, snapshots/)"
+      "configs/": "Project-level configs (thresholds, experiment_schema)"
+      "reports/": "Project reports (qa/, experiment/, compliance/)"
+      "docs/": "Project docs, decisions/"
+      "scripts/": "Project-level scripts (data_eng/, training/, analysis/)"
+      "specs/": "Project-level specs"
+      "tests/": "OS-level integration tests"
+      "archive/": "Archived legacy DGSF content"
+      "lineage/": "Data lineage tracking"
+      "decisions/": "Project decision records"
+
+  dgsf_submodule:
+    description: "projects/dgsf/repo/ — DGSF source code (Git submodule)"
+    structure:
+      "src/dgsf/": "Python package (backtest/, config/, data/, dataeng/, ea/, eval/, factors/, paneltree/, rolling/, sdf/, utils/)"
+      "tests/": "Unit tests mirroring src/ structure"
+      "configs/": "Config files (data_eng/, loaders/, models/, experiments/, dev/, schemas/, pipeline/)"
+      "scripts/": "Run scripts (data_eng/, training/, analysis/, sanity/, reporting/)"
+      "data/": "Working data (raw/, interim/, processed/, cache/) — .gitignored"
+      "docs/": "Project docs (specs/, papers/, archive/)"
+      "tools/": "QA tools"
+      "reports/": "Run reports"
+
+# ============================================================================
+# F. EXTENSION RULES — Future growth
+# ============================================================================
+extension_rules:
+
+  new_module:
+    description: "Adding a new research module to DGSF"
+    steps:
+      - "Create src/dgsf/{module}/__init__.py"
+      - "Create tests/{module}/__init__.py"
+      - "Create configs/{category}/ entries if needed"
+      - "Register in adapter.yaml modules list"
+
+  new_project:
+    description: "Adding a new project to AI Workflow OS"
+    steps:
+      - "Create projects/{id}/ directory"
+      - "Create projects/{id}/adapter.yaml (copy from templates/)"
+      - "Create projects/{id}/project.yaml"
+      - "Add Git submodule: git submodule add <url> projects/{id}/repo"
+      - "Follow same internal structure as dgsf/"
+
+  new_config_category:
+    description: "Adding a new config subcategory"
+    steps:
+      - "Create configs/{category}/ subdirectory"
+      - "Register in this governance file under directory_hierarchy"
+      - "Update file_routing rules"
+
+  new_experiment:
+    description: "Adding a new experiment"
+    steps:
+      - "Determine next t{NN} number"
+      - "Create experiments/t{NN}_{name}/config.yaml"
+      - "Follow experiment_schema from project configs"
+
+# ============================================================================
+# G. GIT ALIGNMENT
+# ============================================================================
+git_alignment:
+
+  dual_repo_sync:
+    description: "Parent OS repo and DGSF submodule are independent Git repos"
+    workflow:
+      - "DGSF code changes → commit + push inside repo/"
+      - "Parent OS updates submodule reference → commit new submodule SHA"
+      - "Both repos pass their own CI independently"
+      - "Merge to respective main branches"
+
+  gitignore_parent:
+    must_ignore:
+      - "htmlcov/"
+      - ".coverage"
+      - "*.pyc"
+      - "__pycache__/"
+      - ".pytest_cache/"
+      - "*.tmp"
+      - "*.log"
+      - "state/.git_hooks_check"
+
+  gitignore_submodule:
+    must_ignore:
+      - "data/"
+      - "results/"
+      - "telemetry/"
+      - "*.parquet"
+      - "*.sqlite"
+      - "*.db"
+      - "*.csv"
+      - "*.log"
+      - ".ipynb_checkpoints/"
+
+  lfs_tracking:
+    patterns:
+      - "*.parquet"
+    scope: "Parent repo only (submodule .gitignores data files)"
+
+  branch_policy: "configs/git_branch_policy.yaml"
+  commit_convention: "Conventional Commits (feat, fix, docs, test, chore, experiment, refactor, perf)"

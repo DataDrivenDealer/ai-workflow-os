@@ -243,6 +243,9 @@ WHEN <condition> [AND <condition>]* THEN <action> [WITH <parameters>]
 | R4 | `WHEN write_target IN data_protected THEN BLOCK + HALT` | **Protect raw data** | **P4** |
 | R5 | `WHEN claiming(value) AND NOT evidenced(value) THEN BLOCK` | No assumptions | P1 |
 | R6 | `WHEN estimated_runtime > threshold THEN HANDOFF` | Long-run handoff | P2 |
+| R7 | `WHEN create_branch AND NOT valid_name(policy) THEN BLOCK` | Branch naming must conform to policy | P2 |
+| R8 | `WHEN git_operation AND NOT hooks_installed THEN WARN + PROMPT` | Check hooks before git ops | P3 |
+| R9 | `WHEN creating_file AND NOT conforming(file_system_governance) THEN BLOCK` | File naming & routing must conform | P2 |
 
 **Priority Enforcement**: P4 > P3 > P2 > P1 (higher = stricter)
 
@@ -290,13 +293,99 @@ THEN:
   3. WAIT: Human execution and result report
 ```
 
+### R7 Protocol (Branch Naming Enforcement)
+```
+WHEN create_branch OR commit_on_branch
+AND NOT branch_name MATCHES configs/git_branch_policy.yaml
+THEN:
+  1. BLOCK operation
+  2. DISPLAY: Allowed formats from policy
+  3. SUGGEST: Conforming branch name via suggest_branch_name()
+```
+
+### R8 Protocol (Hooks Installation Check)
+```
+WHEN git_operation (commit, push, tag)
+AND NOT all_hooks_installed(.git/hooks/)
+THEN:
+  1. WARN: "Git hooks not installed"
+  2. PROMPT: "Install hooks now? [Y/n]"
+  3. IF Y: Run install_hooks (copy hooks/ → .git/hooks/)
+  4. IF N: Record decline (suppress for 24h)
+```
+
+---
+
+## FILE SYSTEM GOVERNANCE
+
+> **Canonical Source**: `configs/file_system_governance.yaml`
+> **Enforcement**: pre-commit hook, CI workflow, VS Code settings, this file
+> **Rule**: R9 `WHEN creating_file AND NOT conforming(file_system_governance) THEN BLOCK`
+
+### Naming Rules
+
+| File Type | Convention | Example | Extension |
+|-----------|-----------|---------|-----------|
+| Python source | `snake_case` | `state_engine.py` | `.py` |
+| Python test | `test_` + `snake_case` | `test_state_engine.py` | `.py` |
+| YAML config | `snake_case` | `git_branch_policy.yaml` | `.yaml` (NEVER `.yml`) |
+| JSON schema | `snake_case` + `.schema` | `de3_fina.schema.json` | `.schema.json` |
+| Governance doc | `UPPER_SNAKE_CASE` | `GOVERNANCE_INVARIANTS.md` | `.md` |
+| Technical doc | `snake_case` | `data_inventory.md` | `.md` |
+| Report file | `{domain}_{type}_{YYYYMMDD}` | `de7_qa_report_20260206.json` | various |
+| Git hooks | `kebab-case` (no ext) | `pre-commit` | none |
+| Prompt | `{prefix}_{name}.prompt.md` | `dgsf_execute.prompt.md` | `.prompt.md` |
+| Directories | `snake_case` (all lowercase) | `data_eng/`, `panel_tree/` | — |
+| Experiments | `t{NN}_{name}` (zero-padded) | `t04_baseline/` | — |
+
+### Prohibited Patterns
+
+- **NO spaces** in file or directory names → use `snake_case`
+- **NO `.yml`** extension → use `.yaml` (exception: `.github/ISSUE_TEMPLATE/*.yml`)
+- **NO `test_*.py`** in `scripts/` directories → move to `tests/`
+- **NO mixed-case** directory names → use `snake_case` lowercase
+- **NO undated** report files → include `_YYYYMMDD` suffix
+
+### File Routing Rules (Where New Files MUST Go)
+
+```
+New Python source (DGSF)     → projects/dgsf/repo/src/dgsf/{module}/
+New unit test (DGSF)         → projects/dgsf/repo/tests/{module}/test_{name}.py
+New integration test (DGSF)  → projects/dgsf/tests/test_{name}.py
+New kernel test              → kernel/tests/test_{name}.py
+New DE config                → projects/dgsf/repo/configs/data_eng/{name}.yaml
+New loader config            → projects/dgsf/repo/configs/loaders/{name}.yaml
+New model config             → projects/dgsf/repo/configs/models/{name}.yaml
+New experiment config        → projects/dgsf/repo/configs/experiments/{name}.yaml
+New dev/test config          → projects/dgsf/repo/configs/dev/{name}.yaml
+New JSON schema              → projects/dgsf/repo/configs/schemas/{name}.schema.json
+New pipeline config          → projects/dgsf/repo/configs/pipeline/{name}.yaml
+New QA report                → projects/dgsf/reports/qa/{name}_{YYYYMMDD}.{ext}
+New experiment report        → projects/dgsf/reports/experiment/{name}_{YYYYMMDD}.{ext}
+New compliance report        → projects/dgsf/reports/compliance/{name}_{YYYYMMDD}.{ext}
+New DE script                → projects/dgsf/repo/scripts/data_eng/{name}.py
+New training script          → projects/dgsf/repo/scripts/training/{name}.py
+New analysis script          → projects/dgsf/repo/scripts/analysis/{name}.py
+New experiment               → projects/dgsf/experiments/t{NN}_{name}/config.yaml
+New project decision         → projects/dgsf/decisions/{YYYYMMDD}_{topic}.md
+New OS proposal              → docs/proposals/{TITLE}_{YYYYMMDD}.md
+```
+
+### Layer Responsibility (Content Isolation)
+
+| Layer | Contains | NEVER Contains |
+|-------|----------|----------------|
+| Root (OS) | Kernel code, OS configs, specs, templates | Project source code, project data |
+| projects/dgsf/ | Experiments, project configs, reports, integration tests | Source code (→ repo/) |
+| projects/dgsf/repo/ | Python package, unit tests, configs, scripts | Experiments, large data files |
+
 ---
 
 ## EXPERIMENT FORMAT
 
 ```
 projects/dgsf/experiments/
-  t{NN}_{name}/           # e.g., t01_baseline/
+  t{NN}_{name}/           # e.g., t01_baseline/ (NN = zero-padded)
     config.yaml           # Required: experiment parameters
     results.json          # Required: metrics output
     lineage.yaml          # Optional: data provenance

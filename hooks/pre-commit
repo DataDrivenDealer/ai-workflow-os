@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-# Pre-commit hook: Run policy check and basic validation
-# Updated: 2026-02-01 by 张平台 - Added venv detection
+# Pre-commit hook: Run policy check, branch validation, file conventions, and basic validations
+# Updated: 2026-02-06 by Copilot OS — Added file system governance checks (R9)
 
 echo "Running pre-commit checks..."
 
@@ -16,6 +16,58 @@ else
 fi
 
 echo "Using Python: $PYTHON"
+
+# ======================================================================
+# PHASE 0: Branch naming policy check (BLOCK enforcement)
+# ======================================================================
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ -n "$CURRENT_BRANCH" ]; then
+    if [ -f "kernel/git_branch_validator.py" ]; then
+        $PYTHON -m kernel.git_branch_validator 2>&1
+        BRANCH_EXIT=$?
+        if [ $BRANCH_EXIT -ne 0 ]; then
+            echo ""
+            echo "[BLOCK] Branch name '${CURRENT_BRANCH}' violates naming policy."
+            echo "        See configs/git_branch_policy.yaml for allowed formats."
+            echo ""
+            echo "  Quick fix — rename your branch:"
+            echo "    git branch -m feature/TASK_ID-description"
+            echo "    git branch -m experiment/t05_my_experiment"
+            echo ""
+            exit 1
+        fi
+    fi
+fi
+
+# ======================================================================
+# PHASE 0.5: Protected branch check
+# ======================================================================
+if [ "$CURRENT_BRANCH" = "main" ]; then
+    echo ""
+    echo "[BLOCK] Direct commits to 'main' are not allowed."
+    echo "        Create a feature branch first:"
+    echo "          git checkout -b feature/TASK_ID-description"
+    echo ""
+    exit 1
+fi
+
+# ======================================================================
+# PHASE 1: File system governance check (R9 enforcement)
+# ======================================================================
+if [ -f "scripts/check_file_conventions.py" ]; then
+    echo ""
+    echo "Checking file naming conventions..."
+    $PYTHON scripts/check_file_conventions.py --staged 2>&1
+    CONVENTION_EXIT=$?
+    if [ $CONVENTION_EXIT -eq 1 ]; then
+        echo ""
+        echo "[BLOCK] File convention violations found (R9)."
+        echo "        See: configs/file_system_governance.yaml"
+        echo ""
+        exit 1
+    fi
+    # Exit code 2 = warnings only, continue
+fi
 
 # Check if yaml module is available
 $PYTHON -c "import yaml" 2>/dev/null
