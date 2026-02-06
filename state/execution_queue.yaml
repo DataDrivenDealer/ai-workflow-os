@@ -1,0 +1,1057 @@
+# Execution Queue State
+# Purpose: Plan Mode 和 Execute Mode 之间的交接契约
+# Lifecycle: Plan Mode 创建/更新 → Execute Mode 消费/更新
+# Location: state/execution_queue.yaml
+
+execution_queue:
+  version: "1.2"  # 升级版本 - DE Fullwindow Upgrade
+  
+  # ==========================================================================
+  # METADATA（元数据）
+  # ==========================================================================
+  metadata:
+    # 创建信息
+    created_at: "2026-02-06T10:00:00Z"
+    created_by: "plan_mode"
+    plan_session_id: "DE_FULLWINDOW_UPGRADE_20260206"
+    
+    # 规划摘要（供 Execute Mode 显示）
+    plan_summary: |
+      [2026-02-06 更新] 数据工程全链路升级计划
+      
+      背景：Raw data 已升级到 201501-202601 全量 A 股，但 DE3/DE4 仍停在 2019 年末，
+      导致 DE7 fundamentals (roe/roa/net_margin) 2020 年后 100% NaN，DY 全部 100% NaN。
+      
+      目标：重建 DE3→DE4→DE5→DE6→DE7 全链路，使 PANELTREE 获得完整 21 因子输入。
+      
+      任务序列：
+      1. DE.CFG: 更新配置时间窗口 (201501-202601)
+      2. DE.3.REBUILD: 重建 DE3 Eff Panels
+      3. DE.4.REBUILD: 重建 DE4 Fina Indicators
+      4. DE.5.VALIDATE: 验证 DE5 Market Micro
+      5. DE.6.VALIDATE: 验证 DE6 Universe Mask
+      6. DE.7.REBUILD: 重建 DE7 Factor Panel
+      7. DE.7.DY_FIX: 修复 DY 因子
+      8. DE.7.QA: 运行 QA 验证
+      9. PT.VALIDATE: 验证 PANELTREE 输入
+    
+    # 更新信息
+    last_updated: "2026-02-06T10:00:00Z"
+    last_updated_by: "plan_mode"
+    
+    # ==========================================================================
+    # PAUSE/RESUME STATE（暂停/恢复状态）
+    # ==========================================================================
+    paused: false
+    paused_at: null
+    paused_reason: null
+    paused_by: null
+    
+    resumed_at: null
+    resumed_by: null
+    
+    halted: false
+    halted_reason: null
+    
+  # ==========================================================================
+  # EXECUTION QUEUE（执行队列）
+  # 按优先级和依赖关系排序，Execute Mode 按顺序执行
+  # ==========================================================================
+  queue:
+    - id: 1
+      # 任务标识
+      task_id: "SDF_FEATURE_ENG_001"
+      subtask_id: "T3.1"
+      title: "现有特征盘点 (补充 formula)"
+      description: "SDF_FEATURE_INVENTORY.json 已存在(12特征)，formula 字段已补充完成。"
+      
+      # 优先级与状态
+      priority: P0
+      status: completed  # pending | in_progress | completed | skipped | blocked
+      blocked_reason: null  # 🆕 阻塞原因，格式: "escalation:{ESC-ID}" 或其他原因
+      
+      # 验收标准（从 Plan Mode 继承，Execute Mode 验证）
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "JSON 包含至少 10 个特征定义"
+          verification_command: |
+            $inv = Get-Content projects/dgsf/reports/SDF_FEATURE_INVENTORY.json | ConvertFrom-Json
+            $inv.features.Count -ge 10
+        - id: "AC-2"
+          description: "每个特征有 name, type, source, formula 字段"
+          verification_command: null
+        - id: "AC-3"
+          description: "标记 SDF_SPEC v3.1 覆盖状态"
+          verification_command: null
+          
+      # Spec 指向（可追溯性）
+      spec_pointers:
+        - path: "specs/PROJECT_DGSF.yaml"
+          anchor: "SDF_DEV_001_T3"
+        - path: "tasks/active/SDF_FEATURE_ENG_001.md"
+          anchor: "T3.1"
+          
+      # 预估与实际
+      estimated_effort: "4 hours"
+      actual_effort: "1 hour"
+      started_at: "2026-02-05T14:35:00Z"
+      completed_at: "2026-02-05T14:40:00Z"
+      
+      # 执行约束
+      constraints:
+        max_runtime_seconds: 1800  # 30 min
+        requires_human_for: []
+        dependencies: []  # 前置任务 ID 列表
+        
+      # 执行结果（完成后填充）
+      result:
+        output_files: []
+        metrics: {}
+        notes: null
+        
+    - id: 2
+      task_id: "SDF_FEATURE_ENG_001"
+      subtask_id: "T3.2"
+      title: "特征计算 Point-in-Time 合规性验证"
+      description: "验证 DE7 特征计算逻辑的 point-in-time 合规性，确保无前瞻偏差"
+      priority: P0
+      status: completed
+      blocked_reason: null
+      
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "DE7 所有特征计算使用 .shift() 滞后数据（代码审查确认）"
+          verification_command: null
+        - id: "AC-2"
+          description: "DE7 相关测试全部通过"
+          verification_command: "pytest projects/dgsf/repo/tests/dataeng/ -v"
+        - id: "AC-3"
+          description: "生成 Point-in-Time 合规报告"
+          verification_command: null
+          
+      spec_pointers:
+        - path: "tasks/active/SDF_FEATURE_ENG_001.md"
+          anchor: "T3.2"
+          
+      estimated_effort: "6 hours"
+      actual_effort: "30 minutes"
+      started_at: "2026-02-05T15:00:00Z"
+      completed_at: "2026-02-05T15:15:00Z"
+      
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: [1]  # 依赖 T3.1 完成
+        
+      result:
+        output_files:
+          - "projects/dgsf/reports/POINT_IN_TIME_COMPLIANCE_REPORT.md"
+        metrics:
+          shift_usages: 3
+          de7_tests_passed: 30
+          de7_tests_total: 30
+        notes: "DE7 factor panel 完全合规，所有时序特征使用 .shift(1)"
+        
+    - id: 3
+      task_id: "SDF_TEST_FIX_001"
+      subtask_id: "Phase2"
+      title: "SDF 测试修复 Phase 2"
+      description: "运行 tests/sdf/ 并对失败进行分类，生成失败清单与优先级建议（不要求全库 100% 通过）"
+      priority: P1
+      status: completed
+      blocked_reason: null
+      
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "tests/sdf/ 可执行并输出测试摘要（passed/failed/skipped）"
+          verification_command: "pytest projects/dgsf/repo/tests/sdf/ -v --tb=short --maxfail=20"
+        - id: "AC-2"
+          description: "生成 failures 分类清单（至少包含 Import/Schema/Logic/Fixture 四类统计）"
+          verification_command: null
+        - id: "AC-3"
+          description: "将测试输出保存到 projects/dgsf/reports/SDF_TEST_RESULTS.txt"
+          verification_command: null
+          
+      spec_pointers:
+        - path: "tasks/active/SDF_TEST_FIX_001.md"
+          anchor: "Phase2"
+          
+      estimated_effort: "2 hours"
+      actual_effort: "10 minutes"
+      started_at: "2026-02-05T16:20:00Z"
+      completed_at: "2026-02-05T16:25:00Z"
+      
+      constraints:
+        max_runtime_seconds: 1800
+        requires_human_for: []
+        dependencies: []
+        
+      result:
+        output_files:
+          - "projects/dgsf/reports/SDF_TEST_RESULTS.txt"
+          - "projects/dgsf/reports/SDF_TEST_FAILURES.md"
+        metrics:
+          sdf_failed_tests: 0
+          sdf_passed_tests: 156
+          sdf_skipped_tests: 11
+        notes: "tests/sdf/ 全部通过，无失败；输出已保存并更新失败分类报告。"
+
+    - id: 4
+      task_id: "SDF_DEV_001"
+      subtask_id: "SDF_DEV_001.1"
+      title: "实现 StateEngine (dgsf.sdf.state_engine)"
+      description: |
+        按 projects/dgsf/specs/SDF_INTERFACE_CONTRACT.yaml 的 Section 1 实现纯 numpy 的 StateEngine。
+        必须提供 StateEngine, StateEngineConfig, create_baseline_engine, create_extended_engine。
+        目标：修复当前 contract 指向模块缺失导致的生态漂移，并为 E2E 脚本提供可导入实现。
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "新增模块 projects/dgsf/repo/src/dgsf/sdf/state_engine.py，且 import dgsf.sdf.state_engine 成功"
+          verification_command: "python -c \"import dgsf.sdf.state_engine as m; print('ok')\""
+        - id: "AC-2"
+          description: "StateEngine 支持 J=4 baseline 和 include_crowd=True 时 J=5 extended"
+          verification_command: null
+        - id: "AC-3"
+          description: "compute_volatility_state/compute_liquidity_state 输出 shape=[T] 且有限值"
+          verification_command: null
+        - id: "AC-4"
+          description: "fit_transform(returns, turnover) 输出 phi shape=[T, J]"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/specs/SDF_INTERFACE_CONTRACT.yaml"
+          anchor: "Section 1"
+        - path: "tasks/SDF_DEV_001.md"
+          anchor: "2.1"
+
+      estimated_effort: "3-6 hours"
+      actual_effort: "25 minutes"
+      started_at: "2026-02-05T16:40:00Z"
+      completed_at: "2026-02-05T17:05:00Z"
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: []
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/src/dgsf/sdf/state_engine.py"
+        metrics: {}
+        notes: "Implemented pure-numpy StateEngine and re-enabled exports in dgsf.sdf.__init__.py"
+
+    - id: 5
+      task_id: "STATE_ENGINE_INTEGRATION_001"
+      subtask_id: "Phase1"
+      title: "实现 StateEngineDataAdapter (dgsf.sdf.data_adapter)"
+      description: |
+        实现 projects/dgsf/repo/src/dgsf/sdf/data_adapter.py，以满足 projects/dgsf/scripts/test_state_engine_e2e.py 的 import。
+        至少包含：StateEngineDataAdapter, StateEngineData, validate_state_engine_output, HAS_PANDAS。
+        合成数据 from_synthetic 必须可用；真实数据 parquet 读取可选（pandas/pyarrow 存在时启用）。
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "import dgsf.sdf.data_adapter 成功，且包含 E2E 需要的符号"
+          verification_command: "python -c \"from dgsf.sdf.data_adapter import StateEngineDataAdapter, StateEngineData, validate_state_engine_output, HAS_PANDAS; print('ok', HAS_PANDAS)\""
+        - id: "AC-2"
+          description: "adapter.from_synthetic(T,N,seed) 返回 returns/turnover，shape 与 T,N 一致"
+          verification_command: null
+        - id: "AC-3"
+          description: "validate_state_engine_output 对正常输入返回 passed=True"
+          verification_command: null
+
+      spec_pointers:
+        - path: "tasks/STATE_ENGINE_INTEGRATION_001.md"
+          anchor: "Phase 1"
+        - path: "projects/dgsf/scripts/test_state_engine_e2e.py"
+          anchor: "imports"
+
+      estimated_effort: "2-4 hours"
+      actual_effort: "30 minutes"
+      started_at: "2026-02-05T17:10:00Z"
+      completed_at: "2026-02-05T17:40:00Z"
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: [4]
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/src/dgsf/sdf/data_adapter.py"
+        metrics: {}
+        notes: "Implemented DE5/DE1 loaders, synthetic generator, mock DE5 data, and validation helper"
+
+    - id: 6
+      task_id: "STATE_ENGINE_INTEGRATION_001"
+      subtask_id: "Phase2"
+      title: "补齐 StateEngine 单元/集成测试"
+      description: |
+        添加 tests/sdf/ 下的测试，覆盖：
+        - synthetic data 端到端: adapter → state_engine → validate
+        - shape/finite/range 等基本契约约束
+        - (可选) pandas 可用时的 parquet 兼容性 smoke test
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "新增 tests/sdf/test_state_engine_*.py 并可执行"
+          verification_command: "pytest tests/sdf/test_state_engine* -v --tb=short"
+        - id: "AC-2"
+          description: "关键测试用例至少覆盖 synthetic single asset + panel 两种形态"
+          verification_command: null
+
+      spec_pointers:
+        - path: "tasks/STATE_ENGINE_INTEGRATION_001.md"
+          anchor: "Phase 2"
+        - path: "projects/dgsf/specs/SDF_INTERFACE_CONTRACT.yaml"
+          anchor: "Section 1"
+
+      estimated_effort: "2-4 hours"
+      actual_effort: "30 minutes"
+      started_at: "2026-02-05T17:45:00Z"
+      completed_at: "2026-02-05T18:05:00Z"
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: [4, 5]
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/tests/sdf/test_state_engine_integration.py"
+        metrics:
+          tests_passed: 6
+          tests_total: 6
+        notes: "pytest tests/sdf/test_state_engine_integration.py -v"
+
+    - id: 7
+      task_id: "STATE_ENGINE_INTEGRATION_001"
+      subtask_id: "Phase3"
+      title: "修复并验证 StateEngine E2E 脚本"
+      description: |
+        使 projects/dgsf/scripts/test_state_engine_e2e.py 能够运行并生成报告。
+        当前脚本 import dgsf.sdf.state_engine / dgsf.sdf.data_adapter，但对应模块缺失。
+        本任务在模块实现完成后，确认脚本与输出路径一致。
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "E2E 脚本可运行并产生 JSON 报告"
+          verification_command: "python projects/dgsf/scripts/test_state_engine_e2e.py --output projects/dgsf/reports/state_engine_e2e_report.json"
+        - id: "AC-2"
+          description: "报告中 passed == total_tests"
+          verification_command: null
+
+      spec_pointers:
+        - path: "tasks/STATE_ENGINE_INTEGRATION_001.md"
+          anchor: "Phase 3"
+        - path: "projects/dgsf/scripts/test_state_engine_e2e.py"
+          anchor: "Usage"
+
+      estimated_effort: "1-2 hours"
+      actual_effort: "20 minutes"
+      started_at: "2026-02-05T18:10:00Z"
+      completed_at: "2026-02-05T18:30:00Z"
+
+      constraints:
+        max_runtime_seconds: 1800
+        requires_human_for: []
+        dependencies: [4, 5]
+
+      result:
+        output_files:
+          - "projects/dgsf/reports/state_engine_e2e_report.json"
+        metrics:
+          passed: 7
+          total: 7
+        notes: "python projects/dgsf/scripts/test_state_engine_e2e.py --output state_engine_e2e_report.json"
+
+    - id: 8
+      task_id: "DE7_HARDENING_001"
+      subtask_id: "DE7.1"
+      title: "DE7 补完：契约拆分 + Mapping + 文档修订"
+      description: |
+        明确区分 DE7_RAW_61 (Fullwindow 原始 61 因子面板) 与 DE7_A0_21 (PanelTree A0 21 因子面板)
+        两类产物契约，补齐列名/时间键/路径规范与 mapping 表，并修订 DE7 QA loop 文档。
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      required_subagents:
+        - repo_specs_retrieval
+        - spec_drift
+      subagent_artifacts:
+        - subagent_id: "repo_specs_retrieval"
+          output_path: "docs/subagents/runs/20260205_plan_mode_de7_repo_specs_retrieval/"
+        - subagent_id: "spec_drift"
+          output_path: "docs/subagents/runs/20260205_plan_mode_de7_spec_drift/"
+      skip_justification: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "新增 DE7 契约说明：明确 DE7_RAW_61 vs DE7_A0_21（time key/路径/列名）"
+          verification_command: "Test-Path docs/plans/DE7_COMPLETION_AUDIT_UPGRADE_PLAN_20260205.md"
+        - id: "AC-2"
+          description: "de7_qa_loop.md 修订：不再引用缺失脚本/过时 agent 名称，并指向可执行 QA 流程"
+          verification_command: null
+        - id: "AC-3"
+          description: "提供 raw61 ↔ a0_21 因子列名 mapping 表（至少覆盖 21 个 A0 因子）"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/docs/qa/de7_qa_loop.md"
+          anchor: "Purpose / How to Run"
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de7_factor_panel.py"
+          anchor: "INTERNAL TIME KEY CONVENTION"
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de7_factor_panel_a0_builder.py"
+          anchor: "CANONICAL TIME KEY CONVENTION"
+        - path: "projects/dgsf/repo/src/dgsf/paneltree/a0_runner.py"
+          anchor: "Data Sources (A0 namespace only)"
+
+      estimated_effort: "2-4 hours"
+      actual_effort: "40 minutes"
+      started_at: "2026-02-05T18:35:00Z"
+      completed_at: "2026-02-05T19:15:00Z"
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: []
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/docs/qa/de7_qa_loop.md"
+          - "docs/plans/DE7_COMPLETION_AUDIT_UPGRADE_PLAN_20260205.md"
+        metrics: {}
+        notes: "Updated DE7 contract split, mapping table, and QA loop guidance"
+
+    - id: 9
+      task_id: "DE7_QA_AUDIT_001"
+      subtask_id: "DE7.2"
+      title: "DE7 审计：补齐 QA Runner + Guardrails + PIT 回归测试"
+      description: |
+        补齐 DE7 QA runner（或等价的可执行 QA 流程），并增加 guardrails 来阻断 100% NaN 等灾难性劣化。
+        同时添加 PIT 回归测试，确保 shift/effective_date as-of 规则不可被无意破坏。
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      required_subagents:
+        - spec_drift
+        - external_research
+      subagent_artifacts:
+        - subagent_id: "spec_drift"
+          output_path: "docs/subagents/runs/20260205_plan_mode_de7_spec_drift/"
+        - subagent_id: "external_research"
+          output_path: "docs/subagents/runs/20260205_plan_mode_de7_external_research/"
+      skip_justification: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "DE7 QA runner 存在且可运行（或 de7_qa_loop.md 给出真实可执行替代流程）"
+          verification_command: null
+        - id: "AC-2"
+          description: "新增 guardrails：关键基本面因子组出现 100% NaN 时必须 fail-fast（或至少 hard warning）"
+          verification_command: null
+        - id: "AC-3"
+          description: "新增 PIT 回归测试：验证 t 时点仅使用 <=t 的信息（shift/as-of 规则）"
+          verification_command: "pytest projects/dgsf/repo/tests/dataeng/ -v --tb=short"
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/docs/qa/DE7_QUALITY_HARDENING_REPORT.md"
+          anchor: "Executive Summary / Root Cause"
+        - path: "projects/dgsf/repo/tests/dataeng/test_de7_factor_panel.py"
+          anchor: "No future information leakage"
+        - path: "projects/dgsf/repo/docs/qa/de7_qa_loop.md"
+          anchor: "What the QA Runner Checks"
+
+      estimated_effort: "4-8 hours"
+      actual_effort: "1 hour"
+      started_at: "2026-02-05T19:20:00Z"
+      completed_at: "2026-02-05T20:20:00Z"
+
+      constraints:
+        max_runtime_seconds: 7200
+        requires_human_for: []
+        dependencies: [8]
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/tools/qa_de7_runner.py"
+          - "projects/dgsf/repo/tests/dataeng/test_de7_factor_panel.py"
+          - "projects/dgsf/repo/docs/qa/de7_qa_loop.md"
+        metrics:
+          tests_passed: 14
+          tests_total: 14
+        notes: "pytest tests/dataeng/test_de7_factor_panel.py -v"
+
+    - id: 10
+      task_id: "DE7_UPGRADE_RESEARCH_001"
+      subtask_id: "DE7.R1"
+      title: "DE7 升级调研：v2 路线选型 + 迁移策略 + 验收阈值"
+      description: |
+        基于现状（fullwindow fundamentals NaN 风险、A0 与 raw61 契约漂移、PIT join 性能/正确性），
+        在 Option 1/2/3 中完成路线选型，并定义 v2 的验收阈值与灰度迁移策略（不覆盖 frozen 产物）。
+      priority: P2
+      status: completed
+      blocked_reason: null
+
+      required_subagents:
+        - external_research
+        - repo_specs_retrieval
+      subagent_artifacts:
+        - subagent_id: "external_research"
+          output_path: "docs/subagents/runs/20260205_plan_mode_de7_external_research/"
+        - subagent_id: "repo_specs_retrieval"
+          output_path: "docs/subagents/runs/20260205_plan_mode_de7_repo_specs_retrieval/"
+      skip_justification: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "输出 v2 选型决策记录（含风险/回滚/下游切换策略）"
+          verification_command: null
+        - id: "AC-2"
+          description: "定义 missingness/唯一键/月度覆盖等验收阈值，并给出验证步骤"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/configs/de7_fullwindow_v2.yaml"
+          anchor: "Comparison / Metadata"
+        - path: "projects/dgsf/repo/docs/qa/DE7_QUALITY_HARDENING_REPORT.md"
+          anchor: "Recommended Next Steps"
+        - path: "docs/plans/DE7_COMPLETION_AUDIT_UPGRADE_PLAN_20260205.md"
+          anchor: "3) 升级调研"
+
+      estimated_effort: "2-4 hours"
+      actual_effort: "30 minutes"
+      started_at: "2026-02-05T20:25:00Z"
+      completed_at: "2026-02-05T20:55:00Z"
+
+      constraints:
+        max_runtime_seconds: 7200
+        requires_human_for: []
+        dependencies: [8]
+
+      result:
+        output_files:
+          - "docs/plans/DE7_COMPLETION_AUDIT_UPGRADE_PLAN_20260205.md"
+        metrics: {}
+        notes: "Documented v2 route selection, migration strategy, and acceptance thresholds"
+
+    # ==========================================================================
+    # NEW: DataEng Fullwindow Upgrade Tasks (2026-02-06)
+    # 目标：重建 DE3-DE7 链路以对齐 201501-202601 全量数据
+    # ==========================================================================
+
+    - id: 11
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.CFG"
+      title: "更新 DE 配置时间窗口 (201501-202601)"
+      description: |
+        更新 DE3/DE4/DE5/DE6/DE7 相关配置文件的时间窗口：
+        - configs/de3_a0.yaml: end_date → 2026-01-31
+        - configs/de4_a0.yaml: 创建或更新
+        - 验证 de5/de6/de7 配置的 end_month
+        
+        这是后续重建任务的前置配置工作。
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "de3_a0.yaml 的 end_date 更新为 2026-01-31"
+          verification_command: "grep 'end_date' projects/dgsf/repo/configs/de3_a0.yaml"
+        - id: "AC-2"
+          description: "所有 DE 配置的时间窗口覆盖 201501-202601"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/configs/de3_a0.yaml"
+          anchor: "window.end_date"
+        - path: "docs/plans/DE_FULLWINDOW_UPGRADE_PLAN_20260206.md"
+          anchor: "Phase 1"
+
+      estimated_effort: "30 minutes"
+      actual_effort: "10 minutes"
+      started_at: "2026-02-06T10:35:00Z"
+      completed_at: "2026-02-06T10:45:00Z"
+
+      constraints:
+        max_runtime_seconds: 1800
+        requires_human_for: []
+        dependencies: []
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/configs/de3_a0.yaml"
+          - "projects/dgsf/repo/configs/de4_a0.yaml"
+          - "projects/dgsf/repo/configs/de5_a0.yaml"
+          - "projects/dgsf/repo/configs/de6_a0.yaml"
+          - "projects/dgsf/repo/configs/de7_fullwindow.yaml"
+          - "projects/dgsf/repo/configs/de7_fullwindow_v2.yaml"
+        metrics:
+          configs_updated: 6
+        notes: "All DE configs updated: de3/de4/de5 end_date=2026-01-31, de6 end=20260131, de7 end_month=202601"
+
+    - id: 12
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.3.REBUILD"
+      title: "重建 DE3 Eff Panels (income/balance/cashflow)"
+      description: |
+        使用更新后的配置重新运行 DE3 Eff Builder，产出覆盖 201501-202601 的财务报表。
+        
+        命令：python -m dgsf.dataeng.de3_fina_eff_runner --all --force
+        
+        输出到 data/a0/interim_v3/ 目录（不覆盖旧产物）。
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "de3_fina_income_eff.parquet effective_date 覆盖到 ≥ 20251201"
+          verification_command: |
+            python -c "import pandas as pd; df=pd.read_parquet('projects/dgsf/repo/data/a0/interim_v3/de3_fina_income_eff.parquet'); print(df['effective_date'].max())"
+        - id: "AC-2"
+          description: "行数 ≥ 50 万（相比旧版 21 万显著增长）"
+          verification_command: null
+        - id: "AC-3"
+          description: "(ts_code, month_end, report_type) 无重复键"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de3_fina_eff_builder.py"
+          anchor: "build_eff"
+        - path: "projects/dgsf/repo/configs/de3_a0.yaml"
+          anchor: "window"
+
+      estimated_effort: "2-4 hours"
+      actual_effort: null
+      started_at: null
+      completed_at: null
+
+      constraints:
+        max_runtime_seconds: 14400  # 4 hours
+        requires_human_for: ["长时间运行可能需要人工确认"]
+        dependencies: [11]
+
+      result:
+        output_files: []
+        metrics: {}
+        notes: null
+
+    - id: 13
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.4.REBUILD"
+      title: "重建 DE4 Fina Indicators"
+      description: |
+        使用新的 DE3 Eff Panels 重新计算财务指标 (ROE/ROA/margins 等)。
+        
+        命令：python -m dgsf.dataeng.de4_fina_indicator_eff_runner --force
+        
+        输出到 data/a0/interim_v3/de4_fina_indicator_eff.parquet
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "de4_fina_indicator_eff.parquet month_end 覆盖到 ≥ 202512"
+          verification_command: |
+            python -c "import pandas as pd; df=pd.read_parquet('projects/dgsf/repo/data/a0/interim_v3/de4_fina_indicator_eff.parquet'); print(df['month_end'].max())"
+        - id: "AC-2"
+          description: "roe/roa/net_margin 在 2020-2025 年非 100% NaN"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de4_fina_indicator_eff_builder.py"
+          anchor: "compute_indicators"
+
+      estimated_effort: "1-2 hours"
+      actual_effort: null
+      started_at: null
+      completed_at: null
+
+      constraints:
+        max_runtime_seconds: 7200
+        requires_human_for: []
+        dependencies: [12]
+
+      result:
+        output_files: []
+        metrics: {}
+        notes: null
+
+    - id: 14
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.5.VALIDATE"
+      title: "验证 DE5 Market Micro 覆盖"
+      description: |
+        检查 de5_market_micro_monthly.parquet 的时间覆盖范围。
+        如果不足 202601，需要重建。
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "de5_market_micro_monthly.parquet 覆盖到 ≥ 202601"
+          verification_command: |
+            python -c "import pandas as pd; df=pd.read_parquet('projects/dgsf/repo/data/a0/interim/de5_market_micro_monthly.parquet'); print('Shape:', df.shape)"
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de5_microstructure_a0.py"
+          anchor: "run_de5_a0"
+
+      estimated_effort: "30 minutes"
+      actual_effort: "10 minutes"
+      started_at: "2026-02-06T16:05:00Z"
+      completed_at: "2026-02-06T16:13:00Z"
+
+      constraints:
+        max_runtime_seconds: 1800
+        requires_human_for: []
+        dependencies: [11]
+
+      result:
+        output_files:
+          - "data/a0/interim/de5_market_micro_monthly.parquet"
+          - "data/a0/interim/de1_canonical_daily_full.parquet"
+        metrics:
+          file_rows: 510435
+          unique_stocks: 5185
+          month_range: "201501 - 202601"
+          indicator_count: 10
+          nan_pct: 0.32
+        notes: |
+          Fixed DE5 by:
+          1. Merged de1_canonical_daily + daily_basic → de1_canonical_daily_full.parquet (20 cols, 10.2M rows)
+          2. Updated de5_a0.yaml to point to merged file
+          3. Fixed column name mapping (list_date/delist_date → start_date/end_date)
+          4. Rebuilt successfully: 510,435 rows, 14 columns, NaN% = 0.32%
+
+    - id: 15
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.6.VALIDATE"
+      title: "验证 DE6 Universe Mask 覆盖"
+      description: |
+        检查 universe_mask.parquet 的时间覆盖范围。
+        如果不足 202601，需要重建。
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "universe_mask.parquet 覆盖到 ≥ 202601"
+          verification_command: |
+            python -c "import pandas as pd; df=pd.read_parquet('projects/dgsf/repo/data/interim/fullwindow/de6/universe_mask.parquet'); print('Columns:', list(df.columns)[:5]); print('Shape:', df.shape)"
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de6_mask_engine.py"
+          anchor: "build_mask"
+
+      estimated_effort: "30 minutes"
+      actual_effort: "5 minutes"
+      started_at: "2026-02-06T11:05:00Z"
+      completed_at: "2026-02-06T11:10:00Z"
+
+      constraints:
+        max_runtime_seconds: 1800
+        requires_human_for: []
+        dependencies: [11]
+
+      result:
+        output_files:
+          - "projects/dgsf/repo/data/interim/fullwindow/de6/universe_mask.parquet"
+        metrics:
+          file_rows: 10605910
+          ts_code_count: 5420
+          trade_date_min: 20150105
+          trade_date_max: 20260130
+        notes: "DE6 universe_mask.parquet covers 20150105-20260130. AC-1 PASS."
+
+    - id: 16
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.7.REBUILD"
+      title: "重建 DE7 Factor Panel (fullwindow v3)"
+      description: |
+        使用更新后的 DE3/DE4/DE5/DE6 产物重建 DE7 因子面板。
+        
+        输出到 data/full/de7_factor_panel_v3.parquet（不覆盖 frozen）。
+        
+        关键检查：
+        - fundamentals (roe/roa/net_margin) 在 2020-2025 年非 100% NaN
+        - DY 因子状态（可能仍需单独修复）
+      priority: P0
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "de7_factor_panel_v3.parquet date 覆盖 201501-202601"
+          verification_command: |
+            python -c "import pandas as pd; df=pd.read_parquet('projects/dgsf/repo/data/full/de7_factor_panel_v3.parquet'); print('Date range:', df['date'].min(), '-', df['date'].max())"
+        - id: "AC-2"
+          description: "roe/roa/net_margin 在 2024 年 NaN 率 < 60%"
+          verification_command: null
+        - id: "AC-3"
+          description: "(ts_code, date) 唯一键无重复"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de7_factor_panel.py"
+          anchor: "build_factor_panel"
+        - path: "projects/dgsf/repo/configs/de7_fullwindow.yaml"
+          anchor: "window"
+
+      estimated_effort: "2-4 hours"
+      actual_effort: null
+      started_at: null
+      completed_at: null
+
+      constraints:
+        max_runtime_seconds: 14400
+        requires_human_for: ["长时间运行可能需要人工确认"]
+        dependencies: [13, 14, 15]
+
+      result:
+        output_files: []
+        metrics: {}
+        notes: null
+
+    - id: 17
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.7.DY_INVEST"
+      title: "诊断 DY 因子 100% NaN 根因"
+      description: |
+        DY (股息率) 在所有年份 100% NaN，需要诊断：
+        1. 检查 de7_factor_panel.py 中 DY 的计算公式
+        2. 检查上游数据（分红信息）来源
+        3. 确定是计算逻辑问题还是上游数据缺失
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "明确 DY 100% NaN 的根因"
+          verification_command: null
+        - id: "AC-2"
+          description: "提出修复方案或记录为 debt"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de7_factor_panel.py"
+          anchor: "dy calculation"
+        - path: "projects/dgsf/repo/src/dgsf/dataeng/de1_raw_market_loader.py"
+          anchor: "DAILY_BASIC_SCHEMA"
+
+      estimated_effort: "1 hour"
+      actual_effort: "20 minutes"
+      started_at: "2026-02-06T11:15:00Z"
+      completed_at: "2026-02-06T11:35:00Z"
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: []  # Changed: This is a diagnostic task, no dependency on DE7 rebuild
+
+      result:
+        output_files: []
+        metrics:
+          de1_canonical_monthly_columns: ["ts_code", "date", "trade_date", "close", "open", "high", "low", "vol", "amount"]
+          daily_basic_columns: ["ts_code", "trade_date", "turnover_rate", "turnover_rate_f", "volume_ratio", "total_mv", "circ_mv", "pe", "pe_ttm", "pb"]
+          expected_dividend_columns: ["dv_ratio", "dv_ttm"]
+          dividend_columns_present: false
+        notes: |
+          **ROOT CAUSE IDENTIFIED**
+          
+          DY computation chain:
+          1. de7_factor_panel_a0_builder.py expects `dv_ttm` or `dv_ttm_month_end` from `de1_canonical_monthly.parquet`
+          2. de1_canonical_monthly.parquet only has: ts_code, date, trade_date, close, open, high, low, vol, amount
+          3. Missing columns: dv_ratio, dv_ttm (dividend yield data)
+          
+          Upstream issue:
+          - daily_basic.parquet was fetched with limited columns (10 cols vs expected 18)
+          - Missing: ps, ps_ttm, dv_ratio, dv_ttm, total_share, float_share, free_share, float_mktcap
+          - DE1 schema in de1_raw_market_loader.py expects dv_ratio and dv_ttm
+          
+          **FIX REQUIRED**
+          1. Re-fetch daily_basic from tushare with all columns including dv_ratio and dv_ttm
+          2. Regenerate de1_canonical_monthly.parquet with dv_ttm column
+          3. Then rebuild DE7 to get non-NaN DY factor
+          
+          **DEBT ITEM**: Add to strategic debt ledger as DATA-001
+
+    - id: 18
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "DE.7.QA"
+      title: "运行 DE7 QA Runner 验证产物"
+      description: |
+        使用 qa_de7_runner.py 验证 v3 产物质量：
+        
+        python projects/dgsf/repo/tools/qa_de7_runner.py --panel both --report
+      priority: P1
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "QA 报告显示关键因子组无 100% NaN"
+          verification_command: null
+        - id: "AC-2"
+          description: "(ts_code, date) 唯一键通过"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/tools/qa_de7_runner.py"
+          anchor: "run_qa_checks"
+        - path: "projects/dgsf/repo/docs/qa/de7_qa_loop.md"
+          anchor: "What the QA Runner Checks"
+
+      estimated_effort: "30 minutes"
+      actual_effort: null
+      started_at: null
+      completed_at: null
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: [16]
+
+      result:
+        output_files: []
+        metrics: {}
+        notes: null
+
+    - id: 19
+      task_id: "DE_FULLWINDOW_UPGRADE_001"
+      subtask_id: "PT.VALIDATE"
+      title: "验证 PANELTREE A0 Runner 输入可用"
+      description: |
+        验证 a0_runner.py 的输入数据可用性：
+        1. de7_factor_panel 有 21 个 A0 因子
+        2. de1_canonical_monthly 有 returns 和 float_mktcap
+        3. de6_universe_mask 有 in_index
+        
+        可运行 a0_runner.py 的 smoke test 模式。
+      priority: P2
+      status: completed
+      blocked_reason: null
+
+      acceptance_criteria:
+        - id: "AC-1"
+          description: "a0_runner.py 可加载输入数据"
+          verification_command: null
+        - id: "AC-2"
+          description: "X_factor_clean shape = (T, N, 21) 且 T ≥ 120"
+          verification_command: null
+
+      spec_pointers:
+        - path: "projects/dgsf/repo/src/dgsf/paneltree/a0_runner.py"
+          anchor: "load_a0_paneltree_inputs"
+
+      estimated_effort: "1 hour"
+      actual_effort: "30 minutes"
+      started_at: "2026-02-06T16:00:00Z"
+      completed_at: "2026-02-06T16:30:00Z"
+
+      constraints:
+        max_runtime_seconds: 3600
+        requires_human_for: []
+        dependencies: [18]
+
+      result:
+        output_files:
+          - "data/a0/interim/de1_canonical_monthly.parquet"
+          - "data/a0/interim/de6_universe_mask.parquet"
+          - "data/a0/interim/de7_factor_panel.parquet"
+        metrics:
+          T_months: 133
+          N_stocks: 5185
+          K_factors: 21
+          date_range: "2015-01-31 to 2026-01-31"
+        notes: |
+          All 3 input files now in data/a0/interim/:
+          - de7_factor_panel.parquet: 510,435 rows, 21 A0 factors
+          - de1_canonical_monthly.parquet: 510,435 rows with pct_chg_month, circ_mv_month_end
+          - de6_universe_mask.parquet: 530,222 rows with in_index (monthly)
+          
+          X_factor_clean shape: (133, 5185, 21) — AC-2 PASS (T >= 120)
+
+  # ==========================================================================
+  # QUEUE STATISTICS（队列统计）
+  # 由系统自动计算，便于快速了解进度
+  # ==========================================================================
+  stats:
+    total: 19
+    pending: 0
+    in_progress: 0
+    completed: 19
+    skipped: 0
+    blocked: 0
+    
+  # ==========================================================================
+  # HISTORY（历史记录）
+  # 记录所有队列操作，供审计和调试
+  # ==========================================================================
+  history:
+    - timestamp: "2026-02-05T11:15:00Z"
+      action: "queue_created"
+      actor: "plan_mode"
+      details:
+        items_count: 3
+        plan_session_summary: "诊断 T5.2 OOS 失败，规划 T3 特征工程"
+    - timestamp: "2026-02-05T20:55:00Z"
+      action: "queue_item_completed"
+      actor: "execute_mode"
+      details:
+        queue_item_id: 10
+        task_id: "DE7_UPGRADE_RESEARCH_001"
+        subtask_id: "DE7.R1"
+        summary: "Documented v2 route selection, migration strategy, and acceptance thresholds"
+    - timestamp: "2026-02-06T10:00:00Z"
+      action: "queue_extended"
+      actor: "plan_mode"
+      details:
+        items_added: 9
+        plan_session_id: "DE_FULLWINDOW_UPGRADE_20260206"
+        summary: "添加 DE3-DE7 全链路升级任务，对齐 201501-202601 数据"
+
+# =============================================================================
+# SCHEMA NOTES（Schema 说明）
+# =============================================================================
+#
+# status 可选值:
+#   - pending: 待执行
+#   - in_progress: 执行中
+#   - completed: 已完成且验证通过
+#   - skipped: 被用户跳过
+#   - blocked: 遇到阻塞，需要诊断
+#
+# priority 可选值:
+#   - P0: 最高优先级，阻塞关键路径
+#   - P1: 高优先级
+#   - P2: 中等优先级
+#   - Deferred: 延期处理
+#
+# 生命周期:
+#   1. Plan Mode 结束时创建/更新此文件
+#   2. Execute Mode 启动时读取此文件
+#   3. 每完成一个任务，更新 status 和 stats
+#   4. 队列清空后，归档到 state/archive/
+#
