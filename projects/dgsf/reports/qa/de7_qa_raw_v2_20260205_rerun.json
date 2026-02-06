@@ -1,0 +1,24 @@
+{
+  "reports": [
+    {
+      "panel": "DE7_RAW_61",
+      "path": "data\\full\\de7_factor_panel_v2.parquet",
+      "checks": {
+        "unique_key": {
+          "ok": true,
+          "detail": "ok"
+        },
+        "required_columns": {
+          "ok": true,
+          "missing": []
+        },
+        "guardrail_all_nan": {
+          "ok": true,
+          "detail": []
+        }
+      },
+      "errors": []
+    }
+  ],
+  "overall_ok": true
+}
